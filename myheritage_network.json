@@ -1,0 +1,63 @@
+{
+  "requests": [
+    {
+      "url": "https://www.myheritage.com/family-sites/wairua/OYYV6UYCQOJ76UUGSORCEA4K7X53VLQ?hcl=1&tr_date=20260816",
+      "method": "GET",
+      "type": "document"
+    },
+    {
+      "url": "https://www.myheritage.com/_Incapsula_Resource?CWUDNSAI=23&xinfo=38-76366161-0%200NNN%20RT%281786891412635%20249%29%20q%280%20-1%20-1%200%29%20r%280%20-1%29%20B16%20U5&incident_id=898000421366763693-393997111265462950&edet=16&cinfo=ffffffff&rpinfo=0&cip=197.237.243.226&mth=GET",
+      "method": "GET",
+      "type": "document"
+    },
+    {
+      "url": "https://cf.mhcache.com/FP/Assets/Images/Common/myheritage-logo.svg",
+      "method": "GET",
+      "type": "image"
+    },
+    {
+      "url": "https://cf.mhcache.com/FP/Assets/Images/RecaptchaChallenge/recaptcha_robot@2x.jpg?v=1",
+      "method": "GET",
+      "type": "image"
+    },
+    {
+      "url": "https://www.myheritage.com/favicon.ico",
+      "method": "GET",
+      "type": "other"
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.myheritage.com/_Incapsula_Resource?CWUDNSAI=23&xinfo=38-76366161-0%200NNN%20RT%281786891412635%20249%29%20q%280%20-1%20-1%200%29%20r%280%20-1%29%20B16%20U5&incident_id=898000421366763693-393997111265462950&edet=16&cinfo=ffffffff&rpinfo=0&cip=197.237.243.226&mth=GET",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n\r\n<head>\r\n    <title>Access Denied</title>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <style>\r\n        body {\r\n            font-family: \"Helvetica Neue\", \"Helvetica, Arial\", sans-serif;\r\n            margin: 0;\r\n            padding: 0;\r\n            display: flex;\r\n            flex-direction: column;\r\n            justify-content: center;\r\n            align-items: center;\r\n        }\r\n\r\n        header {\r\n            height: 64px;\r\n            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, .05);\r\n            width: 100%;\r\n        }\r\n\r\n        .my_heritage_logo {\r\n            margin: 20px;\r\n        }\r\n\r\n        .container {\r\n            height: 100%;\r\n            padding: 20px;\r\n            max-width: 900px;\r\n            text-align: left;\r\n        }   \r\n\r\n        .container img {\r\n            width: 188px;\r\n            height: auto;\r\n            margin-bottom: 10px;\r\n            text-align: center;\r\n        }\r\n\r\n        .container .image_container {\r\n            text-align: center;\r\n        }\r\n\r\n        .container h1 {\r\n            font-size: 35px;\r\n            margin-bottom: 20px;\r\n        }\r\n\r\n        .container p {\r\n            font-size: 16px;\r\n            line-height: 1.5;\r\n            margin-bottom: 20px;\r\n        }\r\n\r\n        .container ul {\r\n            text-align: left;\r\n            list-style-type: none;\r\n            padding: 0;\r\n        }\r\n\r\n        .container ul li {\r\n            margin-bottom: 10px;\r\n        }\r\n\r\n    </style>\r\n</head>\r\n\r\n<body>\r\n    <header>\r\n        <img class=\"my_heritage_logo\" src=\"https://cf.mhcache.com/FP/Assets/Images/Common/myheritage-logo.svg\" alt=\"Family Tree, Genealogy &amp; Family History - MyHeritage\" height=\"32\" width=\"185\">\r\n    </header>\r\n    <div class=\"container\">\r\n        <div class=\"image_container\">\r\n            <img src=\"https://cf.mhcache.com/FP/Assets/Images/RecaptchaChallenge/recaptcha_robot@2x.jpg?v=1\" alt=\"Robot\">\r\n        </div>\r\n        <h1>Access Denied</h1>\r\n        <p>We’re sorry, but access from your current IP address has been temporarily blocked due to suspicious activity.\r\n        </p>\r\n        <h2>Why did this happen?</h2>\r\n        <p>Our security system detected unusual behavior associated with this IP address, which could pose a risk to our\r\n            site and its users.</p>\r\n        <h2>What can you do?</h2>\r\n        <p>You can try to access again in 24 hours.<br>If the issue persists after 24 hours, you may contact our support\r\n            team at <a href=\"mailto:security-support@myheritage.com\">security-support@myheritage.com</a> for further\r\n            assistance.<br>Please make sure to contact us from your MyHeritage registered email address.</p>\r\n        <p>When reaching out, include the following details to help us assist you more efficiently:</p>\r\n         <div style=\"display:none\" ><div class=\"error-title\">Access Denied</div>\r\n<div class=\"error-code\">Error 16</div>\r\n<div class=\"hostn...[TRUNC]"
+    },
+    {
+      "url": "https://cf.mhcache.com/FP/Assets/Images/Common/myheritage-logo.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "body": null
+    },
+    {
+      "url": "https://cf.mhcache.com/FP/Assets/Images/RecaptchaChallenge/recaptcha_robot@2x.jpg?v=1",
+      "status": 200,
+      "contentType": "image/jpeg",
+      "body": null
+    }
+  ],
+  "finalUrl": "https://www.myheritage.com/family-sites/wairua/OYYV6UYCQOJ76UUGSORCEA4K7X53VLQ?hcl=1&tr_date=20260816",
+  "htmlLength": 785,
+  "cookies": [
+    {
+      "name": "visid_incap_292987",
+      "value": "f+tpRXxYR1+yiNHlk+eo+ZTMgWoAAAAAQUIPAAAAAAD2Jf9uMvA5jcx24L130nM6",
+      "domain": ".myheritage.com"
+    },
+    {
+      "name": "incap_ses_898_292987",
+      "value": "XWXbePU/7QitkLcboFZ2DJTMgWoAAAAApQQjKdLz7DginDxOS8aQ9A==",
+      "domain": ".myheritage.com"
+    }
+  ]
+}
