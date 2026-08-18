@@ -10,9 +10,13 @@ const ZOOM_MIN = 0.04
 const ZOOM_MAX = 2.5
 const GENDER_ICONS = { male: '\u2642', female: '\u2640', unknown: '\u25CB' }
 
-function TreeView({ data, individuals, families, onSelectPerson }) {
+function TreeView({ data, individuals, families, onSelectPerson, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
-  // zoom/pan start null => effective view is auto-computed (fit-to-screen on first load)
+  const svgRef = useRef(null)
+  const contentGroupRef = useRef(null)
+  // zoom/pan start null => effective view is recomputed (legible default) on first
+  // layout / mount. Once the user engages (zoom buttons, wheel, pan) we keep their
+  // view until they tap reset or switch layout mode.
   const [zoom, setZoom] = useState(null)
   const [pan, setPan] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
@@ -40,8 +44,8 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     return () => ro.disconnect()
   }, [])
 
-  // Calculate tree layout
-  const treeLayout = useMemo(() => {
+  // ---- horizontal (flat) layout: top-down, oldest generations on top ----
+  const flatLayout = useMemo(() => {
     if (individuals.size === 0) return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
 
     // ---- structural pass: build descendant subtrees bottom-up ----
@@ -151,10 +155,20 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
 
     let top = 0
     let maxWidth = 0
+    const frames = []
     for (const st of components) {
       const before = placedGlobal.size
+      const linkStart = links.length
       place(st, 0, top)
       if (placedGlobal.size > before) {
+        frames.push({
+          top,
+          width: st.width,
+          height: st.height,
+          nodeIds: new Set(Array.from(placedGlobal).slice(before)),
+          linkStart,
+          linkEnd: links.length,
+        })
         maxWidth = Math.max(maxWidth, st.width)
         top += st.height + V_GAP
       }
@@ -176,11 +190,20 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     }
     for (const members of orphanIslands) {
       const w = members.length * NODE_WIDTH + (members.length - 1) * H_GAP
+      const linkStart = links.length
       let x = 0
       for (const mid of members) {
         pos.set(mid, { x, y: top })
         x += NODE_WIDTH + H_GAP
       }
+      frames.push({
+        top,
+        width: w,
+        height: NODE_HEIGHT,
+        nodeIds: new Set(members),
+        linkStart,
+        linkEnd: linkStart,
+      })
       maxWidth = Math.max(maxWidth, w)
       top += NODE_HEIGHT + V_GAP
     }
@@ -190,8 +213,44 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     }
     const height = components.length || orphanIslands.length ? top + NODE_HEIGHT : NODE_HEIGHT
 
-    return { nodes, links, posMap: pos, width: maxWidth, height }
+    return { nodes, links, posMap: pos, width: maxWidth, height, frames }
   }, [individuals])
+
+  // Vertical mode: transpose each top-level component (packed columns left->right,
+  // spouses stacked, descendants fanning right). Reuses the flat placement math.
+  const verticalLayout = useMemo(() => {
+    if (flatLayout.nodes.length === 0) {
+      return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
+    }
+    const nodes = []
+    const links = []
+    const posMap = new Map()
+    let w = 0
+    let h = 0
+    for (const f of flatLayout.frames) {
+      for (const id of f.nodeIds) {
+        const p = flatLayout.posMap.get(id)
+        if (!p) continue
+        const nx = w + (p.y - f.top)
+        const ny = p.x
+        posMap.set(id, { x: nx, y: ny })
+        nodes.push({ id, x: nx, y: ny })
+      }
+      for (let i = f.linkStart; i < f.linkEnd; i++) {
+        const l = flatLayout.links[i]
+        links.push({
+          type: l.type,
+          x1: w + (l.y1 - f.top), y1: l.x1,
+          x2: w + (l.y2 - f.top), y2: l.x2,
+        })
+      }
+      w += f.height + V_GAP
+      h = Math.max(h, f.width)
+    }
+    return { nodes, links, posMap, width: w, height: h }
+  }, [flatLayout])
+
+  const treeLayout = layoutMode === 'vertical' ? verticalLayout : flatLayout
 
   // ---- view computation (all pan/zoom is expressed through the SVG viewBox) ----
   const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
@@ -214,9 +273,21 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     )
   }, [treeLayout, viewport, fitRect])
 
+  // Switching orientation invalidates the current pan/zoom — drop back to the
+  // legible default for the new layout (skip the initial mount).
+  const prevModeRef = useRef(layoutMode)
+  useEffect(() => {
+    if (prevModeRef.current !== layoutMode) {
+      prevModeRef.current = layoutMode
+      setZoom(null)
+      setPan(null)
+    }
+  }, [layoutMode])
+
   // Default (unengaged) view: anchored to the top-left (oldest generation roots)
   // at a legible zoom so names/dates are readable on open. Zoom 1 = layout units
-  // map 1:1 to screen pixels (22px photo, ~12px text).
+  // map 1:1 to screen pixels (22px photo, ~12px text). In vertical mode the same
+  // anchor lands on the oldest-generation column at the far left.
   const legibleDefault = useCallback(() => {
     return { zoom: 1, pan: { x: 20, y: 20 } }
   }, [])
@@ -233,16 +304,64 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
   if (view) viewRef.current = view
 
-  const engage = useCallback(() => {
-    setZoom(prev => (prev !== null ? prev : viewRef.current.zoom))
-  }, [])
+  // Mirror the committed view into the <g> content transform AND the svg viewBox.
+  // Doing the transform imperatively keeps pan smooth: no React re-render per
+  // mousemove, the browser applies the attribute directly.
+  const applyView = useCallback(() => {
+    const z = viewRef.current.zoom
+    const panX = viewRef.current.pan.x
+    const panY = viewRef.current.pan.y
+    const g = contentGroupRef.current
+    if (g) g.setAttribute('transform', `translate(${panX}, ${panY}) scale(${z})`)
+    const svg = svgRef.current
+    if (svg && viewport.w && viewport.h) {
+      svg.setAttribute('viewBox', `${-panX / z} ${-panY / z} ${viewport.w / z} ${viewport.h / z}`)
+    }
+  }, [viewport.w, viewport.h])
 
-  const handleZoom = useCallback((delta) => {
-    setZoom(prev => {
-      const base = prev !== null ? prev : viewRef.current.zoom
-      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base + delta))
-    })
-  }, [])
+  useEffect(() => {
+    applyView()
+  }, [applyView, zoom, pan, view])
+
+  const engage = useCallback(() => {
+    if (zoom === null || pan === null) {
+      setZoom(viewRef.current.zoom)
+      setPan(viewRef.current.pan)
+    }
+  }, [zoom, pan])
+
+  // Keyboard accessible zoom (wheel / +/-). Zooming around a screen point keeps
+  // that point stationary under the cursor.
+  const zoomAtPoint = useCallback((px, py, factor) => {
+    let z = viewRef.current.zoom
+    const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z + factor))
+    if (next === z) return
+    const ratio = next / z
+    const v = viewRef.current
+    viewRef.current = {
+      zoom: next,
+      pan: { x: px - (px - v.pan.x) * ratio, y: py - (py - v.pan.y) * ratio },
+    }
+    setZoom(next)
+    setPan(viewRef.current.pan)
+    applyView()
+  }, [applyView])
+
+  const zoomBy = useCallback((factor) => {
+    if (!viewport.w || !viewport.h) return
+    zoomAtPoint(viewport.w / 2, viewport.h / 2, factor)
+  }, [viewport, zoomAtPoint])
+
+  // Programmatic view set (fit / drill / reset): commit to state + ref + DOM.
+  const animateTo = useCallback((viewTo) => {
+    if (!viewTo) return
+    const prev = viewRef.current
+    if (prev.zoom === viewTo.zoom && prev.pan.x === viewTo.pan.x && prev.pan.y === viewTo.pan.y) return
+    viewRef.current = viewTo
+    setZoom(viewTo.zoom)
+    setPan(viewTo.pan)
+    applyView()
+  }, [applyView])
 
   // Native wheel listener so preventDefault actually works (React wheel is passive by default)
   useEffect(() => {
@@ -251,12 +370,12 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     const onWheel = (e) => {
       if (e.ctrlKey) return
       e.preventDefault()
-      const factor = e.deltaY > 0 ? -0.08 : 0.08
-      handleZoom(factor)
+      const rect = el.getBoundingClientRect()
+      zoomAtPoint(e.clientX - rect.left, e.clientY - rect.top, e.deltaY > 0 ? -0.08 : 0.08)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [handleZoom])
+  }, [zoomAtPoint])
 
   // ---- pan (mouse) ----
   const handleMouseDown = useCallback((e) => {
@@ -272,10 +391,13 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     if (dragStart.current && (Math.abs(e.clientX - dragStart.current.x) > 4 || Math.abs(e.clientY - dragStart.current.y) > 4)) {
       suppressClick.current = true
     }
-    setPan({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y })
-  }, [])
+    const v = viewRef.current
+    viewRef.current = { zoom: v.zoom, pan: { x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y } }
+    applyView()
+  }, [applyView])
 
   const handleMouseUp = useCallback(() => {
+    if (isPanning.current) setPan(viewRef.current.pan)
     isPanning.current = false
   }, [])
 
@@ -315,19 +437,23 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
       const ratio = dist / start.distance
       const nextZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, start.zoom * ratio))
       const zoomRatio = nextZoom / start.zoom
-      setPan({
+      const next = {
         x: midX - (start.midX - start.panX) * zoomRatio,
         y: midY - (start.midY - start.panY) * zoomRatio,
-      })
-      setZoom(nextZoom)
+      }
+      viewRef.current = { zoom: nextZoom, pan: next }
+      applyView()
       e.preventDefault()
     } else if (isPanning.current && touches.length === 1) {
-      setPan({ x: touches[0].clientX - startPos.current.x, y: touches[0].clientY - startPos.current.y })
+      const v = viewRef.current
+      viewRef.current = { zoom: v.zoom, pan: { x: touches[0].clientX - startPos.current.x, y: touches[0].clientY - startPos.current.y } }
+      applyView()
     }
-  }, [])
+  }, [applyView])
 
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
+      if (isPanning.current || pinchRef.current) setPan(viewRef.current.pan)
       isPanning.current = false
       pinchRef.current = null
     } else if (e.touches.length === 1) {
@@ -340,17 +466,14 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
   }, [])
 
   const fitView = useCallback(() => {
-    const v = fitAll()
-    if (v) {
-      setZoom(v.zoom)
-      setPan(v.pan)
-    }
-  }, [fitAll])
+    animateTo(fitAll())
+  }, [fitAll, animateTo])
 
   const resetView = useCallback(() => {
+    viewRef.current = legibleDefault()
     setZoom(null)
     setPan(null)
-  }, [])
+  }, [legibleDefault])
 
   // Drill down: zoom the view onto a person and their descendants
   const drillTo = useCallback((id) => {
@@ -379,11 +502,8 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
       }
     }
     const v = fitRect({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, viewport.w, viewport.h, 30, 0.12, 1.6)
-    if (v) {
-      setZoom(v.zoom)
-      setPan(v.pan)
-    }
-  }, [treeLayout, viewport, individuals, fitRect])
+    animateTo(v)
+  }, [treeLayout, viewport, individuals, fitRect, animateTo])
 
   const handlePersonClick = useCallback((id) => {
     if (suppressClick.current) {
@@ -408,10 +528,10 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     <div className="tree-toolbar">
       <div className="toolbar-left">
         <span className="toolbar-label">Tree view</span>
-        <button className="btn btn-icon" onClick={() => handleZoom(0.1)} title="Zoom In">
+        <button className="btn btn-icon" onClick={() => zoomBy(0.1)} title="Zoom In">
           <i className="fas fa-plus"></i>
         </button>
-        <button className="btn btn-icon" onClick={() => handleZoom(-0.1)} title="Zoom Out">
+        <button className="btn btn-icon" onClick={() => zoomBy(-0.1)} title="Zoom Out">
           <i className="fas fa-minus"></i>
         </button>
         <span className="toolbar-zoom">{Math.round((view ? view.zoom : 1) * 100)}%</span>
@@ -423,6 +543,15 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
         <button className="btn btn-icon" onClick={resetView} title="Reset View">
           <i className="fas fa-home"></i>
         </button>
+        {hasData && (
+          <button
+            className={`btn btn-icon layout-toggle ${layoutMode === 'vertical' ? 'active' : ''}`}
+            onClick={() => onLayoutModeChange && onLayoutModeChange(layoutMode === 'flat' ? 'vertical' : 'flat')}
+            title={layoutMode === 'flat' ? 'Switch to vertical (side-by-side) view' : 'Switch to horizontal (top-down) view'}
+          >
+            <i className={`fas ${layoutMode === 'flat' ? 'fa-arrows-alt-v' : 'fa-arrows-alt-h'}`}></i>
+          </button>
+        )}
       </div>
       <div className="toolbar-center">
         {hasData ? (
@@ -471,6 +600,11 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
 
   const linkPath = (link) => {
     if (link.type === 'marriage') {
+      if (Math.abs(link.x2 - link.x1) < Math.abs(link.y2 - link.y1)) {
+        // vertical couple: a straight vertical line between the two cards
+        const mx = link.x1
+        return `M ${mx} ${link.y1} L ${mx} ${link.y2}`
+      }
       const my = link.y1
       return `M ${link.x1} ${my} L ${link.x2} ${my}`
     }
@@ -497,6 +631,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
         {view && (
           <svg
             id="tree-svg"
+            ref={svgRef}
             width="100%"
             height="100%"
             viewBox={`${-view.pan.x / view.zoom} ${-view.pan.y / view.zoom} ${viewport.w / view.zoom} ${viewport.h / view.zoom}`}
@@ -510,6 +645,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
               </filter>
             </defs>
 
+            <g ref={contentGroupRef} id="tree-content" transform={`translate(${view.pan.x}, ${view.pan.y}) scale(${view.zoom})`}>
             {/* Links */}
             {treeLayout.links.map((link, i) => (
               <path
@@ -603,6 +739,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
                 </g>
               )
             })}
+            </g>
           </svg>
         )}
         {selectedPerson && (

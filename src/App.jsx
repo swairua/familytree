@@ -14,6 +14,7 @@ function App() {
   const [families, setFamilies] = useState(new Map())
   const [currentView, setCurrentView] = useState('tree')
   const [selectedPersonId, setSelectedPersonId] = useState(null)
+  const [layoutMode, setLayoutMode] = useState('flat')
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
@@ -309,6 +310,8 @@ function App() {
             individuals={individuals}
             families={families}
             onSelectPerson={handleSelectPerson}
+            layoutMode={layoutMode}
+            onLayoutModeChange={setLayoutMode}
           />
         )}
 
