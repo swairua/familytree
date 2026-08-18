@@ -164,7 +164,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
                   </span>
                 )}
                 {person.deathDate && (
-                  <span style={{ marginLeft: '10px' }}>
+                  <span className="profile-date-separator">
                     <i className="fas fa-cross"></i> {formatDate(person.deathDate)}
                     {person.deathPlace && ` • ${person.deathPlace}`}
                   </span>
@@ -196,7 +196,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
                     )}
                   </div>
                 ))}
-                <div className="edit-field" style={{ gridColumn: '1 / -1' }}>
+                <div className="edit-field edit-field-wide">
                   <label htmlFor="edit-notes">Notes</label>
                   <textarea id="edit-notes" rows="4" value={form.notes || ''} onChange={handleField('notes')} />
                 </div>
@@ -221,7 +221,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
                     {person.gender !== 'unknown' && (
                       <div className="profile-info-item">
                         <div className="label">Gender</div>
-                        <div className="value" style={{ textTransform: 'capitalize' }}>{person.gender}</div>
+                        <div className="value value-capitalized">{person.gender}</div>
                       </div>
                     )}
                     {person.occupation && (
@@ -293,7 +293,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
                   <div className="family-list">
                     {person.events.map((event, i) => (
                       <div key={i} className="family-member">
-                        <div className="mini-avatar" style={{ background: '#95a5a6' }}>
+                        <div className="mini-avatar event-avatar">
                           <i className="fas fa-calendar"></i>
                         </div>
                         <span className="member-name">
@@ -316,7 +316,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
                 <div className="profile-section">
                   <h3><i className="fas fa-sticky-note"></i> Notes</h3>
                   {person.notes.map((note, i) => (
-                    <div key={i} className="profile-info-item" style={{ marginBottom: '8px' }}>
+                    <div key={i} className="profile-info-item profile-note">
                       <div className="value">{note}</div>
                     </div>
                   ))}

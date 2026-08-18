@@ -11,8 +11,11 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
   return (
     <header className="main-header">
       <div className="logo">
-        <i className="fas fa-tree"></i>
-        <span>Family Tree</span>
+        <span className="logo-mark" aria-hidden="true">
+          <i className="fas fa-tree"></i>
+        </span>
+        <span className="logo-wordmark">MyHeritage</span>
+        <span className="logo-context">Family tree</span>
       </div>
       <nav className="main-nav">
         {navItems.map(item => (
@@ -38,10 +41,11 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
           title="Re-pull the latest data from MyHeritage and update the database"
         >
           <i className={`fas ${syncing ? 'fa-spinner fa-spin' : 'fa-sync'}`}></i>
-          {syncing ? ' Syncing...' : ' Sync'}
+          <span>{syncing ? 'Syncing...' : 'Sync'}</span>
         </button>
         <button className="btn btn-primary" onClick={onImportClick}>
-          <i className="fas fa-file-import"></i> Import GEDCOM
+          <i className="fas fa-file-import"></i>
+          <span>Import GEDCOM</span>
         </button>
       </div>
     </header>
