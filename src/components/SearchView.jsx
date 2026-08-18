@@ -1,14 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react'
+import PersonAvatar from './PersonAvatar'
 
 function SearchView({ individuals, onSelectPerson }) {
   const [query, setQuery] = useState('')
-
-  const getInitials = useCallback((name) => {
-    const parts = name.split(' ').filter(Boolean)
-    if (parts.length === 0) return '?'
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
-  }, [])
 
   const formatDates = useCallback((person) => {
     const extractYear = (date) => {
@@ -86,9 +80,7 @@ function SearchView({ individuals, onSelectPerson }) {
             className="search-result-item"
             onClick={() => onSelectPerson(person.id)}
           >
-            <div className={`person-avatar ${person.gender}`}>
-              {getInitials(person.name)}
-            </div>
+            <PersonAvatar person={person} className="person-avatar" />
             <div>
               <h3>{person.name}</h3>
               <div className="person-dates">{formatDates(person)}</div>

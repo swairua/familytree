@@ -22,6 +22,24 @@ require_once __DIR__ . '/gedcomParser.php';
 
 send_cors_headers();
 
+const INDIVIDUAL_EDITABLE_FIELDS = [
+    'givenName'  => ['given_name', 128],
+    'surname'    => ['surname', 128],
+    'prefix'     => ['prefix', 32],
+    'suffix'     => ['suffix', 32],
+    'nickname'   => ['nickname', 128],
+    'gender'     => ['gender', 16],
+    'birthDate'  => ['birth_date', 64],
+    'birthPlace' => ['birth_place', 255],
+    'deathDate'  => ['death_date', 64],
+    'deathPlace' => ['death_place', 255],
+    'burialDate' => ['burial_date', 64],
+    'burialPlace'=> ['burial_place', 255],
+    'occupation' => ['occupation', 255],
+    'education'  => ['education', 255],
+    'religion'   => ['religion', 128],
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -56,11 +74,14 @@ try {
         case 'clear':
             handleClear($pdo);
             break;
+        case 'update':
+            handleUpdateIndividual($pdo);
+            break;
         default:
             send_error("Unknown action: {$action}", 404);
     }
 } catch (Throwable $e) {
-    send_error('Server error: ' . $e->getMessage(), 500);
+    send_error('Server error: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine(), 500);
 }
 
 // ---------------------------------------------------------------------------
@@ -354,6 +375,87 @@ function handleClear(PDO $pdo): void
     $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
     $pdo->commit();
     send_json(['ok' => true, 'cleared' => true]);
+}
+
+function handleUpdateIndividual(PDO $pdo): void
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        send_error('Update requires POST');
+    }
+    $body = read_json_body();
+    $id = trim((string)($body['id'] ?? ''));
+    if ($id === '') send_error('Missing id');
+
+    $stmt = $pdo->prepare('SELECT * FROM individuals WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) send_error('Individual not found: ' . $id, 404);
+
+    $set = [];
+    $params = ['id' => $id];
+    $new = $row;
+
+    foreach (INDIVIDUAL_EDITABLE_FIELDS as $field => [$col, $max]) {
+        if (!array_key_exists($field, $body)) continue;
+        $val = is_string($body[$field]) ? trim($body[$field]) : '';
+        if ($col === 'gender') {
+            $val = in_array($val, ['male', 'female', 'unknown'], true) ? $val : $row[$col];
+        }
+        $val = mb_substr($val, 0, $max);
+        $set[] = "`{$col}` = :{$col}";
+        $params[$col] = $val;
+        $new[$col] = $val;
+    }
+
+    if (array_key_exists('notes', $body)) {
+        $notes = $body['notes'];
+        $notesStr = is_array($notes) ? implode("\n", array_map('strval', $notes)) : (string)$notes;
+        $set[] = 'notes = :notes';
+        $params['notes'] = mb_substr($notesStr, 0, 60000);
+        $new['notes'] = $params['notes'];
+    }
+
+    // Rebuild the GEDCOM-style display name whenever name parts change
+    $nameParts = ['prefix', 'givenName', 'surname', 'suffix'];
+    if (count(array_intersect($nameParts, array_keys($body))) > 0) {
+        $given   = (string)$new['given_name'];
+        $surname = (string)$new['surname'];
+        $prefix  = (string)$new['prefix'];
+        $suffix  = (string)$new['suffix'];
+        $name = trim(implode(' ', array_filter([
+            $prefix,
+            $given,
+            $surname === '' ? '' : '/' . $surname . '/',
+            $suffix,
+        ], fn($x) => $x !== '')));
+        if ($name === '') $name = $row['name'];
+        $set[] = 'name = :name';
+        $params['name'] = mb_substr($name, 0, 255);
+        $new['name'] = $params['name'];
+    }
+
+    if (array_key_exists('birthDate', $body)) {
+        $set[] = 'birth_year = :birth_year';
+        $params['birth_year'] = extract_year($new['birth_date']);
+        $new['birth_year'] = $params['birth_year'];
+    }
+    if (array_key_exists('deathDate', $body)) {
+        $set[] = 'death_year = :death_year';
+        $params['death_year'] = extract_year($new['death_date']);
+        $new['death_year'] = $params['death_year'];
+    }
+
+    if (count($set) === 0) {
+        send_error('No fields to update');
+    }
+
+    $sql = 'UPDATE individuals SET ' . implode(', ', $set) . ' WHERE id = :id';
+    $pdo->prepare($sql)->execute($params);
+
+    $ind = row_to_individual($new);
+    $inds = [$ind];
+    attach_relationships_bulk($inds, $pdo);
+    send_json(['ok' => true, 'individual' => $inds[0]]);
 }
 
 // ---------------------------------------------------------------------------

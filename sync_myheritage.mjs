@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildGedcomFromPeople } from './build_gedcom.mjs';
+import { ensurePhotos } from './download_photos.mjs';
 
 // ---------------------------------------------------------------------------
 // Sync: re-pull ALL people from MyHeritage via the logged-in CDP browser,
@@ -151,13 +152,27 @@ async function main() {
   const total = parseInt(out.total, 10) || people.length;
   writeStatus({ message: `Extracted ${people.length} of ${total} people`, progress: 60, total, extracted: people.length });
 
+  // ---- download profile photos (new/changed only) ---------------------------
+  writeStatus({ message: 'Downloading profile photos...', progress: 65 });
+  const photosDir = path.join(DATA_DIR, 'photos');
+  const photoResult = await ensurePhotos(people, photosDir, {
+    onProgress: (p) => {
+      const donePct = 65 + Math.round((p.ok + p.fail) / Math.max(p.total, 1) * 15);
+      writeStatus({ message: `Downloading profile photos ${p.ok + p.fail}/${p.total}...`, progress: donePct });
+    },
+  });
+  writeStatus({
+    message: `Photos: ${photoResult.total} total (${photoResult.downloaded} new, ${photoResult.failed.length} failed)`,
+    progress: 80,
+  });
+
   // ---- rebuild GEDCOM -------------------------------------------------------
-  writeStatus({ message: 'Rebuilding GEDCOM file...', progress: 70 });
+  writeStatus({ message: 'Rebuilding GEDCOM file...', progress: 83 });
   const ged = buildGedcomFromPeople(people, GEDCOM_FILE);
   writeStatus({ message: `GEDCOM rebuilt: ${ged.individuals} individuals, ${ged.families} families`, progress: 80 });
 
   // ---- import into MySQL -----------------------------------------------------
-  writeStatus({ message: 'Importing into database...', progress: 85 });
+  writeStatus({ message: 'Importing into database...', progress: 88 });
   const { execFileSync } = await import('child_process');
   const php = process.env.PHP_BIN || 'php';
   const importer = path.join(__dirname, 'api', 'import_gedcom.php');

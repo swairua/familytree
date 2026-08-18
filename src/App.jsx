@@ -6,7 +6,7 @@ import SearchView from './components/SearchView'
 import ImportView from './components/ImportView'
 import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
-import { fetchExport, importGedcom, syncStatus, startSync, abortSync } from './utils/api'
+import { fetchExport, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
 
 function App() {
   const [data, setData] = useState(null)
@@ -234,6 +234,29 @@ function App() {
     setSelectedPersonId(null)
   }, [])
 
+  const handleUpdatePerson = useCallback(async (id, fields) => {
+    setServerStatus({ type: 'info', message: 'Saving person...' })
+    try {
+      const res = await updateIndividual(id, fields)
+      const updated = res.individual
+      setIndividuals(prev => {
+        const next = new Map(prev)
+        next.set(id, updated)
+        return next
+      })
+      setData(prev => {
+        if (!prev) return prev
+        const individuals = prev.individuals.map(p => (p.id === id ? updated : p))
+        return { ...prev, individuals }
+      })
+      setServerStatus({ type: 'success', message: 'Person updated.' })
+      return updated
+    } catch (err) {
+      setServerStatus({ type: 'error', message: `Update failed: ${err.message}` })
+      throw err
+    }
+  }, [])
+
   const handleSwitchView = useCallback((view) => {
     setCurrentView(view)
   }, [])
@@ -314,6 +337,7 @@ function App() {
           families={families}
           onClose={handleCloseModal}
           onSelectPerson={handleSelectPerson}
+          onUpdatePerson={handleUpdatePerson}
         />
       )}
     </div>

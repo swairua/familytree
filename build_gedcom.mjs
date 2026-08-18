@@ -166,6 +166,12 @@ export function buildGedcomFromPeople(people, outPath) {
     }
     if (p.gender === 'M') out.push(gedLine(1, 'SEX', 'M'));
     else if (p.gender === 'F') out.push(gedLine(1, 'SEX', 'F'));
+    if (p.photo && p.photo.url) {
+      const gid = indIdMap.get(p.id).slice(1); // strip 'I' prefix to match download naming
+      out.push(gedLine(1, 'OBJE'));
+      out.push(gedLine(2, 'FILE', gid + '.jpg'));
+      out.push(gedLine(2, 'FORM', 'jpg'));
+    }
     const bd = gedDate(p.birthDate);
     if (bd) {
       out.push(gedLine(1, 'BIRT'));

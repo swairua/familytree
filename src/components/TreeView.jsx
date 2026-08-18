@@ -1,25 +1,46 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { photoUrl } from '../utils/photoUrl'
 
-const NODE_WIDTH = 160
-const NODE_HEIGHT = 60
-const H_GAP = 40
-const V_GAP = 30
+const NODE_WIDTH = 172
+const NODE_HEIGHT = 68
+const H_GAP = 30
+const V_GAP = 46
+const ZOOM_MIN = 0.04
+const ZOOM_MAX = 2.5
+const GENDER_ICONS = { male: '\u2642', female: '\u2640', unknown: '\u25CB' }
 
 function TreeView({ data, individuals, families, onSelectPerson }) {
   const containerRef = useRef(null)
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  // zoom/pan start null => effective view is auto-computed (fit-to-screen on first load)
+  const [zoom, setZoom] = useState(null)
+  const [pan, setPan] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
-  const [layout, setLayout] = useState('horizontal')
+  const [viewport, setViewport] = useState({ w: 0, h: 0 })
+  const [showLegend, setShowLegend] = useState(true)
   const isPanning = useRef(false)
   const startPos = useRef({ x: 0, y: 0 })
+  const dragStart = useRef(null)
+  const suppressClick = useRef(false)
+  const pinchRef = useRef(null)
 
   const personCount = individuals.size
   const familyCount = families.size
 
+  // Track container size
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect
+      setViewport({ w: rect.width, h: rect.height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   // Calculate tree layout
   const treeLayout = useMemo(() => {
-    if (individuals.size === 0) return { nodes: [], links: [], width: 0, height: 0 }
+    if (individuals.size === 0) return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
 
     // ---- structural pass: build descendant subtrees bottom-up ----
     const memo = new Map()
@@ -69,8 +90,6 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
       return d !== 0 ? d : (a < b ? -1 : 1)
     })
 
-    // Every root builds its own component. placedGlobal dedupes members that
-    // were already rendered by an earlier (older) component (e.g. shared kids).
     const components = []
     for (const r of roots) {
       if (memo.has(r)) continue
@@ -109,19 +128,18 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
         const p = pos.get(st.id)
         const sp = pos.get(s)
         const y = top + NODE_HEIGHT / 2
-        links.push({ d: `M ${p.x + NODE_WIDTH} ${y} L ${sp.x} ${y}`, type: 'marriage' })
+        links.push({ type: 'marriage', x1: p.x + NODE_WIDTH, y1: y, x2: sp.x, y2: y })
       })
 
       // children subtrees + parent-child links
       const childTop = top + NODE_HEIGHT + V_GAP
       const fromX = midX
       const fromY = top + NODE_HEIGHT
-      const midY = (fromY + childTop) / 2
       let cx = kidsX
       for (const cs of st.children) {
         const childCx = place(cs, cx, childTop)
         if (childCx != null) {
-          links.push({ d: `M ${fromX} ${fromY} L ${fromX} ${midY} L ${childCx} ${midY} L ${childCx} ${childTop}` })
+          links.push({ type: 'child', x1: fromX, y1: fromY, x2: childCx, y2: childTop })
         }
         cx += cs.width + H_GAP
       }
@@ -140,8 +158,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
       }
     }
 
-    // Orphan pass: people still not placed (e.g. children whose parent couple
-    // was consumed as a spouse row elsewhere) get their own small island rows.
+    // Orphan pass
     const orphanIslands = []
     const used = new Set()
     for (const [id, person] of individuals) {
@@ -171,23 +188,88 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     }
     const height = components.length || orphanIslands.length ? top + NODE_HEIGHT : NODE_HEIGHT
 
-    return { nodes, links, width: maxWidth, height }
+    return { nodes, links, posMap: pos, width: maxWidth, height }
   }, [individuals])
 
-  // Handle zoom
-  const handleZoom = useCallback((delta) => {
-    setZoom(prev => Math.min(2, Math.max(0.2, prev + delta)))
+  // ---- view computation (all pan/zoom is expressed through the SVG viewBox) ----
+  const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
+    if (!vw || !vh || !box || !box.w || !box.h) return null
+    const z = Math.min((vw - pad * 2) / box.w, (vh - pad * 2) / box.h)
+    const clamped = Math.max(minZ, Math.min(maxZ, z))
+    return {
+      zoom: clamped,
+      pan: {
+        x: (vw - box.w * clamped) / 2 - box.x * clamped,
+        y: (vh - box.h * clamped) / 2 - box.y * clamped,
+      },
+    }
   }, [])
 
-  // Handle pan
+  const fitAll = useCallback(() => {
+    return fitRect(
+      { x: 0, y: 0, w: treeLayout.width, h: treeLayout.height },
+      viewport.w, viewport.h, 40, 0.006, 1
+    )
+  }, [treeLayout, viewport, fitRect])
+
+  // Default (unengaged) view: anchored to the top-left (oldest generation roots)
+  // at a legible zoom so names/dates are readable on open. Zoom 1 = layout units
+  // map 1:1 to screen pixels (22px photo, ~12px text).
+  const legibleDefault = useCallback(() => {
+    return { zoom: 1, pan: { x: 20, y: 20 } }
+  }, [])
+
+  // Effective view: user-controlled once they interact, otherwise the legible default.
+  // The SVG is only rendered once the viewport is known, so the first paint is
+  // already correct => no flash/jump.
+  const view = useMemo(() => {
+    if (zoom !== null && pan !== null) return { zoom, pan }
+    if (!viewport.w || !viewport.h) return null
+    return legibleDefault()
+  }, [zoom, pan, viewport, legibleDefault])
+
+  const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
+  if (view) viewRef.current = view
+
+  const engage = useCallback(() => {
+    setZoom(prev => (prev !== null ? prev : viewRef.current.zoom))
+  }, [])
+
+  const handleZoom = useCallback((delta) => {
+    setZoom(prev => {
+      const base = prev !== null ? prev : viewRef.current.zoom
+      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base + delta))
+    })
+  }, [])
+
+  // Native wheel listener so preventDefault actually works (React wheel is passive by default)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const onWheel = (e) => {
+      if (e.ctrlKey) return
+      e.preventDefault()
+      const factor = e.deltaY > 0 ? -0.08 : 0.08
+      handleZoom(factor)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [handleZoom])
+
+  // ---- pan (mouse) ----
   const handleMouseDown = useCallback((e) => {
-    if (e.target.closest('.tree-node')) return
+    engage()
     isPanning.current = true
-    startPos.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
-  }, [pan])
+    dragStart.current = { x: e.clientX, y: e.clientY }
+    const v = viewRef.current
+    startPos.current = { x: e.clientX - v.pan.x, y: e.clientY - v.pan.y }
+  }, [engage])
 
   const handleMouseMove = useCallback((e) => {
     if (!isPanning.current) return
+    if (dragStart.current && (Math.abs(e.clientX - dragStart.current.x) > 4 || Math.abs(e.clientY - dragStart.current.y) > 4)) {
+      suppressClick.current = true
+    }
     setPan({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y })
   }, [])
 
@@ -195,40 +277,129 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     isPanning.current = false
   }, [])
 
-  // Handle wheel zoom
-  const handleWheel = useCallback((e) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    handleZoom(delta)
-  }, [handleZoom])
+  // ---- touch: single-finger pan, two-finger pinch zoom + pan ----
+  const handleTouchStart = useCallback((e) => {
+    const touches = e.touches
+    if (touches.length === 1) {
+      engage()
+      isPanning.current = true
+      const v = viewRef.current
+      startPos.current = { x: touches[0].clientX - v.pan.x, y: touches[0].clientY - v.pan.y }
+      pinchRef.current = null
+    } else if (touches.length === 2) {
+      engage()
+      isPanning.current = false
+      const [a, b] = touches
+      const v = viewRef.current
+      pinchRef.current = {
+        distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+        zoom: v.zoom,
+        midX: (a.clientX + b.clientX) / 2,
+        midY: (a.clientY + b.clientY) / 2,
+        panX: v.pan.x,
+        panY: v.pan.y,
+      }
+    }
+  }, [engage])
 
-  // Reset view
+  const handleTouchMove = useCallback((e) => {
+    const touches = e.touches
+    if (pinchRef.current && touches.length === 2) {
+      const [a, b] = touches
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+      const midX = (a.clientX + b.clientX) / 2
+      const midY = (a.clientY + b.clientY) / 2
+      const start = pinchRef.current
+      const ratio = dist / start.distance
+      const nextZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, start.zoom * ratio))
+      const zoomRatio = nextZoom / start.zoom
+      setPan({
+        x: midX - (start.midX - start.panX) * zoomRatio,
+        y: midY - (start.midY - start.panY) * zoomRatio,
+      })
+      setZoom(nextZoom)
+      e.preventDefault()
+    } else if (isPanning.current && touches.length === 1) {
+      setPan({ x: touches[0].clientX - startPos.current.x, y: touches[0].clientY - startPos.current.y })
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (e.touches.length === 0) {
+      isPanning.current = false
+      pinchRef.current = null
+    } else if (e.touches.length === 1) {
+      // one finger remains -> resume panning from current position
+      isPanning.current = true
+      const v = viewRef.current
+      startPos.current = { x: e.touches[0].clientX - v.pan.x, y: e.touches[0].clientY - v.pan.y }
+      pinchRef.current = null
+    }
+  }, [])
+
+  const fitView = useCallback(() => {
+    const v = fitAll()
+    if (v) {
+      setZoom(v.zoom)
+      setPan(v.pan)
+    }
+  }, [fitAll])
+
   const resetView = useCallback(() => {
-    setZoom(1)
-    setPan({ x: 0, y: 0 })
+    setZoom(null)
+    setPan(null)
   }, [])
 
-  // Toggle layout
-  const toggleLayout = useCallback(() => {
-    setLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')
-  }, [])
+  // Drill down: zoom the view onto a person and their descendants
+  const drillTo = useCallback((id) => {
+    const posMap = treeLayout.posMap
+    const p = posMap.get(id)
+    if (!p || !viewport.w || !viewport.h) return
+    const visited = new Set()
+    const stack = [id]
+    let x0 = p.x, y0 = p.y, x1 = p.x + NODE_WIDTH, y1 = p.y + NODE_HEIGHT
+    while (stack.length) {
+      const cur = stack.pop()
+      if (visited.has(cur)) continue
+      visited.add(cur)
+      const curP = posMap.get(cur)
+      if (!curP) continue
+      x0 = Math.min(x0, curP.x)
+      y0 = Math.min(y0, curP.y)
+      x1 = Math.max(x1, curP.x + NODE_WIDTH)
+      y1 = Math.max(y1, curP.y + NODE_HEIGHT)
+      const person = individuals.get(cur)
+      for (const s of person?.spouses || []) {
+        if (posMap.has(s) && !visited.has(s)) stack.push(s)
+      }
+      for (const c of person?.children || []) {
+        if (posMap.has(c) && !visited.has(c)) stack.push(c)
+      }
+    }
+    const v = fitRect({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, viewport.w, viewport.h, 30, 0.12, 1.6)
+    if (v) {
+      setZoom(v.zoom)
+      setPan(v.pan)
+    }
+  }, [treeLayout, viewport, individuals, fitRect])
 
-  // Handle person click
   const handlePersonClick = useCallback((id) => {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      return
+    }
     setSelectedId(id)
     onSelectPerson(id)
   }, [onSelectPerson])
 
-  // Get gender color
   const getGenderColor = useCallback((gender) => {
     switch (gender) {
       case 'male': return '#4a90d9'
       case 'female': return '#e07a9e'
-      default: return '#95a5a6'
+      default: return '#8e99a3'
     }
   }, [])
 
-  // Format dates
   const formatDates = useCallback((person) => {
     const extractYear = (date) => {
       const match = date.match(/\d{4}/)
@@ -239,38 +410,57 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     return death ? `${birth} - ${death}` : `${birth}`
   }, [])
 
-  // Truncate text
-  const truncateText = useCallback((text, maxLength) => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength - 3) + '...'
-  }, [])
+  const renderToolbar = (hasData) => (
+    <div className="tree-toolbar">
+      <div className="toolbar-left">
+        <button className="btn btn-icon" onClick={() => handleZoom(0.1)} title="Zoom In">
+          <i className="fas fa-plus"></i>
+        </button>
+        <button className="btn btn-icon" onClick={() => handleZoom(-0.1)} title="Zoom Out">
+          <i className="fas fa-minus"></i>
+        </button>
+        <span className="toolbar-zoom">{Math.round((view ? view.zoom : 1) * 100)}%</span>
+        {hasData && (
+          <button className="btn btn-icon" onClick={fitView} title="Fit to Screen">
+            <i className="fas fa-expand"></i>
+          </button>
+        )}
+        <button className="btn btn-icon" onClick={resetView} title="Reset View">
+          <i className="fas fa-home"></i>
+        </button>
+      </div>
+      <div className="toolbar-center">
+        {hasData ? (
+          <span>{personCount} people • {familyCount} families • double-click a person to zoom in</span>
+        ) : (
+          <span>No family tree loaded</span>
+        )}
+      </div>
+      <div className="toolbar-right">
+        {hasData && showLegend && (
+          <div className="tree-legend">
+            <span className="legend-dot male"></span> Male
+            <span className="legend-dot female"></span> Female
+            <span className="legend-dot unknown"></span> Unknown
+            <span className="legend-dot deceased"></span> Deceased
+          </div>
+        )}
+        <button
+          className={`btn btn-icon ${showLegend ? 'active' : ''}`}
+          onClick={() => setShowLegend(s => !s)}
+          title="Toggle Legend"
+        >
+          <i className="fas fa-list-ul"></i>
+        </button>
+      </div>
+    </div>
+  )
 
-  // Render empty state if no data
   if (personCount === 0) {
     return (
       <div className="tree-container">
-        <div className="tree-toolbar">
-          <div className="toolbar-left">
-            <button className="btn btn-icon" onClick={() => handleZoom(0.1)} title="Zoom In">
-              <i className="fas fa-plus"></i>
-            </button>
-            <button className="btn btn-icon" onClick={() => handleZoom(-0.1)} title="Zoom Out">
-              <i className="fas fa-minus"></i>
-            </button>
-            <button className="btn btn-icon" onClick={resetView} title="Reset View">
-              <i className="fas fa-expand"></i>
-            </button>
-          </div>
-          <div className="toolbar-center">
-            <span>No family tree loaded</span>
-          </div>
-          <div className="toolbar-right">
-            <button className="btn btn-icon" onClick={toggleLayout} title="Toggle Layout">
-              <i className="fas fa-arrows-alt-v"></i>
-            </button>
-          </div>
-        </div>
-        <div className="tree-canvas">
+        {renderToolbar(false)}
+        <div className="tree-canvas" ref={containerRef}>
           <div className="empty-state">
             <i className="fas fa-tree"></i>
             <h2>Your Family Tree</h2>
@@ -284,33 +474,20 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     )
   }
 
-  const padding = 50
-  const svgWidth = treeLayout.width + padding * 2
-  const svgHeight = treeLayout.height + padding * 2
+  const linkPath = (link) => {
+    if (link.type === 'marriage') {
+      const my = link.y1
+      return `M ${link.x1} ${my} L ${link.x2} ${my}`
+    }
+    const dx = link.x2 - link.x1
+    const dy = link.y2 - link.y1
+    const midY = link.y1 + dy / 2
+    return `M ${link.x1} ${link.y1} C ${link.x1 + dx * 0.25} ${midY}, ${link.x2 - dx * 0.25} ${midY}, ${link.x2} ${link.y2}`
+  }
 
   return (
     <div className="tree-container">
-      <div className="tree-toolbar">
-        <div className="toolbar-left">
-          <button className="btn btn-icon" onClick={() => handleZoom(0.1)} title="Zoom In">
-            <i className="fas fa-plus"></i>
-          </button>
-          <button className="btn btn-icon" onClick={() => handleZoom(-0.1)} title="Zoom Out">
-            <i className="fas fa-minus"></i>
-          </button>
-          <button className="btn btn-icon" onClick={resetView} title="Reset View">
-            <i className="fas fa-expand"></i>
-          </button>
-        </div>
-        <div className="toolbar-center">
-          <span>{personCount} people • {familyCount} families</span>
-        </div>
-        <div className="toolbar-right">
-          <button className="btn btn-icon" onClick={toggleLayout} title="Toggle Layout">
-            <i className="fas fa-arrows-alt-v"></i>
-          </button>
-        </div>
-      </div>
+      {renderToolbar(true)}
       <div
         className="tree-canvas"
         ref={containerRef}
@@ -318,75 +495,149 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <svg
-          id="tree-svg"
-          width={svgWidth}
-          height={svgHeight}
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            transformOrigin: '0 0',
-            position: 'absolute',
-            top: 0,
-            left: 0
-          }}
-        >
-          {/* Links */}
-          {treeLayout.links.map((link, i) => (
-            <path
-              key={`link-${i}`}
-              d={link.d}
-              className={`tree-link ${link.type || ''}`}
-            />
-          ))}
+        {view && (
+          <svg
+            id="tree-svg"
+            width="100%"
+            height="100%"
+            viewBox={`${-view.pan.x / view.zoom} ${-view.pan.y / view.zoom} ${viewport.w / view.zoom} ${viewport.h / view.zoom}`}
+          >
+            <defs>
+              {['male', 'female', 'unknown'].map(g => (
+                <linearGradient key={g} id={`card-grad-${g}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor={getGenderColor(g)} />
+                  <stop offset="1" stopColor={getGenderColor(g)} stopOpacity="0.72" />
+                </linearGradient>
+              ))}
+              <linearGradient id="card-grad-deceased" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#8b8b94" />
+                <stop offset="1" stopColor="#5f5f68" stopOpacity="0.82" />
+              </linearGradient>
+              <filter id="tree-glow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="2" stdDeviation="6" floodColor="rgba(30,50,40,0.25)" />
+              </filter>
+              <filter id="tree-glow-hover" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="4" stdDeviation="10" floodColor="rgba(20,40,30,0.35)" />
+              </filter>
+            </defs>
 
-          {/* Nodes */}
-          {treeLayout.nodes.map(node => {
-            const person = individuals.get(node.id)
-            if (!person) return null
-            return (
-              <g
-                key={node.id}
-                className={`tree-node ${selectedId === node.id ? 'selected' : ''}`}
-                data-id={node.id}
-                transform={`translate(${node.x}, ${node.y})`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handlePersonClick(node.id)
-                }}
-              >
-                <rect
-                  width={NODE_WIDTH}
-                  height={NODE_HEIGHT}
-                  rx="8"
-                  ry="8"
-                  fill={getGenderColor(person.gender)}
-                  stroke="#fff"
-                  strokeWidth="2"
-                />
-                <text
-                  className="node-name"
-                  x={NODE_WIDTH / 2}
-                  y={NODE_HEIGHT / 2 - 5}
+            {/* Links */}
+            {treeLayout.links.map((link, i) => (
+              <path
+                key={`link-${i}`}
+                d={linkPath(link)}
+                className={`tree-link ${link.type || ''}`}
+              />
+            ))}
+
+            {/* Nodes */}
+            {treeLayout.nodes.map(node => {
+              const person = individuals.get(node.id)
+              if (!person) return null
+              const isSelected = selectedId === node.id
+              const deceased = !!(person.deathDate || person.deathYear)
+              const safeId = node.id.replace(/[^a-zA-Z0-9_-]/g, '')
+              return (
+                <g
+                  key={node.id}
+                  className={`tree-node ${deceased ? 'deceased' : ''} ${isSelected ? 'selected' : ''}`}
+                  data-id={node.id}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePersonClick(node.id)
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation()
+                    drillTo(node.id)
+                  }}
                 >
-                  {truncateText(person.name, 20)}
-                </text>
-                <text
-                  className="node-dates"
-                  x={NODE_WIDTH / 2}
-                  y={NODE_HEIGHT / 2 + 15}
-                >
-                  {formatDates(person)}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
+                  <clipPath id={`node-card-clip-${safeId}`}>
+                    <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
+                  </clipPath>
+                  <rect
+                    width={NODE_WIDTH}
+                    height={NODE_HEIGHT}
+                    rx="14"
+                    ry="14"
+                    fill={deceased ? '#7a7a83' : '#fff'}
+                  />
+                  <rect
+                    width={NODE_WIDTH}
+                    height={NODE_HEIGHT}
+                    rx="14"
+                    ry="14"
+                    fill={deceased ? 'url(#card-grad-deceased)' : `url(#card-grad-${person.gender || 'unknown'})`}
+                  />
+                  <rect
+                    width={NODE_WIDTH}
+                    height={NODE_HEIGHT}
+                    rx="14"
+                    ry="14"
+                    className="node-shine"
+                  />
+                  {person.photo ? (
+                    <g>
+                      <clipPath id={`node-clip-${safeId}`}>
+                        <circle cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r="22" />
+                      </clipPath>
+                      <circle cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r="23" fill="#fff" />
+                      <image
+                        href={photoUrl(person)}
+                        x={NODE_HEIGHT / 2 - 22}
+                        y={NODE_HEIGHT / 2 - 22}
+                        width="44"
+                        height="44"
+                        clipPath={`url(#node-clip-${safeId})`}
+                        preserveAspectRatio="xMidYMid slice"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                    </g>
+                  ) : (
+                    <circle
+                      cx={NODE_HEIGHT / 2}
+                      cy={NODE_HEIGHT / 2}
+                      r="20"
+                      fill="#fff"
+                      fillOpacity="0.25"
+                    />
+                  )}
+                  <text className="node-name" x={NODE_HEIGHT + 14} y={NODE_HEIGHT / 2 - 6}>
+                    {truncateText(person.name, 16)}
+                  </text>
+                  <text className="node-dates" x={NODE_HEIGHT + 14} y={NODE_HEIGHT / 2 + 14}>
+                    {formatDates(person)}
+                  </text>
+                  <text className="node-gender-icon" x={NODE_WIDTH - 16} y={NODE_HEIGHT / 2 - 4}>
+                    {GENDER_ICONS[person.gender] || GENDER_ICONS.unknown}
+                  </text>
+                  {deceased && (
+                    <g clipPath={`url(#node-card-clip-${safeId})`}>
+                      <polygon className="ribbon-fold" points="120,0 136,0 136,14" />
+                      <polygon className="ribbon-fold" points="172,20 172,36 158,36" />
+                      <polygon className="ribbon-band" points="170,-32 204,2 170,36 136,2" />
+                      <rect className="ribbon-cross" x="145" y="16" width="10" height="4" />
+                      <rect className="ribbon-cross" x="148" y="13" width="4" height="10" />
+                    </g>
+                  )}
+                </g>
+              )
+            })}
+          </svg>
+        )}
       </div>
     </div>
   )
+}
+
+function truncateText(text, maxLength) {
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength - 3) + '...'
 }
 
 export default TreeView

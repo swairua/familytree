@@ -87,10 +87,10 @@ try {
     $indStmt = $pdo->prepare(
         'INSERT INTO individuals (id, name, given_name, surname, prefix, suffix, nickname, gender,
             birth_date, birth_place, death_date, death_place, burial_date, burial_place,
-            occupation, education, religion, notes, birth_year, death_year)
+            occupation, education, religion, photo, notes, birth_year, death_year)
          VALUES (:id, :name, :given, :surname, :prefix, :suffix, :nick, :gender,
             :birth_date, :birth_place, :death_date, :death_place, :burial_date, :burial_place,
-            :occupation, :education, :religion, :notes, :birth_year, :death_year)'
+            :occupation, :education, :religion, :photo, :notes, :birth_year, :death_year)'
     );
 
     $count = 0;
@@ -100,7 +100,7 @@ try {
             'suffix' => '', 'nickname' => '', 'gender' => 'unknown',
             'birthDate' => '', 'birthPlace' => '', 'deathDate' => '', 'deathPlace' => '',
             'burialDate' => '', 'burialPlace' => '', 'occupation' => '', 'education' => '',
-            'religion' => '', 'notes' => [],
+            'religion' => '', 'photo' => '', 'notes' => [],
         ], $ind);
 
         $gender = in_array($ind['gender'], ['male', 'female', 'unknown'], true) ? $ind['gender'] : 'unknown';
@@ -122,6 +122,7 @@ try {
             ':occupation' => mb_substr($ind['occupation'], 0, 255),
             ':education' => mb_substr($ind['education'], 0, 255),
             ':religion' => mb_substr($ind['religion'], 0, 128),
+            ':photo' => mb_substr($ind['photo'] ?? '', 0, 255),
             ':notes' => implode("\n", array_values($ind['notes'] ?? [])),
             ':birth_year' => extract_year($ind['birthDate']),
             ':death_year' => extract_year($ind['deathDate']),

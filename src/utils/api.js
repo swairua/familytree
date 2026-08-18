@@ -44,6 +44,13 @@ export async function clearTree() {
   return request('tree.php?action=clear', { method: 'POST', body: '{}' })
 }
 
+export async function updateIndividual(id, fields) {
+  return request('tree.php?action=update', {
+    method: 'POST',
+    body: JSON.stringify({ id, ...fields }),
+  })
+}
+
 export async function syncStatus() {
   return request('sync.php?action=status')
 }
