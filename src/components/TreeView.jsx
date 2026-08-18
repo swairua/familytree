@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { photoUrl } from '../utils/photoUrl'
+import PersonAvatar from './PersonAvatar'
 
-const NODE_WIDTH = 172
-const NODE_HEIGHT = 68
-const H_GAP = 30
-const V_GAP = 46
+const NODE_WIDTH = 184
+const NODE_HEIGHT = 72
+const H_GAP = 32
+const V_GAP = 52
 const ZOOM_MIN = 0.04
 const ZOOM_MAX = 2.5
 const GENDER_ICONS = { male: '\u2642', female: '\u2640', unknown: '\u25CB' }
@@ -25,6 +26,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
 
   const personCount = individuals.size
   const familyCount = families.size
+  const selectedPerson = selectedId ? individuals.get(selectedId) : null
 
   // Track container size
   useEffect(() => {
@@ -392,14 +394,6 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
     onSelectPerson(id)
   }, [onSelectPerson])
 
-  const getGenderColor = useCallback((gender) => {
-    switch (gender) {
-      case 'male': return '#4a90d9'
-      case 'female': return '#e07a9e'
-      default: return '#8e99a3'
-    }
-  }, [])
-
   const formatDates = useCallback((person) => {
     const extractYear = (date) => {
       const match = date.match(/\d{4}/)
@@ -413,6 +407,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
   const renderToolbar = (hasData) => (
     <div className="tree-toolbar">
       <div className="toolbar-left">
+        <span className="toolbar-label">Tree view</span>
         <button className="btn btn-icon" onClick={() => handleZoom(0.1)} title="Zoom In">
           <i className="fas fa-plus"></i>
         </button>
@@ -461,7 +456,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
       <div className="tree-container">
         {renderToolbar(false)}
         <div className="tree-canvas" ref={containerRef}>
-          <div className="empty-state">
+          <div className="empty-state tree-empty-state">
             <i className="fas fa-tree"></i>
             <h2>Your Family Tree</h2>
             <p>Import a GEDCOM file to visualize your family tree</p>
@@ -507,21 +502,11 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
             viewBox={`${-view.pan.x / view.zoom} ${-view.pan.y / view.zoom} ${viewport.w / view.zoom} ${viewport.h / view.zoom}`}
           >
             <defs>
-              {['male', 'female', 'unknown'].map(g => (
-                <linearGradient key={g} id={`card-grad-${g}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor={getGenderColor(g)} />
-                  <stop offset="1" stopColor={getGenderColor(g)} stopOpacity="0.72" />
-                </linearGradient>
-              ))}
-              <linearGradient id="card-grad-deceased" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#8b8b94" />
-                <stop offset="1" stopColor="#5f5f68" stopOpacity="0.82" />
-              </linearGradient>
-              <filter id="tree-glow" x="-40%" y="-40%" width="180%" height="180%">
-                <feDropShadow dx="0" dy="2" stdDeviation="6" floodColor="rgba(30,50,40,0.25)" />
+              <filter id="tree-glow" x="-30%" y="-40%" width="160%" height="180%">
+                <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="rgba(76, 63, 56, 0.22)" />
               </filter>
-              <filter id="tree-glow-hover" x="-40%" y="-40%" width="180%" height="180%">
-                <feDropShadow dx="0" dy="4" stdDeviation="10" floodColor="rgba(20,40,30,0.35)" />
+              <filter id="tree-glow-hover" x="-30%" y="-40%" width="160%" height="180%">
+                <feDropShadow dx="0" dy="4" stdDeviation="7" floodColor="rgba(76, 63, 56, 0.3)" />
               </filter>
             </defs>
 
@@ -544,7 +529,7 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
               return (
                 <g
                   key={node.id}
-                  className={`tree-node ${deceased ? 'deceased' : ''} ${isSelected ? 'selected' : ''}`}
+                  className={`tree-node gender-${person.gender || 'unknown'} ${deceased ? 'deceased' : ''} ${isSelected ? 'selected' : ''}`}
                   data-id={node.id}
                   transform={`translate(${node.x}, ${node.y})`}
                   onClick={(e) => {
@@ -557,27 +542,27 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
                   }}
                 >
                   <clipPath id={`node-card-clip-${safeId}`}>
-                    <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
+                    <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="8" ry="8" />
                   </clipPath>
                   <rect
+                    className="node-card"
                     width={NODE_WIDTH}
                     height={NODE_HEIGHT}
-                    rx="14"
-                    ry="14"
-                    fill={deceased ? '#7a7a83' : '#fff'}
+                    rx="8"
+                    ry="8"
+                  />
+                  <rect
+                    className="node-accent"
+                    width="5"
+                    height={NODE_HEIGHT}
+                    rx="2.5"
+                    ry="2.5"
                   />
                   <rect
                     width={NODE_WIDTH}
                     height={NODE_HEIGHT}
-                    rx="14"
-                    ry="14"
-                    fill={deceased ? 'url(#card-grad-deceased)' : `url(#card-grad-${person.gender || 'unknown'})`}
-                  />
-                  <rect
-                    width={NODE_WIDTH}
-                    height={NODE_HEIGHT}
-                    rx="14"
-                    ry="14"
+                    rx="8"
+                    ry="8"
                     className="node-shine"
                   />
                   {person.photo ? (
@@ -585,49 +570,64 @@ function TreeView({ data, individuals, families, onSelectPerson }) {
                       <clipPath id={`node-clip-${safeId}`}>
                         <circle cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r="22" />
                       </clipPath>
-                      <circle cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r="23" fill="#fff" />
+                      <circle className="node-photo-ring" cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r="21" />
                       <image
                         href={photoUrl(person)}
-                        x={NODE_HEIGHT / 2 - 22}
-                        y={NODE_HEIGHT / 2 - 22}
-                        width="44"
-                        height="44"
+                        x={NODE_HEIGHT / 2 - 20}
+                        y={NODE_HEIGHT / 2 - 20}
+                        width="40"
+                        height="40"
                         clipPath={`url(#node-clip-${safeId})`}
                         preserveAspectRatio="xMidYMid slice"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
                       />
                     </g>
                   ) : (
                     <circle
                       cx={NODE_HEIGHT / 2}
                       cy={NODE_HEIGHT / 2}
-                      r="20"
-                      fill="#fff"
-                      fillOpacity="0.25"
+                      r="19"
+                      className="node-avatar-placeholder"
                     />
                   )}
-                  <text className="node-name" x={NODE_HEIGHT + 14} y={NODE_HEIGHT / 2 - 6}>
+                  <text className="node-name" x={NODE_HEIGHT + 12} y={NODE_HEIGHT / 2 - 7}>
                     {truncateText(person.name, 16)}
                   </text>
-                  <text className="node-dates" x={NODE_HEIGHT + 14} y={NODE_HEIGHT / 2 + 14}>
+                  <text className="node-dates" x={NODE_HEIGHT + 12} y={NODE_HEIGHT / 2 + 13}>
                     {formatDates(person)}
                   </text>
-                  <text className="node-gender-icon" x={NODE_WIDTH - 16} y={NODE_HEIGHT / 2 - 4}>
+                  <text className="node-gender-icon" x={NODE_WIDTH - 15} y={NODE_HEIGHT / 2 - 5}>
                     {GENDER_ICONS[person.gender] || GENDER_ICONS.unknown}
                   </text>
-                  {deceased && (
-                    <g clipPath={`url(#node-card-clip-${safeId})`}>
-                      <polygon className="ribbon-fold" points="120,0 136,0 136,14" />
-                      <polygon className="ribbon-fold" points="172,20 172,36 158,36" />
-                      <polygon className="ribbon-band" points="170,-32 204,2 170,36 136,2" />
-                      <rect className="ribbon-cross" x="145" y="16" width="10" height="4" />
-                      <rect className="ribbon-cross" x="148" y="13" width="4" height="10" />
-                    </g>
-                  )}
+                  {deceased && <circle className="deceased-marker" cx={NODE_WIDTH - 15} cy="14" r="4" />}
                 </g>
               )
             })}
           </svg>
+        )}
+        {selectedPerson && (
+          <aside
+            className="tree-profile-panel"
+            aria-label="Selected person"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <div className="tree-profile-heading">
+              <span className="tree-profile-kicker">Selected person</span>
+              <i className="fas fa-user-circle" aria-hidden="true"></i>
+            </div>
+            <PersonAvatar person={selectedPerson} className="tree-profile-avatar" />
+            <h2>{selectedPerson.name}</h2>
+            <p className="tree-profile-dates">
+              {formatDates(selectedPerson)}
+              {selectedPerson.birthPlace && <span>{selectedPerson.birthPlace}</span>}
+            </p>
+            <div className="tree-profile-summary">
+              <span><strong>{(selectedPerson.parents || []).length}</strong> parents</span>
+              <span><strong>{(selectedPerson.children || []).length}</strong> children</span>
+            </div>
+            <p className="tree-profile-hint">Click the card again to open full details.</p>
+          </aside>
         )}
       </div>
     </div>

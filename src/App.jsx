@@ -275,29 +275,33 @@ function App() {
       />
 
       <main className="main-content">
-        {syncState.active && (
-          <div className="server-banner info sync-banner">
+        <div className="status-stack">
+          {syncState.active && (
+            <div className="server-banner info sync-banner">
             <i className="fas fa-sync fa-spin"></i>
             <span>{syncState.message}</span>
             {syncState.progress > 0 && (
               <div className="sync-progress">
-                <div className="sync-progress-bar" style={{ width: `${syncState.progress}%` }}></div>
+                <progress className="sync-progress-bar" value={syncState.progress} max="100" aria-label="Sync progress">
+                  {syncState.progress}%
+                </progress>
               </div>
             )}
-          </div>
-        )}
-        {serverStatus.type === 'loading' && (
-          <div className="server-banner loading"><i className="fas fa-spinner fa-spin"></i> {serverStatus.message}</div>
-        )}
-        {serverStatus.type === 'success' && (
-          <div className="server-banner success"><i className="fas fa-database"></i> {serverStatus.message}</div>
-        )}
-        {serverStatus.type === 'info' && (
-          <div className="server-banner info"><i className="fas fa-info-circle"></i> {serverStatus.message}</div>
-        )}
-        {serverStatus.type === 'error' && (
-          <div className="server-banner error"><i className="fas fa-exclamation-triangle"></i> {serverStatus.message}</div>
-        )}
+            </div>
+          )}
+          {serverStatus.type === 'loading' && (
+            <div className="server-banner loading"><i className="fas fa-spinner fa-spin"></i> {serverStatus.message}</div>
+          )}
+          {serverStatus.type === 'success' && (
+            <div className="server-banner success"><i className="fas fa-database"></i> {serverStatus.message}</div>
+          )}
+          {serverStatus.type === 'info' && (
+            <div className="server-banner info"><i className="fas fa-info-circle"></i> {serverStatus.message}</div>
+          )}
+          {serverStatus.type === 'error' && (
+            <div className="server-banner error"><i className="fas fa-exclamation-triangle"></i> {serverStatus.message}</div>
+          )}
+        </div>
 
         {currentView === 'tree' && (
           <TreeView
