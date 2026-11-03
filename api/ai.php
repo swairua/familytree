@@ -38,7 +38,7 @@ if ($apiKey === '' || $apiKey === 'YOUR_GROQ_API_KEY_HERE') {
 }
 
 $payload = [
-    'model' => 'llama-3.1-8b-instant',
+    'model' => 'openai/gpt-oss-20b',
     'messages' => [
         ['role' => 'system', 'content' => 'You are a helpful genealogy research assistant. When asked to extract search filters, reply with ONLY a JSON object with keys: firstName, lastName, birthYear, place, keywords. No prose.'],
         ['role' => 'user', 'content' => $prompt],
