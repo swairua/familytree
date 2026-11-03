@@ -3,14 +3,14 @@ import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 import PersonAvatar from './PersonAvatar'
 
-const NODE_WIDTH = 170
-const NODE_HEIGHT = 108
+const NODE_WIDTH = 190
+const NODE_HEIGHT = 120
 const H_GAP = 34
 const V_GAP = 56
 const ZOOM_MIN = 0.01
 const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
-const AVATAR_R = 34
+const AVATAR_R = 40
 
 function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
@@ -292,49 +292,16 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     const nodes = treeLayout.nodes
     if (!nodes || nodes.length === 0) return { zoom: 1, pan: { x: 20, y: 20 } }
 
-    const roots = []
-    for (const [id, p] of individuals) {
-      if (!p.parents || p.parents.length === 0) roots.push(id)
+    // Height-driven vertical fit: zoom so the whole tree height fits,
+    // top-aligned, allowing horizontal pan for wide branches.
+    const zoom = Math.max(ZOOM_MIN, Math.min(1, (viewport.h - 40) / treeLayout.height))
+    return {
+      zoom,
+      pan: {
+        x: 20,
+        y: 20,
+      },
     }
-    if (roots.length === 0) {
-      return { zoom: 0.5, pan: { x: 20, y: 20 } }
-    }
-
-    const rootPositions = roots
-      .map(id => ({ id, pos: treeLayout.posMap.get(id) }))
-      .filter(r => r.pos)
-
-    const targetW = viewport.w * 2
-    const topSliceBottom = treeLayout.frames && treeLayout.frames[0]
-      ? treeLayout.frames[0].top + treeLayout.frames[0].height + V_GAP
-      : Infinity
-    const sorted = rootPositions.sort((a, b) => a.pos.x - b.pos.x || a.pos.y - b.pos.y)
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
-    let count = 0
-    for (const { pos } of sorted) {
-      if (pos.y > topSliceBottom) continue
-      if (count > 0 && pos.x > x0 + targetW) break
-      x0 = Math.min(x0, pos.x)
-      y0 = Math.min(y0, pos.y)
-      x1 = Math.max(x1, pos.x + NODE_WIDTH)
-      y1 = Math.max(y1, pos.y + NODE_HEIGHT)
-      count++
-    }
-    if (x0 === Infinity) {
-      if (treeLayout.frames && treeLayout.frames[0]) {
-        const f = treeLayout.frames[0]
-        const box = { x: 0, y: f.top, w: Math.min(f.width, targetW), h: f.height }
-        const v = fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
-        if (v) v.pan.y = 20
-        return v
-      }
-      return { zoom: 0.5, pan: { x: 20, y: 20 } }
-    }
-
-    const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
-    const v = fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
-    if (v) v.pan.y = 20
-    return v
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
@@ -703,13 +670,21 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
 
   useEffect(() => {
     if (!viewport.w || !viewport.h) return
-    if (!hasInteracted.current && treeLayout.width && treeLayout.height) {
-      // Fit the whole tree into the viewport so it stays responsive.
-      const v = fitAll()
-      if (v) {
-        viewRef.current = v
-        setZoom(v.zoom)
-        setPan(v.pan)
+    if (hasInteracted.current) return
+    if (!treeLayout.width || !treeLayout.height) return
+    // Prefer a vertical (height-driven) fit so the chart reads top-down.
+    const v = fitAll()
+    if (v) {
+      viewRef.current = v
+      setZoom(v.zoom)
+      setPan(v.pan)
+      applyView()
+    } else {
+      const fallback = legibleDefault()
+      if (fallback) {
+        viewRef.current = fallback
+        setZoom(fallback.zoom)
+        setPan(fallback.pan)
         applyView()
       }
     }
@@ -895,24 +870,24 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
 
         <g className="node-avatar-wrap">
-          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 14} r={AVATAR_R} />
+          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 18} r={AVATAR_R} />
           {detailed ? (url ? (
             <image
               className="node-photo"
               href={url}
-              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 14 - AVATAR_R}
+              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 18 - AVATAR_R}
               width={AVATAR_R * 2} height={AVATAR_R * 2}
               style={{ clipPath: 'circle(50%)' }}
               preserveAspectRatio="xMidYMid slice"
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 8} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
+            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 12} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
           )) : null}
         </g>
 
-        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 24} textAnchor="middle">{truncateText(name, 18)}</text>}
-        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 42} textAnchor="middle">{formatDates(person)}</text>}
+        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 28} textAnchor="middle">{truncateText(name, 18)}</text>}
+        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 48} textAnchor="middle">{formatDates(person)}</text>}
 
         <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 14} cy={14} r="6" />
         {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 14} cy={NODE_HEIGHT - 14} r="5" />}
