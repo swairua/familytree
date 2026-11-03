@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { cleanName } from '../utils/cleanName'
 import { photoUrl } from '../utils/photoUrl'
 import PhotoLightbox from './PhotoLightbox'
@@ -7,9 +7,7 @@ function GalleryView({ individuals, onSelectPerson }) {
   const [viewMode, setViewMode] = useState('masonry')
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [filter, setFilter] = useState('photos')
-  const [loadedMap, setLoadedMap] = useState({})
   const [visibleCount, setVisibleCount] = useState(60)
-  const observerRef = useRef(null)
 
   const photos = useMemo(() => {
     const list = []
@@ -45,23 +43,6 @@ function GalleryView({ individuals, onSelectPerson }) {
 
   useEffect(() => { setVisibleCount(60) }, [filter, viewMode])
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const id = e.target.dataset.photoId
-          if (id) setLoadedMap(prev => ({ ...prev, [id]: true }))
-          observerRef.current.unobserve(e.target)
-        }
-      })
-    }, { rootMargin: '200px' })
-    return () => observerRef.current?.disconnect()
-  }, [])
-
-  const observedRef = useCallback((node) => {
-    if (node && observerRef.current) observerRef.current.observe(node)
-  }, [])
-
   const openLightbox = (index) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(-1)
   const nextPhoto = () => setLightboxIndex(i => Math.min(i + 1, photos.length - 1))
@@ -91,23 +72,14 @@ function GalleryView({ individuals, onSelectPerson }) {
   }
 
   const renderGalleryItem = (photo, globalIndex) => {
-    const isLoaded = loadedMap[photo.id] || !photo.url
     return (
       <div
         key={photo.id}
-        data-photo-id={photo.id}
-        ref={observedRef}
-        className={`gallery-item ${isLoaded ? 'loaded' : 'loading'}`}
+        className="gallery-item loaded"
         onClick={() => openLightbox(globalIndex)}
       >
         {photo.url ? (
-          isLoaded ? (
-            <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
-          ) : (
-            <div className="gallery-skeleton">
-              <div className="skeleton-shimmer"></div>
-            </div>
-          )
+          <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
         ) : (
           <div className={`gallery-placeholder gender-${photo.gender}`}>
             <i className="fas fa-user"></i>
