@@ -297,14 +297,33 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
       .map(id => ({ id, pos: treeLayout.posMap.get(id) }))
       .filter(r => r.pos)
 
-    // Focus on the first root's branch so the chart reads top-down (vertical)
-    // instead of a wide horizontal strip of all roots.
-    if (treeLayout.frames && treeLayout.frames[0]) {
-      const f = treeLayout.frames[0]
-      const box = { x: 0, y: f.top, w: Math.min(f.width, viewport.w * 1.5), h: f.height }
-      return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+    const targetW = viewport.w * 2
+    const topSliceBottom = treeLayout.frames && treeLayout.frames[0]
+      ? treeLayout.frames[0].top + treeLayout.frames[0].height + V_GAP
+      : Infinity
+    const sorted = rootPositions.sort((a, b) => a.pos.x - b.pos.x || a.pos.y - b.pos.y)
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    let count = 0
+    for (const { pos } of sorted) {
+      if (pos.y > topSliceBottom) continue
+      if (count > 0 && pos.x > x0 + targetW) break
+      x0 = Math.min(x0, pos.x)
+      y0 = Math.min(y0, pos.y)
+      x1 = Math.max(x1, pos.x + NODE_WIDTH)
+      y1 = Math.max(y1, pos.y + NODE_HEIGHT)
+      count++
     }
-    return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    if (x0 === Infinity) {
+      if (treeLayout.frames && treeLayout.frames[0]) {
+        const f = treeLayout.frames[0]
+        const box = { x: 0, y: f.top, w: Math.min(f.width, targetW), h: f.height }
+        return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+      }
+      return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    }
+
+    const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+    return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
