@@ -4,7 +4,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
   const navItems = [
     { id: 'home', label: 'Home', icon: 'fa-home' },
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap' },
-    { id: 'people', label: 'Discoveries', icon: 'fa-compass' },
+    { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
     { id: 'gallery', label: 'Photos', icon: 'fa-images' },
     { id: 'search', label: 'DNA', icon: 'fa-dna' },
     { id: 'search', label: 'Research', icon: 'fa-book' },

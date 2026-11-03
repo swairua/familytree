@@ -1,0 +1,128 @@
+.discoveries-view {
+  height: 100%;
+  overflow-y: auto;
+  background: #f2f0ed;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.discoveries-container {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.discoveries-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.discoveries-header h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #3e322a;
+  margin: 0 0 2px;
+}
+
+.discoveries-sub {
+  font-size: 0.82rem;
+  color: #8b837d;
+  margin: 0;
+}
+
+.discoveries-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.discoveries-search {
+  padding: 8px 12px;
+  border: 1px solid #d9d1cb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
+.discoveries-sort {
+  padding: 8px 10px;
+  border: 1px solid #d9d1cb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.discoveries-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ddd8d4;
+  padding-bottom: 8px;
+}
+
+.disc-tab {
+  padding: 7px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #8b837d;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.disc-tab:hover { background: #eee9e3; color: #3e322a; }
+.disc-tab.active { background: #8b7355; color: #fff; }
+
+.discoveries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.disc-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(62, 50, 42, 0.08);
+  padding: 14px 16px;
+  transition: box-shadow 0.15s;
+}
+
+.disc-card:hover { box-shadow: 0 4px 14px rgba(62, 50, 42, 0.14); }
+
+.disc-avatar { width: 52px !important; height: 52px !important; flex-shrink: 0; font-size: 0.85rem !important; }
+
+.disc-info { flex: 1; min-width: 0; }
+.disc-name { font-size: 1rem; font-weight: 800; color: #3e322a; margin: 0 0 2px; }
+.disc-rel { font-size: 0.8rem; color: #8b837d; margin: 0 0 2px; }
+.disc-new { font-size: 0.75rem; color: #a69e98; margin: 0; font-style: italic; }
+
+.disc-review {
+  background: #f5a623;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.disc-review:hover { background: #e09515; }
+
+.disc-empty {
+  text-align: center;
+  padding: 40px;
+  color: #8b837d;
+  font-size: 0.9rem;
+}

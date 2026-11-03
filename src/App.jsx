@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import AppLayout from './components/AppLayout'
 import TreeView from './components/TreeView'
 import HomeView from './components/HomeView'
+import DiscoveriesView from './components/DiscoveriesView'
 import PeopleView from './components/PeopleView'
 import SearchView from './components/SearchView'
 import ImportView from './components/ImportView'
@@ -262,6 +263,14 @@ function App() {
         <HomeView
           individuals={individuals}
           families={families}
+          onSelectPerson={handleSelectPerson}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'discoveries' && (
+        <DiscoveriesView
+          individuals={individuals}
           onSelectPerson={handleSelectPerson}
           onSwitchView={handleSwitchView}
         />
