@@ -50,7 +50,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [personCount])
 
   // ---- structural layout (top-down / flat) ----
   const flatLayout = useMemo(() => {
