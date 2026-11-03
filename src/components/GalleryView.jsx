@@ -7,7 +7,7 @@ function GalleryView({ individuals, onSelectPerson }) {
   const [viewMode, setViewMode] = useState('masonry')
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [filter, setFilter] = useState('photos')
-  const [visibleCount, setVisibleCount] = useState(60)
+  const [visibleCount, setVisibleCount] = useState(24)
 
   const photos = useMemo(() => {
     const list = []
@@ -41,7 +41,7 @@ function GalleryView({ individuals, onSelectPerson }) {
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
   }, [photos, viewMode])
 
-  useEffect(() => { setVisibleCount(60) }, [filter, viewMode])
+  useEffect(() => { setVisibleCount(24) }, [filter, viewMode])
 
   const openLightbox = (index) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(-1)
@@ -215,7 +215,7 @@ function GalleryView({ individuals, onSelectPerson }) {
           </div>
           {visibleCount < photos.length && (
             <div className="gallery-loadmore">
-              <button className="btn btn-primary" onClick={() => setVisibleCount(c => c + 60)}>
+              <button className="btn btn-primary" onClick={() => setVisibleCount(c => c + 24)}>
                 Load more ({photos.length - visibleCount} remaining)
               </button>
             </div>
