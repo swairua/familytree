@@ -324,13 +324,17 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
       if (treeLayout.frames && treeLayout.frames[0]) {
         const f = treeLayout.frames[0]
         const box = { x: 0, y: f.top, w: Math.min(f.width, targetW), h: f.height }
-        return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+        const v = fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+        if (v) v.pan.y = 20
+        return v
       }
       return { zoom: 0.5, pan: { x: 20, y: 20 } }
     }
 
     const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
-    return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+    const v = fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+    if (v) v.pan.y = 20
+    return v
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
