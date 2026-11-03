@@ -898,12 +898,12 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 4} text-anchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
+            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 4} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
           )) : null}
         </g>
 
-        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 16} text-anchor="middle">{truncateText(name, 16)}</text>}
-        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 30} text-anchor="middle">{formatDates(person)}</text>}
+        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 16} textAnchor="middle">{truncateText(name, 16)}</text>}
+        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 30} textAnchor="middle">{formatDates(person)}</text>}
 
         <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 14} cy={14} r="6" />
         {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 14} cy={NODE_HEIGHT - 14} r="5" />}
