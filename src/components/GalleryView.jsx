@@ -4,7 +4,7 @@ import { photoUrl } from '../utils/photoUrl'
 import PhotoLightbox from './PhotoLightbox'
 
 function GalleryView({ individuals, onSelectPerson }) {
-  const [viewMode, setViewMode] = useState('masonry')
+  const [viewMode, setViewMode] = useState('grid')
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [filter, setFilter] = useState('photos')
   const [visibleCount, setVisibleCount] = useState(24)
