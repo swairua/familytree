@@ -62,3 +62,16 @@ export async function startSync() {
 export async function abortSync() {
   return request('sync.php?action=abort', { method: 'POST', body: '{}' })
 }
+
+export async function aiSearch(prompt) {
+  const res = await fetch(`${API_BASE}/ai.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `AI error ${res.status}`)
+  }
+  return res.json()
+}

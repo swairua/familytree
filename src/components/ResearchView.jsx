@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
+import { aiSearch } from '../utils/api'
 import '../styles/research.css'
 
 function ResearchView({ individuals, onSelectPerson }) {
@@ -11,6 +12,10 @@ function ResearchView({ individuals, onSelectPerson }) {
   const [keywords, setKeywords] = useState('')
   const [exact, setExact] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [aiQuery, setAiQuery] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiText, setAiText] = useState('')
 
   const results = useMemo(() => {
     if (!submitted) return []
@@ -49,6 +54,37 @@ function ResearchView({ individuals, onSelectPerson }) {
     }
     return out.slice(0, 80)
   }, [individuals, firstName, lastName, birthYear, place, keywords, exact, submitted])
+
+  const handleAiSearch = async (e) => {
+    e.preventDefault()
+    if (!aiQuery.trim()) return
+    setAiLoading(true)
+    setAiError('')
+    setAiText('')
+    try {
+      const prompt = `Extract search filters from this request: "${aiQuery}". Reply ONLY with JSON: {"firstName":"","lastName":"","birthYear":"","place":"","keywords":""}.`
+      const res = await aiSearch(prompt)
+      let parsed = null
+      try {
+        const m = (res.text || '').match(/\{[\s\S]*\}/)
+        parsed = m ? JSON.parse(m[0]) : null
+      } catch {}
+      if (parsed) {
+        setFirstName(parsed.firstName || '')
+        setLastName(parsed.lastName || '')
+        setBirthYear(parsed.birthYear || '')
+        setPlace(parsed.place || '')
+        setKeywords(parsed.keywords || '')
+        setSubmitted(true)
+      } else {
+        setAiText(res.text || 'No filters extracted.')
+      }
+    } catch (err) {
+      setAiError(err.message)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -98,6 +134,25 @@ function ResearchView({ individuals, onSelectPerson }) {
                 <button type="button" className="btn" onClick={handleClear}>Clear form</button>
               </div>
             </form>
+
+            <div className="research-ai">
+              <h3>AI assistant (Groq)</h3>
+              <form onSubmit={handleAiSearch} className="research-ai-form">
+                <input
+                  value={aiQuery}
+                  onChange={e => setAiQuery(e.target.value)}
+                  placeholder='e.g. "find people born in Nyeri in 1978"'
+                />
+                <button type="submit" className="btn btn-accent" disabled={aiLoading}>
+                  {aiLoading ? 'Thinking...' : 'Ask AI'}
+                </button>
+              </form>
+              {aiError && <p className="research-ai-error">{aiError}</p>}
+              {aiText && <p className="research-ai-text">{aiText}</p>}
+              <p className="research-ai-hint">
+                AI fills the search form for you. Set your Groq key in api/config.local.php.
+              </p>
+            </div>
           </section>
 
           <section className="research-card research-info-card">

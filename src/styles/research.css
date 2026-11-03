@@ -164,3 +164,33 @@
   text-align: center;
   padding: 20px;
 }
+
+.research-ai {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee9e5;
+}
+
+.research-ai h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #3e322a;
+  margin: 0 0 8px;
+}
+
+.research-ai-form {
+  display: flex;
+  gap: 8px;
+}
+
+.research-ai-form input {
+  flex: 1;
+  padding: 9px 11px;
+  border: 1px solid #d9d1cb;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.research-ai-error { color: #c0392b; font-size: 0.8rem; margin: 6px 0 0; }
+.research-ai-text { color: #3e322a; font-size: 0.82rem; margin: 6px 0 0; white-space: pre-wrap; }
+.research-ai-hint { font-size: 0.72rem; color: #a69e98; margin: 6px 0 0; }
