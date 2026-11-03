@@ -83,9 +83,12 @@
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
 .tree-node .node-card { fill: none; stroke: #bfb7b1; stroke-width: 1.4px; }
 .tree-node .node-card-fill { fill: #ffffff; }
-.tree-node.gender-male .node-card { stroke: var(--male); stroke-width: 1.5px; }
-.tree-node.gender-female .node-card { stroke: var(--female); stroke-width: 1.5px; }
+.tree-node.gender-male .node-card { stroke: #6fa8d6; stroke-width: 1.5px; }
+.tree-node.gender-male .node-card-fill { fill: #eaf3fb; }
+.tree-node.gender-female .node-card { stroke: #e89bb0; stroke-width: 1.5px; }
+.tree-node.gender-female .node-card-fill { fill: #fbeaef; }
 .tree-node.gender-unknown .node-card { stroke: #b5b0ad; stroke-width: 1.4px; }
+.tree-node.gender-unknown .node-card-fill { fill: #f4f1ee; }
 .tree-node .node-port { fill: #ffffff; stroke: #9a918a; stroke-width: 1.2px; opacity: 0.55; }
 .tree-node:hover .node-port { opacity: 0.9; }
 .tree-node.selected .node-card { stroke: var(--heritage-burgundy); stroke-width: 2.6px; }
