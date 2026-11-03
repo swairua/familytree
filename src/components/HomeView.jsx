@@ -5,7 +5,18 @@ import { photoUrl } from '../utils/photoUrl'
 import '../styles/home.css'
 
 function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
-  const peopleCount = individuals.size
+  if (individuals.size === 0) {
+    return (
+      <div className="home-view">
+        <div className="home-container">
+          <div className="home-card" style={{ textAlign: 'center', padding: '40px' }}>
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.6rem', color: '#8b7355' }}></i>
+            <p style={{ marginTop: '10px', color: '#8b837d' }}>Loading family data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
   const treeCount = Math.max(1, families.size > 0 ? 1 : 0)
   const photoCount = useMemo(() => {
     let n = 0
