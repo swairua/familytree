@@ -8,6 +8,7 @@ function GalleryView({ individuals, onSelectPerson }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [filter, setFilter] = useState('photos')
   const [loadedMap, setLoadedMap] = useState({})
+  const [visibleCount, setVisibleCount] = useState(60)
   const observerRef = useRef(null)
 
   const photos = useMemo(() => {
@@ -28,6 +29,8 @@ function GalleryView({ individuals, onSelectPerson }) {
     return list
   }, [individuals, filter])
 
+  const visiblePhotos = photos.slice(0, visibleCount)
+
   const decades = useMemo(() => {
     if (viewMode !== 'timeline') return []
     const groups = {}
@@ -39,6 +42,8 @@ function GalleryView({ individuals, onSelectPerson }) {
     }
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
   }, [photos, viewMode])
+
+  useEffect(() => { setVisibleCount(60) }, [filter, viewMode])
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver((entries) => {
@@ -97,7 +102,7 @@ function GalleryView({ individuals, onSelectPerson }) {
       >
         {photo.url ? (
           isLoaded ? (
-            <img src={photo.url} alt={photo.name} loading="lazy" />
+            <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
           ) : (
             <div className="gallery-skeleton">
               <div className="skeleton-shimmer"></div>
@@ -205,7 +210,7 @@ function GalleryView({ individuals, onSelectPerson }) {
         </div>
       ) : viewMode === 'list' ? (
         <div className="gallery-list">
-          {photos.map((photo, i) => (
+          {visiblePhotos.map((photo, i) => (
             <div
               key={photo.id}
               className="gallery-list-item"
@@ -213,7 +218,7 @@ function GalleryView({ individuals, onSelectPerson }) {
             >
               <div className={`gallery-list-avatar gender-${photo.gender}`}>
                 {photo.url ? (
-                  <img src={photo.url} alt={photo.name} loading="lazy" />
+                  <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
                 ) : (
                   <i className="fas fa-user"></i>
                 )}
@@ -232,9 +237,18 @@ function GalleryView({ individuals, onSelectPerson }) {
           ))}
         </div>
       ) : (
-        <div className={`gallery-grid gallery-${viewMode}`}>
-          {photos.map((photo, i) => renderGalleryItem(photo, i))}
-        </div>
+        <>
+          <div className={`gallery-grid gallery-${viewMode}`}>
+            {visiblePhotos.map((photo, i) => renderGalleryItem(photo, i))}
+          </div>
+          {visibleCount < photos.length && (
+            <div className="gallery-loadmore">
+              <button className="btn btn-primary" onClick={() => setVisibleCount(c => c + 60)}>
+                Load more ({photos.length - visibleCount} remaining)
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {lightboxIndex >= 0 && (

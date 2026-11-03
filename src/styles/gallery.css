@@ -460,3 +460,7 @@
 .gallery-side-item.active i { color: #fff; }
 .gallery-main { flex: 1; min-width: 0; overflow-y: auto; }
 @media (max-width: 768px) { .gallery-layout { flex-direction: column; } .gallery-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; } }
+
+/* Performance */
+.gallery-item { content-visibility: auto; contain-intrinsic-size: 180px 180px; }
+.gallery-loadmore { text-align: center; padding: 16px; }
