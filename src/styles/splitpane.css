@@ -1,0 +1,51 @@
+.split-pane {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.pane {
+  overflow: hidden;
+  min-width: 0;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pane-resizer {
+  width: var(--resizer-width);
+  cursor: col-resize;
+  background: #e4e0dc;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  z-index: 5;
+}
+
+.pane-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  background: #c7c0bb;
+  transition: background 0.15s;
+}
+
+.pane-resizer:hover {
+  background: var(--heritage-burgundy);
+}
+
+.pane-resizer:hover::after {
+  background: white;
+}
+
+.pane-resizer.dragging {
+  background: var(--heritage-burgundy);
+}
+
+.pane-resizer.dragging::after {
+  background: white;
+}

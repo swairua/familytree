@@ -1,0 +1,227 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid #e4e0dc;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
+.sidebar.collapsed {
+  width: 0;
+  border-right: none;
+}
+
+.sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee9e5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sidebar-header h3 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover { background: var(--bg); color: var(--heritage-burgundy); }
+
+.sidebar-user {
+  padding: 16px;
+  border-bottom: 1px solid #eee9e5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.sidebar-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--heritage-burgundy);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-user-info {
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--heritage-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-site {
+  font-size: 0.68rem;
+  color: var(--text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-nav {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee9e5;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background: #faf8f6;
+  color: var(--heritage-burgundy);
+}
+
+.sidebar-nav-item.active {
+  background: #fcf5f4;
+  color: var(--heritage-burgundy);
+  font-weight: 600;
+}
+
+.sidebar-nav-item i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.sidebar-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.sidebar-tree-header {
+  padding: 8px 16px 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Sidebar tree drill-down nodes */
+.sidebar-tree-node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px 5px 16px;
+  font-size: 0.76rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.12s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-tree-node:hover {
+  background: #faf8f6;
+}
+
+.sidebar-tree-node.selected {
+  background: #fcf5f4;
+  color: var(--heritage-burgundy);
+  font-weight: 600;
+}
+
+.sidebar-tree-node .toggle-icon {
+  width: 14px;
+  text-align: center;
+  font-size: 0.6rem;
+  color: var(--text-light);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.sidebar-tree-node .toggle-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.sidebar-tree-node .person-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sidebar-tree-node .person-year {
+  font-size: 0.65rem;
+  color: var(--text-light);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-tree-children {
+  padding-left: 16px;
+}
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #eee9e5;
+  flex-shrink: 0;
+}
+
+.sidebar-footer .btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 0.72rem;
+}
+
+/* Mobile overlay */
+.sidebar-backdrop {
+  display: none;
+}

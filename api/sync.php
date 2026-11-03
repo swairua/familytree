@@ -67,23 +67,21 @@ function launch_sync(): array
     }
 
     $node = node_bin();
+    $nodeDir = dirname($node);
 
     // Abort hook so we can stop gracefully later
     $abortFile = __DIR__ . '/../data/sync_abort.txt';
     file_put_contents($abortFile, '');
-    $env = array_merge($_SERVER, ['SYNC_ABORT_FILE' => $abortFile]);
+    putenv('SYNC_ABORT_FILE=' . $abortFile);
+    putenv('PATH=' . $nodeDir . ';' . ($_SERVER['PATH'] ?? ''));
 
     $script = __DIR__ . '/../sync_myheritage.mjs';
-    $cmd = sprintf(
-        '"%s" "%s" >> "%s" 2>&1',
-        $node,
-        $script,
-        $logFile
-    );
+    // Invoke bare `node` (no spaces) with the script quoted, avoiding the
+    // cmd /c quoting bug that splits "C:\Program Files\nodejs\node.exe".
+    $cmd = 'start /b "" cmd /c node "' . $script . '" >> "' . $logFile . '" 2>&1';
 
     // Launch detached on Windows so Apache doesn't wait for it
-    $popenCmd = 'start /b cmd /c ' . $cmd;
-    @pclose(popen($popenCmd, 'r'));
+    @pclose(popen($cmd, 'r'));
 
     return [
         'ok' => true,

@@ -222,7 +222,7 @@ class GEDCOMParser {
     for (const child of line.children) {
       switch (child.tag) {
         case 'NAME':
-          individual.name = child.value
+          individual.name = child.value.replace(/\/[^\/]*\//g, '').replace(/\s+/g, ' ').trim()
           for (const sub of child.children) {
             switch (sub.tag) {
               case 'GIVN': individual.givenName = sub.value; break

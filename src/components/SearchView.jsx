@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
+import { cleanName } from '../utils/cleanName'
 import PersonAvatar from './PersonAvatar'
 
 function SearchView({ individuals, onSelectPerson }) {
@@ -82,7 +83,7 @@ function SearchView({ individuals, onSelectPerson }) {
           >
             <PersonAvatar person={person} className="person-avatar" />
             <div>
-              <h3>{person.name}</h3>
+              <h3>{cleanName(person.name)}</h3>
               <div className="person-dates">{formatDates(person)}</div>
               {person.birthPlace && (
                 <div className="person-dates">

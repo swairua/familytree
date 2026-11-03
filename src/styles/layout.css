@@ -1,0 +1,67 @@
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg);
+  min-width: 0;
+}
+
+/* Status banners */
+.status-stack {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  display: grid;
+  gap: 5px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.server-banner {
+  padding: 7px 14px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+.server-banner.loading { background: #f8f2e9; border-color: #ddc6a5; color: #765b37; }
+.server-banner.success { background: #edf5ee; border-color: #b8d1bb; color: #3f6c47; }
+.server-banner.info    { background: #edf5f5; border-color: #b7d4d4; color: #3d7276; }
+.server-banner.error   { background: #fbefee; border-color: #e1b6b3; color: #934a4b; }
+.server-banner i { margin-right: 6px; }
+
+.sync-progress {
+  margin: 5px auto 0;
+  height: 4px;
+  max-width: 320px;
+  background: rgba(56, 116, 119, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sync-progress-bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  appearance: none;
+  background: transparent;
+}
+.sync-progress-bar::-webkit-progress-bar { background: transparent; }
+.sync-progress-bar::-webkit-progress-value { background: var(--heritage-teal); border-radius: 3px; transition: width 0.4s ease; }
+.sync-progress-bar::-moz-progress-bar { background: var(--heritage-teal); border-radius: 3px; }

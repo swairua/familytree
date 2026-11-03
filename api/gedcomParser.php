@@ -190,7 +190,8 @@ class GEDCOMParser
         foreach ($line['children'] as $child) {
             switch ($child['tag']) {
                 case 'NAME':
-                    $ind['name'] = $child['value'];
+                    $ind['name'] = preg_replace('/\/[^\/]*\//', '', $child['value']);
+                    $ind['name'] = preg_replace('/\s+/', ' ', trim($ind['name']));
                     foreach ($child['children'] as $sub) {
                         if ($sub['tag'] === 'GIVN') $ind['givenName'] = $sub['value'];
                         if ($sub['tag'] === 'SURN') $ind['surname'] = $sub['value'];

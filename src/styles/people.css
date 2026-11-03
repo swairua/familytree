@@ -1,0 +1,27 @@
+.people-container { height: 100%; padding: 22px; overflow-y: auto; }
+.people-container .empty-state, .search-results .empty-state { padding: 55px 20px; text-align: center; color: var(--text-light); }
+.people-container .empty-state i, .search-results .empty-state i { display: block; margin-bottom: 14px; color: var(--heritage-burgundy); font-size: 2.8rem; }
+.people-container .empty-state h2, .search-results .empty-state h2 { margin-bottom: 8px; color: var(--heritage-ink); font-size: 1.25rem; }
+
+.people-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; background: white; padding: 14px 18px; border: 1px solid #e2dcd8; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.people-header h2 { font-size: 1.15rem; color: var(--heritage-burgundy-dark); }
+
+.search-box { position: relative; display: flex; align-items: center; }
+.search-box i { position: absolute; left: 12px; color: var(--text-light); }
+.search-box input { padding: 8px 12px 8px 35px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; width: 250px; outline: none; transition: border-color 0.3s; }
+.search-box input:focus { border-color: var(--heritage-burgundy); box-shadow: 0 0 0 3px rgba(153,66,75,0.1); }
+.search-box.large input { width: 100%; padding: 12px 12px 12px 40px; font-size: 1rem; }
+
+.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+
+.person-card { background: white; border-radius: var(--radius-lg); padding: 15px; text-align: center; border: 1px solid #e2dcd8; box-shadow: var(--shadow); cursor: pointer; transition: all 0.25s ease; }
+.person-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--heritage-burgundy); }
+.person-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--heritage-ink); }
+.person-card .person-dates { font-size: 0.8rem; color: var(--text-light); }
+
+.person-avatar { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: white; }
+.person-avatar.male { background: var(--male); }
+.person-avatar.female { background: var(--female); }
+.person-avatar.unknown { background: var(--unknown); }
+.avatar-photo { overflow: hidden; padding: 0; background: #dde3dd; }
+.avatar-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }

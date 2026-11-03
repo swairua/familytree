@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import Header from './components/Header'
+import AppLayout from './components/AppLayout'
 import TreeView from './components/TreeView'
 import PeopleView from './components/PeopleView'
 import SearchView from './components/SearchView'
 import ImportView from './components/ImportView'
+import GalleryView from './components/GalleryView'
 import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
 import { fetchExport, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
@@ -19,8 +20,6 @@ function App() {
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
 
-  // Load data: server (MySQL via PHP API) is the source of truth,
-  // localStorage acts as an offline cache/fallback.
   useEffect(() => {
     let cancelled = false
     const applyData = (parsed) => {
@@ -42,7 +41,6 @@ function App() {
           localStorage.setItem('familyTreeData', JSON.stringify(res))
           setServerStatus({ type: 'success', message: `Loaded ${res.individuals.length} people from server.` })
         } else {
-          // Empty server DB — fall back to cached local data if any
           const saved = localStorage.getItem('familyTreeData')
           if (saved) {
             applyData(JSON.parse(saved))
@@ -71,7 +69,6 @@ function App() {
     return () => { cancelled = true }
   }, [])
 
-  // Save data to localStorage whenever it changes
   useEffect(() => {
     if (data) {
       try {
@@ -82,7 +79,6 @@ function App() {
     }
   }, [data])
 
-  // Poll sync status while a sync is running
   useEffect(() => {
     if (!syncState.active) return
     let cancelled = false
@@ -98,7 +94,6 @@ function App() {
             progress: Number(s.progress) || 0,
           })
           if (s.state === 'done') {
-            // Reload tree data from the freshly-synced database
             fetchExport()
               .then((exp) => {
                 if (cancelled || !(exp.ok && exp.individuals.length > 0)) return
@@ -135,12 +130,7 @@ function App() {
     startSync()
       .then((res) => {
         if (!res.ok) {
-          setSyncState({
-            active: false,
-            state: 'error',
-            message: res.error || 'Sync could not start',
-            progress: 0,
-          })
+          setSyncState({ active: false, state: 'error', message: res.error || 'Sync could not start', progress: 0 })
         }
       })
       .catch((err) => {
@@ -178,20 +168,11 @@ function App() {
                 result.families.forEach(f => famMap.set(f.id, f))
                 setFamilies(famMap)
                 localStorage.setItem('familyTreeData', JSON.stringify(result))
-
-                setImportStatus({
-                  type: 'success',
-                  message: `Imported ${result.individuals.length} people and ${result.families.length} families to the database!`
-                })
-
-                setTimeout(() => {
-                  setCurrentView('tree')
-                  setImportStatus(null)
-                }, 1500)
+                setImportStatus({ type: 'success', message: `Imported ${result.individuals.length} people and ${result.families.length} families to the database!` })
+                setTimeout(() => { setCurrentView('tree'); setImportStatus(null) }, 1500)
               })
               .catch((dbErr) => {
                 console.error('DB import error:', dbErr)
-                // Server may be down — keep local-only import as fallback
                 setData(result)
                 const indMap = new Map()
                 result.individuals.forEach(p => indMap.set(p.id, p))
@@ -200,14 +181,8 @@ function App() {
                 result.families.forEach(f => famMap.set(f.id, f))
                 setFamilies(famMap)
                 localStorage.setItem('familyTreeData', JSON.stringify(result))
-                setImportStatus({
-                  type: 'success',
-                  message: `Imported ${result.individuals.length} people locally (database save failed: ${dbErr.message}).`
-                })
-                setTimeout(() => {
-                  setCurrentView('tree')
-                  setImportStatus(null)
-                }, 1500)
+                setImportStatus({ type: 'success', message: `Imported ${result.individuals.length} people locally (database save failed: ${dbErr.message}).` })
+                setTimeout(() => { setCurrentView('tree'); setImportStatus(null) }, 1500)
               })
           } catch (parseError) {
             console.error('Parse error:', parseError)
@@ -265,77 +240,62 @@ function App() {
   const selectedPerson = selectedPersonId ? individuals.get(selectedPersonId) : null
 
   return (
-    <div className="app">
-      <Header
-        currentView={currentView}
-        onSwitchView={handleSwitchView}
-        onImportClick={() => setCurrentView('import')}
-        hasData={!!data}
-        onSyncClick={handleSync}
-        syncing={syncState.active}
-      />
+    <AppLayout
+      currentView={currentView}
+      onSwitchView={handleSwitchView}
+      onImportClick={() => setCurrentView('import')}
+      individuals={individuals}
+      families={families}
+      onSelectPerson={handleSelectPerson}
+      onOpenPersonModal={handleSelectPerson}
+      selectedPersonId={selectedPersonId}
+      data={data}
+      onSyncClick={handleSync}
+      syncing={syncState.active}
+      layoutMode={layoutMode}
+      onLayoutModeChange={setLayoutMode}
+      syncState={syncState}
+      serverStatus={serverStatus}
+    >
+      {currentView === 'tree' && (
+        <TreeView
+          data={data}
+          individuals={individuals}
+          families={families}
+          onSelectPerson={handleSelectPerson}
+          onOpenPersonModal={handleSelectPerson}
+          layoutMode={layoutMode}
+          onLayoutModeChange={setLayoutMode}
+        />
+      )}
 
-      <main className="main-content">
-        <div className="status-stack">
-          {syncState.active && (
-            <div className="server-banner info sync-banner">
-            <i className="fas fa-sync fa-spin"></i>
-            <span>{syncState.message}</span>
-            {syncState.progress > 0 && (
-              <div className="sync-progress">
-                <progress className="sync-progress-bar" value={syncState.progress} max="100" aria-label="Sync progress">
-                  {syncState.progress}%
-                </progress>
-              </div>
-            )}
-            </div>
-          )}
-          {serverStatus.type === 'loading' && (
-            <div className="server-banner loading"><i className="fas fa-spinner fa-spin"></i> {serverStatus.message}</div>
-          )}
-          {serverStatus.type === 'success' && (
-            <div className="server-banner success"><i className="fas fa-database"></i> {serverStatus.message}</div>
-          )}
-          {serverStatus.type === 'info' && (
-            <div className="server-banner info"><i className="fas fa-info-circle"></i> {serverStatus.message}</div>
-          )}
-          {serverStatus.type === 'error' && (
-            <div className="server-banner error"><i className="fas fa-exclamation-triangle"></i> {serverStatus.message}</div>
-          )}
-        </div>
+      {currentView === 'people' && (
+        <PeopleView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
+        />
+      )}
 
-        {currentView === 'tree' && (
-          <TreeView
-            data={data}
-            individuals={individuals}
-            families={families}
-            onSelectPerson={handleSelectPerson}
-            layoutMode={layoutMode}
-            onLayoutModeChange={setLayoutMode}
-          />
-        )}
+      {currentView === 'search' && (
+        <SearchView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
+        />
+      )}
 
-        {currentView === 'people' && (
-          <PeopleView
-            individuals={individuals}
-            onSelectPerson={handleSelectPerson}
-          />
-        )}
+      {currentView === 'import' && (
+        <ImportView
+          onImport={handleImport}
+          status={importStatus}
+        />
+      )}
 
-        {currentView === 'search' && (
-          <SearchView
-            individuals={individuals}
-            onSelectPerson={handleSelectPerson}
-          />
-        )}
-
-        {currentView === 'import' && (
-          <ImportView
-            onImport={handleImport}
-            status={importStatus}
-          />
-        )}
-      </main>
+      {currentView === 'gallery' && (
+        <GalleryView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
+        />
+      )}
 
       {selectedPerson && (
         <PersonModal
@@ -347,7 +307,7 @@ function App() {
           onUpdatePerson={handleUpdatePerson}
         />
       )}
-    </div>
+    </AppLayout>
   )
 }
 

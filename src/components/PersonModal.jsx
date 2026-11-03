@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { cleanName } from '../utils/cleanName'
 import PersonAvatar from './PersonAvatar'
 
 function PersonModal({ person, individuals, families, onClose, onSelectPerson, onUpdatePerson }) {
@@ -118,7 +119,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
         onClick={() => onSelectPerson(member.id)}
       >
         <PersonAvatar person={member} className="mini-avatar" />
-        <span className="member-name">{member.name}</span>
+        <span className="member-name">{cleanName(member.name)}</span>
         <span className="member-relation">{relation}</span>
       </div>
     )
@@ -154,7 +155,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
         <div className="modal-content">
           <div className="profile-header">
             <PersonAvatar person={person} className="profile-avatar" />
-            <h2>{editing ? 'Edit Person' : person.name}</h2>
+            <h2>{editing ? 'Edit Person' : cleanName(person.name)}</h2>
             {!editing && (
               <div className="profile-dates">
                 {person.birthDate && (
@@ -175,7 +176,7 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
 
           {editing ? (
             <div className="profile-section">
-              <h3><i className="fas fa-pen"></i> Edit details for {person.name}</h3>
+              <h3><i className="fas fa-pen"></i> Edit details for {cleanName(person.name)}</h3>
               <div className="edit-form">
                 {editFields.map(f => (
                   <div className="edit-field" key={f.key}>

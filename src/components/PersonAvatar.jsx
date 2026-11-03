@@ -1,12 +1,6 @@
 import React, { useState } from 'react'
 import { photoUrl } from '../utils/photoUrl'
-
-function getInitials(name) {
-  const parts = (name || '').split(' ').filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
-}
+import { cleanName, getInitials } from '../utils/cleanName'
 
 function PersonAvatar({ person, className, showInitials = true }) {
   const [failed, setFailed] = useState(false)
@@ -19,7 +13,7 @@ function PersonAvatar({ person, className, showInitials = true }) {
       <div className={`${baseClass} ${genderClass} avatar-photo`}>
         <img
           src={url}
-          alt={person ? person.name : ''}
+          alt={person ? cleanName(person.name) : ''}
           loading="lazy"
           onError={() => setFailed(true)}
         />

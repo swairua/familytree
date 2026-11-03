@@ -1,0 +1,48 @@
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(47,39,35,0.48); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.modal { background: white; border: 1px solid #ded7d2; border-radius: var(--radius-lg); max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow-lg); }
+.modal-close { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.3rem; color: var(--text-light); cursor: pointer; padding: 5px 10px; border-radius: 50%; transition: all 0.3s; z-index: 10; }
+.modal-close:hover { background: var(--bg); color: var(--danger); }
+.modal-edit { position: absolute; top: 10px; left: 10px; z-index: 10; font-size: 0.85rem; padding: 6px 12px; }
+.modal-content { padding: 30px; }
+
+.edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.edit-field { display: flex; flex-direction: column; gap: 4px; }
+.edit-field-wide { grid-column: 1 / -1; }
+.edit-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); }
+.edit-field input, .edit-field select, .edit-field textarea { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; font-size: 0.9rem; font-family: inherit; color: var(--text); background: white; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { border-color: var(--heritage-burgundy); box-shadow: 0 0 0 3px rgba(153,66,75,0.12); }
+.edit-actions { display: flex; gap: 10px; margin-top: 16px; }
+.edit-error { margin-top: 12px; padding: 8px 12px; background: #fdecea; color: var(--danger); border-radius: var(--radius); font-size: 0.85rem; }
+
+.profile-header { text-align: center; margin-bottom: 25px; }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: white; }
+.profile-avatar.male { background: var(--male); }
+.profile-avatar.female { background: var(--female); }
+.profile-avatar.unknown { background: var(--unknown); }
+.profile-avatar.avatar-photo { overflow: hidden; padding: 0; }
+.profile-avatar.avatar-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.profile-header h2 { font-size: 1.5rem; color: var(--text); margin-bottom: 5px; }
+.profile-header .profile-dates { color: var(--text-light); font-size: 0.95rem; }
+
+.profile-section { margin-bottom: 20px; }
+.profile-section h3 { font-size: 1rem; color: var(--heritage-burgundy-dark); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid var(--bg); }
+.profile-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.profile-info-item { background: var(--bg); padding: 10px; border-radius: var(--radius); }
+.profile-info-item .label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 3px; }
+.profile-info-item .value { font-size: 0.95rem; font-weight: 500; }
+
+.family-list { display: flex; flex-direction: column; gap: 8px; }
+.family-member { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius); cursor: pointer; transition: all 0.3s; }
+.family-member:hover { background: #faf3f1; }
+.family-member .mini-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; font-weight: 600; flex-shrink: 0; }
+.mini-avatar.male { background: var(--male); }
+.mini-avatar.female { background: var(--female); }
+.mini-avatar.unknown { background: var(--unknown); }
+.mini-avatar.avatar-photo { overflow: hidden; padding: 0; }
+.mini-avatar.avatar-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.family-member .member-name { font-size: 0.9rem; font-weight: 500; }
+.family-member .member-relation { font-size: 0.8rem; color: var(--text-light); margin-left: auto; }
+.profile-date-separator { margin-left: 10px; }
+.value-capitalized { text-transform: capitalize; }
+.event-avatar { background: var(--unknown); }
+.profile-note { margin-bottom: 8px; }

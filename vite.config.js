@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      // PHP API served by XAMPP Apache on port 8082 at /familytree/api/
+      // PHP API served by XAMPP Apache on port 8088 at /familytree/api/
       '/api': {
         target: 'http://localhost:8082/familytree',
         changeOrigin: true,

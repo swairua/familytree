@@ -1,0 +1,19 @@
+.import-container { height: 100%; padding: 20px; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
+.import-card { background: white; border: 1px solid #e2dcd8; border-radius: var(--radius-lg); padding: 40px; max-width: 700px; width: 100%; box-shadow: var(--shadow-lg); text-align: center; }
+.import-icon { font-size: 3.5rem; color: var(--heritage-burgundy); margin-bottom: 15px; }
+.import-card h2 { color: var(--heritage-burgundy-dark); margin-bottom: 10px; }
+.import-card > p { color: var(--text-light); margin-bottom: 30px; }
+.import-steps { text-align: left; margin-bottom: 30px; }
+.step { display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-start; }
+.step-num { width: 35px; height: 35px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.step-content h3 { font-size: 1rem; color: var(--text); margin-bottom: 5px; }
+.step-content p { font-size: 0.9rem; color: var(--text-light); }
+.file-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 40px; cursor: pointer; transition: all 0.3s; background: var(--bg); }
+.file-upload-area:hover, .file-upload-area.dragover { border-color: var(--heritage-burgundy); background: #faf3f1; }
+.file-upload-area i { font-size: 3rem; color: var(--heritage-teal); margin-bottom: 15px; }
+.file-upload-area p { color: var(--text); font-size: 1rem; }
+.file-upload-area .file-hint { color: var(--text-light); font-size: 0.85rem; margin-top: 5px; }
+.import-status { margin-top: 20px; padding: 15px; border-radius: var(--radius); font-size: 0.95rem; }
+.import-status.success { background: #edf5ee; color: #3f6c47; border: 1px solid #b8d1bb; }
+.import-status.error { background: #fbe9e7; color: #c62828; border: 1px solid #ef9a9a; }
+.import-status.info { background: #edf5f5; color: #3d7276; border: 1px solid #b7d4d4; }

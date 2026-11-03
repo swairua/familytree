@@ -425,7 +425,7 @@ function handleUpdateIndividual(PDO $pdo): void
         $name = trim(implode(' ', array_filter([
             $prefix,
             $given,
-            $surname === '' ? '' : '/' . $surname . '/',
+            $surname,
             $suffix,
         ], fn($x) => $x !== '')));
         if ($name === '') $name = $row['name'];
