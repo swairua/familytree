@@ -3,6 +3,7 @@ import AppLayout from './components/AppLayout'
 import TreeView from './components/TreeView'
 import HomeView from './components/HomeView'
 import DiscoveriesView from './components/DiscoveriesView'
+import ResearchView from './components/ResearchView'
 import PeopleView from './components/PeopleView'
 import SearchView from './components/SearchView'
 import ImportView from './components/ImportView'
@@ -265,6 +266,13 @@ function App() {
           families={families}
           onSelectPerson={handleSelectPerson}
           onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'research' && (
+        <ResearchView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
         />
       )}
 

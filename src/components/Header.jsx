@@ -7,7 +7,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
     { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
     { id: 'gallery', label: 'Photos', icon: 'fa-images' },
     { id: 'search', label: 'DNA', icon: 'fa-dna' },
-    { id: 'search', label: 'Research', icon: 'fa-book' },
+    { id: 'research', label: 'Research', icon: 'fa-book' },
   ]
 
   return (
