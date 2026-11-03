@@ -3,6 +3,9 @@ import AppLayout from './components/AppLayout'
 import TreeView from './components/TreeView'
 import HomeView from './components/HomeView'
 import DiscoveriesView from './components/DiscoveriesView'
+import FamilyEventsView from './components/FamilyEventsView'
+import FamilyStatsView from './components/FamilyStatsView'
+import SiteMembersView from './components/SiteMembersView'
 import ResearchView from './components/ResearchView'
 import PeopleView from './components/PeopleView'
 import SearchView from './components/SearchView'
@@ -274,6 +277,18 @@ function App() {
           individuals={individuals}
           onSelectPerson={handleSelectPerson}
         />
+      )}
+
+      {currentView === 'events' && (
+        <FamilyEventsView individuals={individuals} families={families} onSelectPerson={handleSelectPerson} />
+      )}
+
+      {currentView === 'stats' && (
+        <FamilyStatsView individuals={individuals} families={families} />
+      )}
+
+      {currentView === 'members' && (
+        <SiteMembersView individuals={individuals} onSelectPerson={handleSelectPerson} />
       )}
 
       {currentView === 'discoveries' && (

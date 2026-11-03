@@ -2,7 +2,12 @@ import React from 'react'
 
 function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar }) {
   const navItems = [
-    { id: 'home', label: 'Home', icon: 'fa-home' },
+    { id: 'home', label: 'Home', icon: 'fa-home', children: [
+        { id: 'home', label: 'Overview' },
+        { id: 'events', label: 'Family Events' },
+        { id: 'stats', label: 'Family Statistics' },
+        { id: 'members', label: 'Site Members' },
+    ]},
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap' },
     { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
     { id: 'gallery', label: 'Photos', icon: 'fa-images' },
@@ -26,18 +31,44 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
       </div>
       <nav className="main-nav">
         {navItems.map(item => (
-          <a
-            key={item.id}
-            href="#"
-            className={`nav-link ${currentView === item.id ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault()
-              onSwitchView(item.id)
-            }}
-          >
-            <i className={`fas ${item.icon}`}></i>
-            <span>{item.label}</span>
-          </a>
+          item.children ? (
+            <div key={item.id} className="nav-dropdown">
+              <a
+                href="#"
+                className={`nav-link ${['home','events','stats','members'].includes(currentView) ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); onSwitchView(item.id) }}
+              >
+                <i className={`fas ${item.icon}`}></i>
+                <span>{item.label}</span>
+                <i className="fas fa-caret-down nav-caret"></i>
+              </a>
+              <div className="nav-dropdown-menu">
+                {item.children.map(child => (
+                  <a
+                    key={child.id}
+                    href="#"
+                    className={`nav-dropdown-item ${currentView === child.id ? 'active' : ''}`}
+                    onClick={(e) => { e.preventDefault(); onSwitchView(child.id) }}
+                  >
+                    {child.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <a
+              key={item.id}
+              href="#"
+              className={`nav-link ${currentView === item.id ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault()
+                onSwitchView(item.id)
+              }}
+            >
+              <i className={`fas ${item.icon}`}></i>
+              <span>{item.label}</span>
+            </a>
+          )
         ))}
       </nav>
       <div className="header-actions">

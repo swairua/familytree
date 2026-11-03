@@ -1,0 +1,15 @@
+.fs-view { height: 100%; overflow-y: auto; background: #f2f0ed; padding: 24px 20px; box-sizing: border-box; }
+.fs-container { max-width: 900px; margin: 0 auto; }
+.fs-container h1 { font-size: 1.4rem; font-weight: 800; color: #3e322a; margin: 0 0 16px; }
+.fs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.fs-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(62,50,42,0.08); padding: 18px; text-align: center; }
+.fs-card h2 { font-size: 1rem; font-weight: 800; color: #3e322a; margin: 0 0 4px; }
+.fs-total { font-size: 0.78rem; color: #8b837d; margin: 0 0 12px; }
+.fs-circles { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.stat-circle { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stat-circle-ring { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.stat-circle-inner { width: 70px; height: 70px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stat-circle-value { font-size: 0.95rem; font-weight: 800; color: #3e322a; }
+.stat-circle-pct { font-size: 0.68rem; color: #8b837d; }
+.stat-circle-label { font-size: 0.72rem; font-weight: 600; color: #5a524d; }
+.fs-big { font-size: 2.4rem; font-weight: 800; color: #8b7355; margin-top: 10px; }

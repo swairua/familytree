@@ -1,0 +1,25 @@
+.fe-view { height: 100%; overflow-y: auto; background: #f2f0ed; padding: 24px 20px; box-sizing: border-box; }
+.fe-container { max-width: 900px; margin: 0 auto; }
+.fe-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.fe-header h1 { font-size: 1.4rem; font-weight: 800; color: #3e322a; margin: 0; }
+.fe-search { display: flex; gap: 8px; flex: 1; min-width: 220px; }
+.fe-search input { flex: 1; padding: 8px 12px; border: 1px solid #d9d1cb; border-radius: 6px; font-size: 0.85rem; }
+.fe-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1px solid #ddd8d4; padding-bottom: 8px; }
+.fe-nav-btn { padding: 7px 14px; border: none; background: transparent; border-radius: 6px; font-size: 0.82rem; font-weight: 600; color: #8b837d; cursor: pointer; }
+.fe-nav-btn:hover { background: #eee9e3; color: #3e322a; }
+.fe-nav-btn.active { background: #8b7355; color: #fff; }
+.fe-section { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(62,50,42,0.08); padding: 16px 18px; margin-bottom: 16px; }
+.fe-section h2 { font-size: 1rem; font-weight: 800; color: #3e322a; margin: 0 0 10px; }
+.fe-list { list-style: none; padding: 0; margin: 0; }
+.fe-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0ebe6; cursor: pointer; }
+.fe-item:last-child { border-bottom: none; }
+.fe-item:hover { background: #f7f4f0; border-radius: 6px; }
+.fe-date { width: 46px; text-align: center; flex-shrink: 0; }
+.fe-day { display: block; font-size: 1.1rem; font-weight: 800; color: #8b7355; line-height: 1; }
+.fe-mon { display: block; font-size: 0.68rem; color: #8b837d; text-transform: uppercase; font-weight: 700; }
+.fe-avatar { width: 34px !important; height: 34px !important; flex-shrink: 0; font-size: 0.6rem !important; }
+.fe-info { font-size: 0.85rem; color: #3e322a; }
+.fe-info strong { color: #8b7355; }
+.fe-missing { list-style: none; padding: 0; margin: 0; }
+.fe-missing li { padding: 6px 0; font-size: 0.82rem; color: #5a524d; display: flex; align-items: center; gap: 6px; }
+.fe-missing i { color: #f5a623; }
