@@ -1,6 +1,16 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar }) {
+  const [openMenu, setOpenMenu] = useState(null)
+  const navRef = useRef(null)
+  useEffect(() => {
+    const onClick = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) setOpenMenu(null)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
   const navItems = [
     { id: 'home', label: 'Home', icon: 'fa-home', children: [
         { id: 'home', label: 'Overview' },
@@ -32,23 +42,26 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
       <nav className="main-nav">
         {navItems.map(item => (
           item.children ? (
-            <div key={item.id} className="nav-dropdown">
+            <div key={item.id} className="nav-dropdown" ref={navRef}>
               <a
                 href="#"
                 className={`nav-link ${['home','events','stats','members'].includes(currentView) ? 'active' : ''}`}
-                onClick={(e) => { e.preventDefault(); onSwitchView(item.id) }}
+                onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
               >
                 <i className={`fas ${item.icon}`}></i>
                 <span>{item.label}</span>
-                <i className="fas fa-caret-down nav-caret"></i>
+                <i
+                  className="fas fa-caret-down nav-caret"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenu(openMenu === item.id ? null : item.id) }}
+                ></i>
               </a>
-              <div className="nav-dropdown-menu">
+              <div className={`nav-dropdown-menu ${openMenu === item.id ? 'open' : ''}`}>
                 {item.children.map(child => (
                   <a
                     key={child.id}
                     href="#"
                     className={`nav-dropdown-item ${currentView === child.id ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); onSwitchView(child.id) }}
+                    onClick={(e) => { e.preventDefault(); onSwitchView(child.id); setOpenMenu(null) }}
                   >
                     {child.label}
                   </a>
