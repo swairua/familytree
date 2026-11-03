@@ -45,10 +45,9 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
             <div key={item.id} className="nav-dropdown" ref={navRef}>
               <a
                 href="#"
-                className={`nav-link ${['home','events','stats','members'].includes(currentView) ? 'active' : ''}`}
+                className={`nav-link nav-home ${['home','events','stats','members'].includes(currentView) ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
               >
-                <i className={`fas ${item.icon}`}></i>
                 <span>{item.label}</span>
                 <i
                   className="fas fa-caret-down nav-caret"
@@ -78,7 +77,6 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
                 onSwitchView(item.id)
               }}
             >
-              <i className={`fas ${item.icon}`}></i>
               <span>{item.label}</span>
             </a>
           )

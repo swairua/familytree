@@ -118,3 +118,10 @@
 .nav-dropdown-item { display: block; padding: 7px 12px; font-size: 0.8rem; color: #3e322a; border-radius: 4px; text-decoration: none; }
 .nav-dropdown-item:hover { background: #f7f4f0; }
 .nav-dropdown-item.active { background: #8b7355; color: #fff; }
+
+/* Home as button */
+.nav-link.nav-home { background: #8b7355; color: #fff; border-radius: 6px; padding: 6px 12px; }
+.nav-link.nav-home:hover { background: #7a6449; }
+.nav-link.nav-home .nav-caret { color: #fff; }
+.main-nav { display: flex; align-items: center; gap: 12px; justify-content: center; }
+.nav-link { text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #3e322a; padding: 6px 4px; }
