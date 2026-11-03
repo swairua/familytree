@@ -41,16 +41,23 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
   const familyCount = families.size
   const selectedPerson = selectedId ? individuals.get(selectedId) : null
 
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const ro = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect
+  const setContainerRef = useCallback((el) => {
+    containerRef.current = el
+    if (el) {
+      const rect = el.getBoundingClientRect()
       setViewport({ w: rect.width, h: rect.height })
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [personCount])
+      const ro = new ResizeObserver((entries) => {
+        const r = entries[0].contentRect
+        setViewport({ w: r.width, h: r.height })
+      })
+      ro.observe(el)
+      // store for cleanup
+      containerRef._ro = ro
+    } else if (containerRef._ro) {
+      containerRef._ro.disconnect()
+      containerRef._ro = null
+    }
+  }, [])
 
   // ---- structural layout (top-down / flat) ----
   const flatLayout = useMemo(() => {
@@ -835,7 +842,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     return (
       <div className="tree-container">
         {renderToolbar(false)}
-        <div className="tree-canvas" ref={containerRef}>
+        <div className="tree-canvas" ref={setContainerRef}>
           <div className="tree-empty-state">
             <div className="empty-icon"><i className="fas fa-tree"></i></div>
             <h2>Your Family Tree</h2>
@@ -916,7 +923,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
       {renderToolbar(true)}
       <div
         className="tree-canvas"
-        ref={containerRef}
+        ref={setContainerRef}
         onMouseDown={handleMouseDown}
       >
         {view && (
