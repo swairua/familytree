@@ -7,7 +7,8 @@ function GalleryView({ individuals, onSelectPerson }) {
   const [viewMode, setViewMode] = useState('grid')
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [filter, setFilter] = useState('photos')
-  const [visibleCount, setVisibleCount] = useState(24)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 24
 
   const photos = useMemo(() => {
     const list = []
@@ -27,7 +28,8 @@ function GalleryView({ individuals, onSelectPerson }) {
     return list
   }, [individuals, filter])
 
-  const visiblePhotos = photos.slice(0, visibleCount)
+  const totalPages = Math.ceil(photos.length / PAGE_SIZE)
+  const visiblePhotos = photos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const decades = useMemo(() => {
     if (viewMode !== 'timeline') return []
@@ -41,20 +43,12 @@ function GalleryView({ individuals, onSelectPerson }) {
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
   }, [photos, viewMode])
 
-  useEffect(() => { setVisibleCount(24) }, [filter, viewMode])
+  useEffect(() => { setPage(1) }, [filter, viewMode])
 
   const openLightbox = (index) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(-1)
   const nextPhoto = () => setLightboxIndex(i => Math.min(i + 1, photos.length - 1))
   const prevPhoto = () => setLightboxIndex(i => Math.max(i - 1, 0))
-
-  const photoCount = useMemo(() => {
-    let c = 0
-    for (const p of individuals.values()) if (p.photo) c++
-    return c
-  }, [individuals])
-
-  const totalCount = individuals.size
 
   if (individuals.size === 0) {
     return (
@@ -112,7 +106,7 @@ function GalleryView({ individuals, onSelectPerson }) {
         <div className="gallery-header-left">
           <h2><i className="fas fa-images"></i> Photos</h2>
           <span className="gallery-count">
-            Showing {filter === 'photos' ? photoCount : totalCount} media items
+            Showing {visiblePhotos.length} of {photos.length} &bull; Page {page} of {totalPages}
           </span>
         </div>
         <button className="btn btn-primary" title="Upload (coming soon)" disabled>
@@ -210,13 +204,13 @@ function GalleryView({ individuals, onSelectPerson }) {
         </div>
       ) : (
         <>
-          <div className={`gallery-grid gallery-${viewMode}`}>
+          <div className={viewMode === 'masonry' ? 'gallery-masonry' : `gallery-grid gallery-${viewMode}`}>
             {visiblePhotos.map((photo, i) => renderGalleryItem(photo, i))}
           </div>
-          {visibleCount < photos.length && (
+          {page < totalPages && (
             <div className="gallery-loadmore">
-              <button className="btn btn-primary" onClick={() => setVisibleCount(c => c + 24)}>
-                Load more ({photos.length - visibleCount} remaining)
+              <button className="btn btn-primary" onClick={() => setPage(p => p + 1)}>
+                Load more ({photos.length - page * PAGE_SIZE} remaining)
               </button>
             </div>
           )}
