@@ -3,8 +3,8 @@ import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 import PersonAvatar from './PersonAvatar'
 
-const NODE_WIDTH = 192
-const NODE_HEIGHT = 80
+const NODE_WIDTH = 128
+const NODE_HEIGHT = 84
 const H_GAP = 34
 const V_GAP = 56
 const ZOOM_MIN = 0.01
@@ -871,37 +871,34 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         onClick={(e) => { e.stopPropagation(); handlePersonClick(node.id) }}
         onDoubleClick={(e) => { e.stopPropagation(); drillTo(node.id) }}
       >
-        <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={0} r="3" />
-        <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT} r="3" />
-        <circle className="node-port node-port-left" cx={0} cy={NODE_HEIGHT / 2} r="3" />
-        <circle className="node-port node-port-right" cx={NODE_WIDTH} cy={NODE_HEIGHT / 2} r="3" />
+        <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={3} r="3" />
+        <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT - 3} r="3" />
 
-        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
-        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
+        <ellipse className="node-card" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2} rx={NODE_WIDTH / 2 - 3} ry={NODE_HEIGHT / 2 - 3} />
+        <ellipse className="node-card-fill" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2} rx={NODE_WIDTH / 2 - 3} ry={NODE_HEIGHT / 2 - 3} />
 
         <g className="node-avatar-wrap">
-          <circle className="node-avatar-ring" cx={34} cy={40} r={AVATAR_R} />
+          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 8} r={AVATAR_R} />
           {detailed ? (url ? (
             <image
               className="node-photo"
               href={url}
-              x={34 - AVATAR_R} y={40 - AVATAR_R}
+              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 8 - AVATAR_R}
               width={AVATAR_R * 2} height={AVATAR_R * 2}
               style={{ clipPath: 'circle(50%)' }}
               preserveAspectRatio="xMidYMid slice"
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={34} y={44} text-anchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
+            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 4} text-anchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
           )) : null}
         </g>
 
-        {detailed && <text className="node-name" x={70} y={30}>{truncateText(name, 20)}</text>}
-        {detailed && <text className="node-dates" x={70} y={48}>{formatDates(person)}</text>}
-        {detailed && person.birthPlace && <text className="node-place" x={70} y={64}>{truncateText(person.birthPlace, 18)}</text>}
+        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 16} text-anchor="middle">{truncateText(name, 16)}</text>}
+        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 30} text-anchor="middle">{formatDates(person)}</text>}
 
-        <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 17} cy={16} r="7" />
-        {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 17} cy={NODE_HEIGHT - 16} r="5" />}
+        <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 14} cy={14} r="6" />
+        {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 14} cy={NODE_HEIGHT - 14} r="5" />}
       </g>
     )
   }
