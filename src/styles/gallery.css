@@ -448,3 +448,15 @@
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 }
+
+/* Photos page layout (MyHeritage-style) */
+.gallery-layout { display: flex; gap: 16px; height: 100%; box-sizing: border-box; }
+.gallery-sidebar { width: 220px; flex-shrink: 0; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(62,50,42,0.08); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.gallery-sidebar-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #8b837d; margin: 0 0 8px; }
+.gallery-side-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #3e322a; text-align: left; transition: background 0.15s; }
+.gallery-side-item i { color: #8b7355; width: 16px; text-align: center; }
+.gallery-side-item:hover { background: #f7f4f0; }
+.gallery-side-item.active { background: #8b7355; color: #fff; }
+.gallery-side-item.active i { color: #fff; }
+.gallery-main { flex: 1; min-width: 0; overflow-y: auto; }
+@media (max-width: 768px) { .gallery-layout { flex-direction: column; } .gallery-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; } }

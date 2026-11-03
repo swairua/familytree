@@ -117,14 +117,30 @@ function GalleryView({ individuals, onSelectPerson }) {
   }
 
   return (
-    <div className="gallery-container">
+    <div className="gallery-layout">
+      <aside className="gallery-sidebar">
+        <h3 className="gallery-sidebar-title">Media</h3>
+        <button className={`gallery-side-item ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+          <i className="fas fa-th-large"></i> All media items
+        </button>
+        <button className={`gallery-side-item ${filter === 'photos' ? 'active' : ''}`} onClick={() => setFilter('photos')}>
+          <i className="fas fa-user"></i> People
+        </button>
+        <button className="gallery-side-item" onClick={() => setFilter('photos')}>
+          <i className="fas fa-folder"></i> Albums
+        </button>
+      </aside>
+      <div className="gallery-container gallery-main">
       <div className="gallery-header">
         <div className="gallery-header-left">
-          <h2><i className="fas fa-images"></i> Photo Gallery</h2>
+          <h2><i className="fas fa-images"></i> Photos</h2>
           <span className="gallery-count">
-            {filter === 'photos' ? `${photoCount} photos` : `${totalCount} people`}
+            Showing {filter === 'photos' ? photoCount : totalCount} media items
           </span>
         </div>
+        <button className="btn btn-primary" title="Upload (coming soon)" disabled>
+          <i className="fas fa-upload"></i> Upload
+        </button>
         <div className="gallery-controls">
           <div className="gallery-filter-group">
             <button
@@ -231,6 +247,7 @@ function GalleryView({ individuals, onSelectPerson }) {
           onSelectPerson={onSelectPerson}
         />
       )}
+    </div>
     </div>
   )
 }
