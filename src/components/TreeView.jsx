@@ -881,8 +881,8 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={3} r="3" />
         <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT - 3} r="3" />
 
-        <ellipse className="node-card" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2} rx={NODE_WIDTH / 2 - 3} ry={NODE_HEIGHT / 2 - 3} />
-        <ellipse className="node-card-fill" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2} rx={NODE_WIDTH / 2 - 3} ry={NODE_HEIGHT / 2 - 3} />
+        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
+        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
 
         <g className="node-avatar-wrap">
           <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 8} r={AVATAR_R} />
@@ -984,6 +984,21 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
             )}
           </>
         )}
+        <div className="tree-fab">
+          <button className="btn btn-icon" onClick={() => { engage(); zoomBy(ZOOM_STEP) }} title="Zoom in">
+            <i className="fas fa-plus"></i>
+          </button>
+          <button className="btn btn-icon" onClick={() => { engage(); zoomBy(1 / ZOOM_STEP) }} title="Zoom out">
+            <i className="fas fa-minus"></i>
+          </button>
+          <button className="btn btn-icon" onClick={fitView} title="Fit to screen">
+            <i className="fas fa-expand"></i>
+          </button>
+          <button className="btn btn-icon" title="Add father (coming soon)">
+            <i className="fas fa-user-plus"></i>
+          </button>
+        </div>
+
         {selectedPerson && (
           <aside
             className="tree-profile-panel"

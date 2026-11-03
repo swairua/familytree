@@ -83,10 +83,11 @@
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
 .tree-node .node-card { fill: none; stroke: #bfb7b1; stroke-width: 1.4px; }
 .tree-node .node-card-fill { fill: #ffffff; }
-.tree-node.gender-male .node-card { stroke: #6fa8d6; stroke-width: 1.5px; }
-.tree-node.gender-male .node-card-fill { fill: #eaf3fb; }
-.tree-node.gender-female .node-card { stroke: #e89bb0; stroke-width: 1.5px; }
-.tree-node.gender-female .node-card-fill { fill: #fbeaef; }
+/* living individuals: green; deceased: pink */
+.tree-node:not(.deceased) .node-card { stroke: #7fb069; stroke-width: 1.5px; }
+.tree-node:not(.deceased) .node-card-fill { fill: #eaf5ea; }
+.tree-node.deceased .node-card { stroke: #e89bb0; stroke-width: 1.5px; }
+.tree-node.deceased .node-card-fill { fill: #fbeaef; }
 .tree-node.gender-unknown .node-card { stroke: #b5b0ad; stroke-width: 1.4px; }
 .tree-node.gender-unknown .node-card-fill { fill: #f4f1ee; }
 .tree-node .node-port { fill: #ffffff; stroke: #9a918a; stroke-width: 1.2px; opacity: 0.55; }
@@ -178,3 +179,8 @@
 .minimap-bounds { fill: none; stroke: #c9c1ba; stroke-width: 1; }
 .minimap-node { fill: #6e635c; opacity: 0.55; }
 .minimap-viewport { fill: none; stroke: var(--heritage-burgundy); stroke-width: 2; pointer-events: none; }
+
+/* Floating action buttons */
+.tree-fab { position: absolute; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 9; }
+.tree-fab .btn { width: 38px; height: 38px; padding: 0; justify-content: center; background: #fff; border: 1px solid #d9d1cb; box-shadow: 0 2px 6px rgba(62,50,42,0.12); }
+.tree-fab .btn:hover { background: #f7f4f0; }
