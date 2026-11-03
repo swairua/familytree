@@ -970,7 +970,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                   preserveAspectRatio="xMidYMid slice"
                 >
                   <rect className="minimap-bounds" x="0" y="0" width={minimapBox.treeW} height={minimapBox.treeH} />
-                  {treeLayout.nodes.map(node => (
+                  {treeLayout.nodes.filter((_, i) => i % 3 === 0).map(node => (
                     <circle key={node.id} className="minimap-node" cx={node.x + NODE_WIDTH / 2} cy={node.y + NODE_HEIGHT / 2} r="1.6" />
                   ))}
                   <rect
