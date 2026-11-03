@@ -292,9 +292,9 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     const nodes = treeLayout.nodes
     if (!nodes || nodes.length === 0) return { zoom: 1, pan: { x: 20, y: 20 } }
 
-    // Height-driven vertical fit: zoom so the whole tree height fits,
-    // top-aligned, allowing horizontal pan for wide branches.
-    const zoom = Math.max(ZOOM_MIN, Math.min(1, (viewport.h - 40) / treeLayout.height))
+    // Height-driven vertical fit on the first branch so nodes stay visible.
+    const frameH = (treeLayout.frames && treeLayout.frames[0]) ? treeLayout.frames[0].height : treeLayout.height
+    const zoom = Math.max(0.3, Math.min(1, (viewport.h - 40) / Math.max(frameH, 1)))
     return {
       zoom,
       pan: {
