@@ -699,18 +699,10 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
 
   useEffect(() => {
     if (!viewport.w || !viewport.h) return
-    if (hasInteracted.current) return
-    if (!treeLayout.nodes || treeLayout.nodes.length === 0) return
-    // Default to a vertical, focused view of the first root's family
-    // instead of a wide horizontal strip.
-    const firstRoot = treeLayout.nodes[0]?.id
-    if (firstRoot) {
-      // defer so drillTo has latest layout
-      const t = setTimeout(() => drillTo(firstRoot), 50)
-      return () => clearTimeout(t)
+    if (!hasInteracted.current && treeLayout.width && treeLayout.height) {
+      setZoom(null)
+      setPan(null)
     }
-    setZoom(null)
-    setPan(null)
   }, [viewport, treeLayout])
 
   const drillTo = useCallback((id) => {
