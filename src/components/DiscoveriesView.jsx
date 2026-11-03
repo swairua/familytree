@@ -9,9 +9,18 @@ function DiscoveriesView({ individuals, onSelectPerson, onSwitchView }) {
   const [tab, setTab] = useState('All Matches')
   const [sort, setSort] = useState('name')
   const [query, setQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(60)
 
-  const list = useMemo(() => {
+  const filtered = useMemo(() => {
     let arr = Array.from(individuals.values())
+    // Tab-specific filtering
+    if (tab === 'Record Matches') {
+      arr = arr.filter(p => p.birthDate || p.deathDate || p.birthPlace)
+    } else if (tab === 'Smart Matches') {
+      arr = arr.filter(p => (p.spouses && p.spouses.length) || (p.children && p.children.length) || (p.parents && p.parents.length))
+    } else if (tab === 'Pending') {
+      arr = arr.filter(p => !p.birthDate || !p.gender || p.gender === 'unknown')
+    }
     if (query.trim()) {
       const q = query.toLowerCase()
       arr = arr.filter(p => (p.name || '').toLowerCase().includes(q))
@@ -22,8 +31,13 @@ function DiscoveriesView({ individuals, onSelectPerson, onSwitchView }) {
       const yb = parseInt((b.birthYear || '').toString().match(/\d{4}/)?.[0] || '0', 10)
       return yb - ya
     })
-    return arr.slice(0, 60)
-  }, [individuals, query, sort])
+    return arr
+  }, [individuals, query, sort, tab])
+
+  const list = filtered.slice(0, visibleCount)
+
+  // reset pagination on filter change
+  React.useEffect(() => { setVisibleCount(60) }, [tab, query, sort])
 
   return (
     <div className="discoveries-view">
@@ -32,7 +46,7 @@ function DiscoveriesView({ individuals, onSelectPerson, onSwitchView }) {
           <div>
             <h1>Discoveries</h1>
             <p className="discoveries-sub">
-              {individuals.size.toLocaleString()} people &middot; {list.length} shown
+              {individuals.size.toLocaleString()} people &middot; {filtered.length} matches &middot; {list.length} shown
             </p>
           </div>
           <div className="discoveries-controls">
@@ -87,6 +101,13 @@ function DiscoveriesView({ individuals, onSelectPerson, onSwitchView }) {
             <div className="disc-empty">No matches found.</div>
           )}
         </div>
+        {visibleCount < filtered.length && (
+          <div className="disc-loadmore">
+            <button className="btn btn-primary" onClick={() => setVisibleCount(c => c + 60)}>
+              Load more ({filtered.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
