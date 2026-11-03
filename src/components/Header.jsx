@@ -2,11 +2,12 @@ import React from 'react'
 
 function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar }) {
   const navItems = [
-    { id: 'tree', label: 'Family Tree', icon: 'fa-sitemap' },
-    { id: 'people', label: 'People', icon: 'fa-users' },
-    { id: 'search', label: 'Search', icon: 'fa-search' },
-    { id: 'import', label: 'Import', icon: 'fa-file-import' },
-    { id: 'gallery', label: 'Gallery', icon: 'fa-images' },
+    { id: 'home', label: 'Home', icon: 'fa-home' },
+    { id: 'tree', label: 'Family tree', icon: 'fa-sitemap' },
+    { id: 'people', label: 'Discoveries', icon: 'fa-compass' },
+    { id: 'gallery', label: 'Photos', icon: 'fa-images' },
+    { id: 'search', label: 'DNA', icon: 'fa-dna' },
+    { id: 'search', label: 'Research', icon: 'fa-book' },
   ]
 
   return (
@@ -19,8 +20,8 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
           <span className="logo-mark" aria-hidden="true">
             <i className="fas fa-tree"></i>
           </span>
-          <span className="logo-wordmark">MyHeritage</span>
-          <span className="logo-context">Family tree</span>
+          <span className="logo-wordmark">Wairua</span>
+          <span className="logo-context">Family site</span>
         </div>
       </div>
       <nav className="main-nav">

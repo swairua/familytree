@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import AppLayout from './components/AppLayout'
 import TreeView from './components/TreeView'
+import HomeView from './components/HomeView'
 import PeopleView from './components/PeopleView'
 import SearchView from './components/SearchView'
 import ImportView from './components/ImportView'
@@ -13,7 +14,7 @@ function App() {
   const [data, setData] = useState(null)
   const [individuals, setIndividuals] = useState(new Map())
   const [families, setFamilies] = useState(new Map())
-  const [currentView, setCurrentView] = useState('tree')
+  const [currentView, setCurrentView] = useState('home')
   const [selectedPersonId, setSelectedPersonId] = useState(null)
   const [layoutMode, setLayoutMode] = useState('flat')
   const [importStatus, setImportStatus] = useState(null)
@@ -257,6 +258,15 @@ function App() {
       syncState={syncState}
       serverStatus={serverStatus}
     >
+      {currentView === 'home' && (
+        <HomeView
+          individuals={individuals}
+          families={families}
+          onSelectPerson={handleSelectPerson}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
       {currentView === 'tree' && (
         <TreeView
           data={data}
