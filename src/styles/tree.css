@@ -81,34 +81,33 @@
 #tree-content { will-change: transform; transform-box: fill-box; }
 .tree-node { cursor: pointer; }
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
-.tree-node .node-card { fill: none; stroke: #bfb7b1; stroke-width: 1.4px; }
-.tree-node .node-card-fill { fill: #ffffff; }
-/* living individuals: green; deceased: pink */
-.tree-node:not(.deceased) .node-card { stroke: #7fb069; stroke-width: 1.5px; }
-.tree-node:not(.deceased) .node-card-fill { fill: #eaf5ea; }
+/* pill-shaped node card, living = green, deceased = pink */
+.tree-node .node-card { fill: none; stroke: #7fb069; stroke-width: 1.5px; }
+.tree-node .node-card-fill { fill: #eaf5ea; }
 .tree-node.deceased .node-card { stroke: #e89bb0; stroke-width: 1.5px; }
 .tree-node.deceased .node-card-fill { fill: #fbeaef; }
 .tree-node.gender-unknown .node-card { stroke: #b5b0ad; stroke-width: 1.4px; }
 .tree-node.gender-unknown .node-card-fill { fill: #f4f1ee; }
+.tree-node.selected .node-card { stroke: var(--heritage-burgundy); stroke-width: 2.8px; }
+
 .tree-node .node-port { fill: #ffffff; stroke: #9a918a; stroke-width: 1.2px; opacity: 0.55; }
 .tree-node:hover .node-port { opacity: 0.9; }
-.tree-node.selected .node-card { stroke: var(--heritage-burgundy); stroke-width: 2.6px; }
 
+/* large circular thumbnail on the left of each card */
 .tree-node .node-avatar-ring { fill: none; stroke: #d9d0c9; stroke-width: 1.5px; }
-.tree-node .node-photo { fill: #ffffff; stroke: #ffffff; stroke-width: 2px; }
+.tree-node .node-photo { fill: #ffffff; stroke: #ffffff; stroke-width: 2.5px; }
 .tree-node .node-photo-failed { display: none; }
-.tree-node .node-initials { fill: var(--heritage-ink); font-size: 10px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.85; }
+.tree-node .node-initials { fill: var(--heritage-ink); font-size: 14px; font-weight: 900; letter-spacing: 0.5px; opacity: 0.9; dominant-baseline: middle; }
 
-.tree-node .node-name { font-size: 11.5px; font-weight: 800; fill: var(--heritage-ink); text-anchor: middle; letter-spacing: 0.2px; }
-.tree-node .node-dates { font-size: 9.5px; fill: #8a827c; text-anchor: middle; letter-spacing: 0.25px; }
-.tree-node .node-place { font-size: 9px; fill: #a69e98; text-anchor: middle; letter-spacing: 0.2px; font-style: italic; }
+.tree-node .node-name { font-size: 15px; font-weight: 900; fill: var(--heritage-ink); text-anchor: start; letter-spacing: 0.3px; }
+.tree-node .node-dates { font-size: 12px; fill: #8a827c; text-anchor: start; letter-spacing: 0.2px; }
+.tree-node .node-place { font-size: 11px; fill: #a69e98; text-anchor: start; letter-spacing: 0.2px; font-style: italic; }
 
-.tree-node .node-gender-badge { fill: var(--unknown); stroke: #ffffff; stroke-width: 1.5px; }
+.tree-node .node-gender-badge { fill: var(--unknown); stroke: #ffffff; stroke-width: 1.8px; }
 .tree-node.gender-male .node-gender-badge { fill: var(--male); }
 .tree-node.gender-female .node-gender-badge { fill: var(--female); }
-.tree-node .node-deceased { fill: #6e5f5c; stroke: #ffffff; stroke-width: 1.5px; }
+.tree-node .node-deceased { fill: #6e5f5c; stroke: #ffffff; stroke-width: 1.8px; }
 
-.tree-node.deceased .node-card-fill { fill: #f4f1ee; }
 .tree-node.deceased .node-name { fill: #6b635e; }
 .tree-node.deceased .node-dates { fill: #9c948e; }
 .tree-node.deceased .node-place { fill: #b7aea7; }
@@ -117,8 +116,8 @@
 .tree-node.selected { filter: url(#tree-glow); }
 
 .tree-link { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.25s ease; }
-.tree-link.child { stroke: var(--heritage-teal); stroke-width: 1.5px; opacity: 0.62; }
-.tree-link.marriage { stroke: var(--heritage-burgundy); stroke-width: 1.6px; opacity: 0.6; stroke-dasharray: 4, 3; }
+.tree-link.child { stroke: var(--heritage-teal); stroke-width: 2px; opacity: 0.65; }
+.tree-link.marriage { stroke: var(--heritage-burgundy); stroke-width: 2.2px; opacity: 0.62; stroke-dasharray: 5, 4; }
 
 .tree-node.selected .tree-link.child, .tree-node.selected .tree-link.marriage { opacity: 1; }
 

@@ -222,6 +222,7 @@ function GalleryView({ individuals, onSelectPerson }) {
           )}
         </>
       )}
+    </div>
 
       {lightboxIndex >= 0 && (
         <PhotoLightbox
@@ -233,7 +234,6 @@ function GalleryView({ individuals, onSelectPerson }) {
           onSelectPerson={onSelectPerson}
         />
       )}
-    </div>
     </div>
   )
 }

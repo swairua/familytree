@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
-import PersonAvatar from './PersonAvatar'
 
-const NODE_WIDTH = 190
-const NODE_HEIGHT = 120
-const H_GAP = 34
-const V_GAP = 56
+const NODE_WIDTH = 270
+const NODE_HEIGHT = 150
+const H_GAP = 40
+const V_GAP = 70
 const ZOOM_MIN = 0.01
 const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
-const AVATAR_R = 40
+const AVATAR_R = 46
 
 function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
@@ -27,7 +26,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
   const dragStart = useRef(null)
   const suppressClick = useRef(false)
   const pinchRef = useRef(null)
-  // momentum / inertia panning
   const vel = useRef({ x: 0, y: 0 })
   const lastPos = useRef({ x: 0, y: 0, t: 0 })
   const touchVel = useRef({ x: 0, y: 0 })
@@ -35,7 +33,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
   const frame = useRef(null)
   const INERTIA_DECAY = 0.90
   const INERTIA_MIN_SPEED = 0.5
-  const VEL_SAMPLE_MS = 100
 
   const personCount = individuals.size
   const familyCount = families.size
@@ -51,7 +48,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         setViewport({ w: r.width, h: r.height })
       })
       ro.observe(el)
-      // store for cleanup
       containerRef._ro = ro
     } else if (containerRef._ro) {
       containerRef._ro.disconnect()
@@ -59,7 +55,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     }
   }, [])
 
-  // ---- structural layout (top-down / flat) ----
+  // ---- structural layout (top-down vertical tree) ----
   const flatLayout = useMemo(() => {
     if (individuals.size === 0) return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
 
@@ -292,16 +288,45 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     const nodes = treeLayout.nodes
     if (!nodes || nodes.length === 0) return { zoom: 1, pan: { x: 20, y: 20 } }
 
-    // Height-driven vertical fit on the first branch so nodes stay visible.
-    const frameH = (treeLayout.frames && treeLayout.frames[0]) ? treeLayout.frames[0].height : treeLayout.height
-    const zoom = Math.max(0.3, Math.min(1, (viewport.h - 40) / Math.max(frameH, 1)))
-    return {
-      zoom,
-      pan: {
-        x: 20,
-        y: 20,
-      },
+    const roots = []
+    for (const [id, p] of individuals) {
+      if (!p.parents || p.parents.length === 0) roots.push(id)
     }
+    if (roots.length === 0) {
+      return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    }
+
+    const rootPositions = roots
+      .map(id => ({ id, pos: treeLayout.posMap.get(id) }))
+      .filter(r => r.pos)
+
+    const targetW = viewport.w * 2
+    const topSliceBottom = treeLayout.frames && treeLayout.frames[0]
+      ? treeLayout.frames[0].top + treeLayout.frames[0].height + V_GAP
+      : Infinity
+    const sorted = rootPositions.sort((a, b) => a.pos.x - b.pos.x || a.pos.y - b.pos.y)
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    let count = 0
+    for (const { pos } of sorted) {
+      if (pos.y > topSliceBottom) continue
+      if (count > 0 && pos.x > x0 + targetW) break
+      x0 = Math.min(x0, pos.x)
+      y0 = Math.min(y0, pos.y)
+      x1 = Math.max(x1, pos.x + NODE_WIDTH)
+      y1 = Math.max(y1, pos.y + NODE_HEIGHT)
+      count++
+    }
+    if (x0 === Infinity) {
+      if (treeLayout.frames && treeLayout.frames[0]) {
+        const f = treeLayout.frames[0]
+        const box = { x: 0, y: f.top, w: Math.min(f.width, targetW), h: f.height }
+        return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
+      }
+      return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    }
+
+    const box = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+    return fitRect(box, viewport.w, viewport.h, 30, 0.3, 1)
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
@@ -309,31 +334,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     if (!viewport.w || !viewport.h) return null
     return legibleDefault()
   }, [zoom, pan, viewport, legibleDefault])
-
-  // ---- viewport culling + level-of-detail for large trees ----
-  const viewBounds = useMemo(() => {
-    if (!view || !viewport.w || !viewport.h) return null
-    const z = view.zoom || 1
-    const margin = 320
-    return {
-      minX: (-view.pan.x) / z - margin,
-      minY: (-view.pan.y) / z - margin,
-      maxX: (viewport.w - view.pan.x) / z + margin,
-      maxY: (viewport.h - view.pan.y) / z + margin,
-    }
-  }, [view, viewport])
-
-  const visibleNodes = useMemo(() => {
-    if (!viewBounds || treeLayout.nodes.length === 0) return treeLayout.nodes
-    return treeLayout.nodes.filter((n) =>
-      n.x + NODE_WIDTH >= viewBounds.minX &&
-      n.x <= viewBounds.maxX &&
-      n.y + NODE_HEIGHT >= viewBounds.minY &&
-      n.y <= viewBounds.maxY
-    )
-  }, [treeLayout.nodes, viewBounds])
-
-  const detailed = !view || (view.zoom || 1) >= 0.32
 
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
   if (view) viewRef.current = view
@@ -463,6 +463,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         pinchRef.current = null
       } else if (touches.length === 2) {
         engage()
+        cancelInertia()
         isPanning.current = false
         const a = toLocal(touches[0])
         const b = toLocal(touches[1])
@@ -548,7 +549,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
       el.removeEventListener('touchmove', onTouchMove)
       el.removeEventListener('touchend', onTouchEnd)
     }
-  }, [engage, applyView])
+  }, [engage, applyView, cancelInertia, startInertia])
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== undefined && e.button !== 0) return
@@ -568,7 +569,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     if (dragStart.current && (Math.abs(e.clientX - dragStart.current.x) > 4 || Math.abs(e.clientY - dragStart.current.y) > 4)) {
       suppressClick.current = true
     }
-    // track recent motion for inertia velocity (px per frame)
     const now = performance.now()
     const dx = e.clientX - lastPos.current.x
     const dy = e.clientY - lastPos.current.y
@@ -670,15 +670,9 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
 
   useEffect(() => {
     if (!viewport.w || !viewport.h) return
-    if (hasInteracted.current) return
-    if (!treeLayout.width || !treeLayout.height) return
-    // Prefer a vertical (height-driven) fit so the chart reads top-down.
-    const v = legibleDefault()
-    if (v) {
-      viewRef.current = v
-      setZoom(v.zoom)
-      setPan(v.pan)
-      applyView()
+    if (!hasInteracted.current && treeLayout.width && treeLayout.height) {
+      setZoom(null)
+      setPan(null)
     }
   }, [viewport, treeLayout])
 
@@ -719,17 +713,17 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     setSelectedId(id)
   }, [])
 
+  const extractYear = useCallback((date) => {
+    const match = date.match(/\d{4}/)
+    return match ? match[0] : date
+  }, [])
+
   const formatDates = useCallback((person) => {
-    const extractYear = (date) => {
-      const match = date.match(/\d{4}/)
-      return match ? match[0] : date
-    }
     const birth = person.birthDate ? extractYear(person.birthDate) : '?'
     const death = person.deathDate ? extractYear(person.deathDate) : ''
     return death ? `${birth} \u2013 ${death}` : `${birth}`
-  }, [])
+  }, [extractYear])
 
-  // ---- mini-map: viewport rect over full tree bounds ----
   const minimapBox = useMemo(() => {
     if (!view || !viewport.w || !viewport.h || treeLayout.width === 0 || treeLayout.height === 0) return null
     const z = view.zoom
@@ -765,9 +759,9 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
           <button
             className={`btn btn-icon layout-toggle ${layoutMode === 'vertical' ? 'active' : ''}`}
             onClick={() => onLayoutModeChange && onLayoutModeChange(layoutMode === 'flat' ? 'vertical' : 'flat')}
-            title={layoutMode === 'flat' ? 'Side-by-side generations' : 'Top-down generations'}
+            title={layoutMode === 'flat' ? 'Vertical tree' : 'Generational rows'}
           >
-            <i className={`fas ${layoutMode === 'flat' ? 'fa-arrows-alt-h' : 'fa-arrows-alt-v'}`}></i>
+            <i className={`fas ${layoutMode === 'flat' ? 'fa-arrows-alt-v' : 'fa-arrows-alt-h'}`}></i>
           </button>
         )}
         {hasData && (
@@ -811,7 +805,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     return (
       <div className="tree-container">
         {renderToolbar(false)}
-        <div className="tree-canvas" ref={setContainerRef}>
+        <div className="tree-canvas" ref={containerRef}>
           <div className="tree-empty-state">
             <div className="empty-icon"><i className="fas fa-tree"></i></div>
             <h2>Your Family Tree</h2>
@@ -855,34 +849,46 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         onClick={(e) => { e.stopPropagation(); handlePersonClick(node.id) }}
         onDoubleClick={(e) => { e.stopPropagation(); drillTo(node.id) }}
       >
-        <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={3} r="3" />
-        <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT - 3} r="3" />
+        <defs key={`defs-${safeId}`}>
+          <clipPath id={`node-card-clip-${safeId}`}>
+            <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
+          </clipPath>
+          <clipPath id={`node-avatar-clip-${safeId}`}>
+            <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
+          </clipPath>
+        </defs>
 
-        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
-        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
+        <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={0} r="3" />
+        <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT} r="3" />
+        <circle className="node-port node-port-left" cx={0} cy={NODE_HEIGHT / 2} r="3" />
+        <circle className="node-port node-port-right" cx={NODE_WIDTH} cy={NODE_HEIGHT / 2} r="3" />
 
-        <g className="node-avatar-wrap">
-          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 18} r={AVATAR_R} />
-          {detailed ? (url ? (
+        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" clipPath={`url(#node-card-clip-${safeId})`} />
+        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" clipPath={`url(#node-card-clip-${safeId})`} />
+
+        <g className="node-avatar-wrap" clipPath={`url(#node-card-clip-${safeId})`}>
+          <circle className="node-avatar-ring" cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
+          {url ? (
             <image
               className="node-photo"
               href={url}
-              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 18 - AVATAR_R}
+              x={AVATAR_R - AVATAR_R} y={NODE_HEIGHT / 2 - AVATAR_R}
               width={AVATAR_R * 2} height={AVATAR_R * 2}
-              style={{ clipPath: 'circle(50%)' }}
+              clipPath={`url(#node-avatar-clip-${safeId})`}
               preserveAspectRatio="xMidYMid slice"
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 12} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
-          )) : null}
+            <text className="node-initials" x={AVATAR_R} y={NODE_HEIGHT / 2} text-anchor="middle" dominant-baseline="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
+          )}
         </g>
 
-        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 28} textAnchor="middle">{truncateText(name, 18)}</text>}
-        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 48} textAnchor="middle">{formatDates(person)}</text>}
+        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 22} text-anchor="start">{truncateText(name, 26)}</text>
+        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 6} text-anchor="start">{formatDates(person)}</text>
+        {person.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 30} text-anchor="start">{truncateText(person.birthPlace, 24)}</text>}
 
-        <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 14} cy={14} r="6" />
-        {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 14} cy={NODE_HEIGHT - 14} r="5" />}
+        <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 22} cy={22} r="9" />
+        {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 22} cy={NODE_HEIGHT - 22} r="7" />}
       </g>
     )
   }
@@ -892,7 +898,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
       {renderToolbar(true)}
       <div
         className="tree-canvas"
-        ref={setContainerRef}
+        ref={containerRef}
         onMouseDown={handleMouseDown}
       >
         {view && (
@@ -912,25 +918,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
               </defs>
 
               <g ref={contentGroupRef} id="tree-content" transform={`translate(${view.pan.x}, ${view.pan.y}) scale(${view.zoom})`}>
-                {treeLayout.links.map((link, i) => {
-                  if (!viewBounds) return (
-                    <path key={`link-${i}`} d={linkPath(link)} className={`tree-link ${link.type || ''}`} />
-                  )
-                  const xs = [link.x1, link.x2]
-                  const ys = [link.y1, link.y2]
-                  const lx0 = Math.min(...xs)
-                  const ly0 = Math.min(...ys)
-                  const lx1 = Math.max(...xs)
-                  const ly1 = Math.max(...ys) + NODE_HEIGHT
-                  const intersects =
-                    lx1 >= viewBounds.minX && lx0 <= viewBounds.maxX &&
-                    ly1 >= viewBounds.minY && ly0 <= viewBounds.maxY
-                  if (!intersects) return null
-                  return (
-                    <path key={`link-${i}`} d={linkPath(link)} className={`tree-link ${link.type || ''}`} />
-                  )
-                })}
-                {visibleNodes.map(renderNode)}
+                {treeLayout.links.map((link, i) => (
+                  <path
+                    key={`link-${i}`}
+                    d={linkPath(link)}
+                    className={`tree-link ${link.type || ''}`}
+                  />
+                ))}
+                {treeLayout.nodes.map(renderNode)}
               </g>
             </svg>
 
@@ -940,14 +935,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                 <svg
                   ref={minimapSvgRef}
                   className="tree-minimap-svg"
-                  width="210"
-                  height="132"
+                  width="240"
+                  height="150"
                   viewBox={`0 0 ${minimapBox.treeW} ${minimapBox.treeH}`}
                   preserveAspectRatio="xMidYMid slice"
                 >
                   <rect className="minimap-bounds" x="0" y="0" width={minimapBox.treeW} height={minimapBox.treeH} />
-                  {treeLayout.nodes.filter((_, i) => i % 3 === 0).map(node => (
-                    <circle key={node.id} className="minimap-node" cx={node.x + NODE_WIDTH / 2} cy={node.y + NODE_HEIGHT / 2} r="1.6" />
+                  {treeLayout.nodes.map(node => (
+                    <circle key={node.id} className="minimap-node" cx={node.x + NODE_WIDTH / 2} cy={node.y + NODE_HEIGHT / 2} r="2" />
                   ))}
                   <rect
                     className="minimap-viewport"
@@ -961,21 +956,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
             )}
           </>
         )}
-        <div className="tree-fab">
-          <button className="btn btn-icon" onClick={() => { engage(); zoomBy(ZOOM_STEP) }} title="Zoom in">
-            <i className="fas fa-plus"></i>
-          </button>
-          <button className="btn btn-icon" onClick={() => { engage(); zoomBy(1 / ZOOM_STEP) }} title="Zoom out">
-            <i className="fas fa-minus"></i>
-          </button>
-          <button className="btn btn-icon" onClick={fitView} title="Fit to screen">
-            <i className="fas fa-expand"></i>
-          </button>
-          <button className="btn btn-icon" title="Add father (coming soon)">
-            <i className="fas fa-user-plus"></i>
-          </button>
-        </div>
-
         {selectedPerson && (
           <aside
             className="tree-profile-panel"
@@ -989,7 +969,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            <PersonAvatar person={selectedPerson} className="tree-profile-avatar" />
+            <div className="tree-profile-avatar-large" style={{ position: 'relative' }}>
+              <img
+                src={photoUrl(selectedPerson) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%2399424b'%3E${selectedPerson.name ? selectedPerson.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
+                alt={cleanName(selectedPerson.name)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(62,50,42,0.2)' }}
+                onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%2399424b'%3E${selectedPerson.name ? selectedPerson.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
+              />
+            </div>
             <h2>{cleanName(selectedPerson.name)}</h2>
             <p className="tree-profile-dates">
               {formatDates(selectedPerson)}
@@ -1005,8 +992,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                     if (!p) return null
                     return (
                       <button key={pid} className="family-link" onClick={() => { setSelectedId(pid); panTo(pid) }}>
-                        <PersonAvatar person={p} className="family-link-avatar" />
-                        <span>{truncateText(cleanName(p.name), 20)}</span>
+                        <img
+                          src={photoUrl(p) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${p.name ? p.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
+                          alt={cleanName(p.name)}
+                          className="family-link-avatar"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${p.name ? p.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
+                        />
+                        <span>{truncateText(cleanName(p.name), 22)}</span>
                       </button>
                     )
                   })}
@@ -1023,8 +1016,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                     if (!s) return null
                     return (
                       <button key={sid} className="family-link" onClick={() => { setSelectedId(sid); panTo(sid) }}>
-                        <PersonAvatar person={s} className="family-link-avatar" />
-                        <span>{truncateText(cleanName(s.name), 20)}</span>
+                        <img
+                          src={photoUrl(s) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${s.name ? s.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
+                          alt={cleanName(s.name)}
+                          className="family-link-avatar"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${s.name ? s.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
+                        />
+                        <span>{truncateText(cleanName(s.name), 22)}</span>
                       </button>
                     )
                   })}
@@ -1041,8 +1040,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                     if (!c) return null
                     return (
                       <button key={cid} className="family-link" onClick={() => { setSelectedId(cid); panTo(cid) }}>
-                        <PersonAvatar person={c} className="family-link-avatar" />
-                        <span>{truncateText(cleanName(c.name), 20)}</span>
+                        <img
+                          src={photoUrl(c) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${c.name ? c.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
+                          alt={cleanName(c.name)}
+                          className="family-link-avatar"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${c.name ? c.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
+                        />
+                        <span>{truncateText(cleanName(c.name), 22)}</span>
                       </button>
                     )
                   })}
