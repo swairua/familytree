@@ -251,31 +251,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
 
   const treeLayout = layoutMode === 'vertical' ? verticalLayout : flatLayout
 
-  // ---- viewport culling + level-of-detail for large trees ----
-  const viewBounds = useMemo(() => {
-    if (!view || !viewport.w || !viewport.h) return null
-    const z = view.zoom || 1
-    const margin = 320
-    return {
-      minX: (-view.pan.x) / z - margin,
-      minY: (-view.pan.y) / z - margin,
-      maxX: (viewport.w - view.pan.x) / z + margin,
-      maxY: (viewport.h - view.pan.y) / z + margin,
-    }
-  }, [view, viewport])
-
-  const visibleNodes = useMemo(() => {
-    if (!viewBounds || treeLayout.nodes.length === 0) return treeLayout.nodes
-    return treeLayout.nodes.filter((n) =>
-      n.x + NODE_WIDTH >= viewBounds.minX &&
-      n.x <= viewBounds.maxX &&
-      n.y + NODE_HEIGHT >= viewBounds.minY &&
-      n.y <= viewBounds.maxY
-    )
-  }, [treeLayout.nodes, viewBounds])
-
-  const detailed = !view || (view.zoom || 1) >= 0.32
-
   const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
     if (!vw || !vh || !box || !box.w || !box.h) return null
     const z = Math.min((vw - pad * 2) / box.w, (vh - pad * 2) / box.h)
@@ -356,6 +331,31 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     if (!viewport.w || !viewport.h) return null
     return legibleDefault()
   }, [zoom, pan, viewport, legibleDefault])
+
+  // ---- viewport culling + level-of-detail for large trees ----
+  const viewBounds = useMemo(() => {
+    if (!view || !viewport.w || !viewport.h) return null
+    const z = view.zoom || 1
+    const margin = 320
+    return {
+      minX: (-view.pan.x) / z - margin,
+      minY: (-view.pan.y) / z - margin,
+      maxX: (viewport.w - view.pan.x) / z + margin,
+      maxY: (viewport.h - view.pan.y) / z + margin,
+    }
+  }, [view, viewport])
+
+  const visibleNodes = useMemo(() => {
+    if (!viewBounds || treeLayout.nodes.length === 0) return treeLayout.nodes
+    return treeLayout.nodes.filter((n) =>
+      n.x + NODE_WIDTH >= viewBounds.minX &&
+      n.x <= viewBounds.maxX &&
+      n.y + NODE_HEIGHT >= viewBounds.minY &&
+      n.y <= viewBounds.maxY
+    )
+  }, [treeLayout.nodes, viewBounds])
+
+  const detailed = !view || (view.zoom || 1) >= 0.32
 
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
   if (view) viewRef.current = view
