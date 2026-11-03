@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
+import { photoUrl } from '../utils/photoUrl'
 import '../styles/home.css'
 
 function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
@@ -87,11 +88,12 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
                       {p.birthYear || p.deathYear || 'Recently'}
                     </span>
                   </div>
-                  {p.photo && (
+                  {photoUrl(p) && (
                     <img
                       className="activity-thumb"
-                      src={p.photo.startsWith('http') ? p.photo : `/data/photos/${p.photo}`}
+                      src={photoUrl(p)}
                       alt=""
+                      loading="lazy"
                       onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />
                   )}
