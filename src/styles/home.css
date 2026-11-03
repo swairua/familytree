@@ -163,3 +163,4 @@
 }
 .quick-links button i { font-size: 1.2rem; color: #8b7355; }
 .quick-links button:hover { background: #eee9e3; border-color: #d9d1cb; }
+.activity-thumb-placeholder { display: flex; align-items: center; justify-content: center; background: #f0ebe6; color: #a69e98; font-size: 1rem; }

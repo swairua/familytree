@@ -88,7 +88,7 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
                       {p.birthYear || p.deathYear || 'Recently'}
                     </span>
                   </div>
-                  {photoUrl(p) && (
+                  {photoUrl(p) ? (
                     <img
                       className="activity-thumb"
                       src={photoUrl(p)}
@@ -96,6 +96,10 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
                       loading="lazy"
                       onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />
+                  ) : (
+                    <div className="activity-thumb activity-thumb-placeholder">
+                      <i className="fas fa-user"></i>
+                    </div>
                   )}
                 </li>
               ))}
