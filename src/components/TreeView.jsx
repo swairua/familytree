@@ -673,20 +673,12 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     if (hasInteracted.current) return
     if (!treeLayout.width || !treeLayout.height) return
     // Prefer a vertical (height-driven) fit so the chart reads top-down.
-    const v = fitAll()
+    const v = legibleDefault()
     if (v) {
       viewRef.current = v
       setZoom(v.zoom)
       setPan(v.pan)
       applyView()
-    } else {
-      const fallback = legibleDefault()
-      if (fallback) {
-        viewRef.current = fallback
-        setZoom(fallback.zoom)
-        setPan(fallback.pan)
-        applyView()
-      }
     }
   }, [viewport, treeLayout])
 
