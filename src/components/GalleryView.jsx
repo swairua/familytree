@@ -79,7 +79,7 @@ function GalleryView({ individuals, onSelectPerson }) {
         onClick={() => openLightbox(globalIndex)}
       >
         {photo.url ? (
-          <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
+          <img src={photo.url} alt={photo.name} loading={globalIndex < 12 ? 'eager' : 'lazy'} decoding="async" fetchPriority={globalIndex < 4 ? 'high' : 'auto'} />
         ) : (
           <div className={`gallery-placeholder gender-${photo.gender}`}>
             <i className="fas fa-user"></i>
@@ -190,7 +190,7 @@ function GalleryView({ individuals, onSelectPerson }) {
             >
               <div className={`gallery-list-avatar gender-${photo.gender}`}>
                 {photo.url ? (
-                  <img src={photo.url} alt={photo.name} loading="lazy" decoding="async" />
+                  <img src={photo.url} alt={photo.name} loading={i < 12 ? 'eager' : 'lazy'} decoding="async" fetchPriority={i < 4 ? 'high' : 'auto'} />
                 ) : (
                   <i className="fas fa-user"></i>
                 )}
