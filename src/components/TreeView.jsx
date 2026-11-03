@@ -3,14 +3,14 @@ import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 import PersonAvatar from './PersonAvatar'
 
-const NODE_WIDTH = 150
-const NODE_HEIGHT = 96
+const NODE_WIDTH = 170
+const NODE_HEIGHT = 108
 const H_GAP = 34
 const V_GAP = 56
 const ZOOM_MIN = 0.01
 const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
-const AVATAR_R = 26
+const AVATAR_R = 34
 
 function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
@@ -704,8 +704,14 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
   useEffect(() => {
     if (!viewport.w || !viewport.h) return
     if (!hasInteracted.current && treeLayout.width && treeLayout.height) {
-      setZoom(null)
-      setPan(null)
+      // Fit the whole tree into the viewport so it stays responsive.
+      const v = fitAll()
+      if (v) {
+        viewRef.current = v
+        setZoom(v.zoom)
+        setPan(v.pan)
+        applyView()
+      }
     }
   }, [viewport, treeLayout])
 
@@ -889,24 +895,24 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="10" ry="10" />
 
         <g className="node-avatar-wrap">
-          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 12} r={AVATAR_R} />
+          <circle className="node-avatar-ring" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT / 2 - 14} r={AVATAR_R} />
           {detailed ? (url ? (
             <image
               className="node-photo"
               href={url}
-              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 12 - AVATAR_R}
+              x={NODE_WIDTH / 2 - AVATAR_R} y={NODE_HEIGHT / 2 - 14 - AVATAR_R}
               width={AVATAR_R * 2} height={AVATAR_R * 2}
               style={{ clipPath: 'circle(50%)' }}
               preserveAspectRatio="xMidYMid slice"
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 6} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
+            <text className="node-initials" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 - 8} textAnchor="middle">{person.name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}</text>
           )) : null}
         </g>
 
-        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 20} textAnchor="middle">{truncateText(name, 18)}</text>}
-        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 36} textAnchor="middle">{formatDates(person)}</text>}
+        {detailed && <text className="node-name" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 24} textAnchor="middle">{truncateText(name, 18)}</text>}
+        {detailed && <text className="node-dates" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2 + 42} textAnchor="middle">{formatDates(person)}</text>}
 
         <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 14} cy={14} r="6" />
         {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 14} cy={NODE_HEIGHT - 14} r="5" />}
