@@ -935,13 +935,13 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={AVATAR_R} y={NODE_HEIGHT / 2} text-anchor="middle" dominant-baseline="middle">{pd.initials}</text>
+            <text className="node-initials" x={AVATAR_R} y={NODE_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">{pd.initials}</text>
           )}
         </g>
 
-        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 20} text-anchor="start" dominant-baseline="middle">{truncateText(pd.name, 20)}</text>
-        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 8} text-anchor="start" dominant-baseline="middle">{pd.birthYear || pd.deathYear ? `${pd.birthYear || '?'}${pd.deathYear ? ' \u2013 ' + pd.deathYear : ''}` : '?'}</text>
-        {pd.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 32} text-anchor="start" dominant-baseline="middle">{truncateText(pd.birthPlace, 18)}</text>}
+        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 20} textAnchor="start" dominantBaseline="middle">{truncateText(pd.name, 20)}</text>
+        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 8} textAnchor="start" dominantBaseline="middle">{pd.birthYear || pd.deathYear ? `${pd.birthYear || '?'}${pd.deathYear ? ' \u2013 ' + pd.deathYear : ''}` : '?'}</text>
+        {pd.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 32} textAnchor="start" dominantBaseline="middle">{truncateText(pd.birthPlace, 18)}</text>}
 
         <circle className={`node-gender-badge gender-${pd.gender}`} cx={NODE_WIDTH - 22} cy={22} r="9" />
         {pd.deceased && <circle className="node-deceased" cx={NODE_WIDTH - 22} cy={NODE_HEIGHT - 22} r="7" />}
