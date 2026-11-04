@@ -261,6 +261,46 @@
   text-overflow: ellipsis;
 }
 
+.gallery-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.gallery-item-gender {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-light);
+}
+
+.gallery-item-gender.gender-male { color: var(--male-color); border: 1px solid var(--male-color); }
+.gallery-item-gender.gender-female { color: var(--female-color); border: 1px solid var(--female-color); }
+.gallery-item-gender i { font-size: 0.62rem; }
+
+.gallery-item-dates {
+  font-size: 0.68rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.gallery-item-place {
+  font-size: 0.62rem;
+  color: var(--text-light);
+  opacity: 0.7;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
 .gallery-item-dates {
   font-size: 0.68rem;
   opacity: 0.8;

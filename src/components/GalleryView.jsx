@@ -3,6 +3,12 @@ import { cleanName } from '../utils/cleanName'
 import { photoUrl } from '../utils/photoUrl'
 import PhotoLightbox from './PhotoLightbox'
 
+const extractYear = (date) => {
+  if (!date) return ''
+  const m = date.match(/\b(\d{4})\b/)
+  return m ? m[1] : ''
+}
+
 function GalleryView({ individuals, onSelectPerson }) {
   const [viewMode, setViewMode] = useState('grid')
   const [lightboxIndex, setLightboxIndex] = useState(-1)
@@ -19,8 +25,9 @@ function GalleryView({ individuals, onSelectPerson }) {
         id: p.id,
         name: cleanName(p.name),
         url,
-        birthYear: p.birthYear || '',
-        deathYear: p.deathDate || '',
+        birthYear: extractYear(p.birthDate || ''),
+        deathYear: extractYear(p.deathDate || ''),
+        birthPlace: p.birthPlace || '',
         gender: p.gender || 'unknown',
       })
     }
@@ -66,10 +73,14 @@ function GalleryView({ individuals, onSelectPerson }) {
   }
 
   const renderGalleryItem = (photo, globalIndex) => {
+    const dates = []
+    if (photo.birthYear) dates.push(photo.birthYear)
+    if (photo.deathYear) dates.push(photo.deathYear)
+    const dateStr = dates.length ? dates.join(' \u2013 ') : ''
     return (
       <div
         key={photo.id}
-        className="gallery-item loaded"
+        className={`gallery-item loaded gender-${photo.gender}`}
         onClick={() => openLightbox(globalIndex)}
       >
         {photo.url ? (
@@ -81,7 +92,15 @@ function GalleryView({ individuals, onSelectPerson }) {
         )}
         <div className="gallery-item-overlay">
           <span className="gallery-item-name">{photo.name}</span>
-          {photo.birthYear && <span className="gallery-item-dates">{photo.birthYear}</span>}
+          <div className="gallery-item-meta">
+            {photo.gender !== 'unknown' && (
+              <span className={`gallery-item-gender gender-${photo.gender}`} title={photo.gender}>
+                <i className={`fas ${photo.gender === 'male' ? 'fa-mars' : 'fa-venus'}`}></i>
+              </span>
+            )}
+            {dateStr && <span className="gallery-item-dates">{dateStr}</span>}
+            {photo.birthPlace && <span className="gallery-item-place">{photo.birthPlace}</span>}
+          </div>
         </div>
       </div>
     )
