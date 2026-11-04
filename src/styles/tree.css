@@ -76,7 +76,7 @@
 .tree-container .empty-state p { margin-bottom: 20px; font-size: 0.85rem; }
 
 /* Tree SVG */
-#tree-content { will-change: transform; }
+#tree-svg { overflow: visible; }
 .tree-node { cursor: pointer; }
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
 /* pill-shaped node card, living = green, deceased = pink */
