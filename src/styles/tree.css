@@ -119,7 +119,7 @@
 
 /* Tree SVG */
 #tree-content { will-change: transform; transform-box: fill-box; }
-.tree-node { cursor: pointer; }
+.tree-node { cursor: pointer; content-visibility: auto; contain-intrinsic-size: 270px 150px; }
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
 /* pill-shaped node card, living = green, deceased = pink */
 .tree-node .node-card { fill: none; stroke: #7fb069; stroke-width: 1.5px; }
