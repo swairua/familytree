@@ -357,19 +357,12 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
-    try {
-      if (zoom !== null && pan !== null) return { zoom, pan }
-      if (!viewport.w || !viewport.h) return null
-      const def = legibleDefault()
-      if (def) return def
-      const fit = fitAll()
-      if (fit) return fit
-      return { zoom: 0.5, pan: { x: 20, y: 20 } }
-    } catch (e) {
-      console.error('TreeView view error:', e)
-      return { zoom: 0.5, pan: { x: 20, y: 20 } }
-    }
-  }, [zoom, pan, viewport, legibleDefault, fitAll])
+    if (zoom !== null && pan !== null) return { zoom, pan }
+    if (!viewport.w || !viewport.h) return null
+    const fit = fitAll()
+    if (fit) return fit
+    return { zoom: 0.5, pan: { x: 20, y: 20 } }
+  }, [zoom, pan, viewport, fitAll])
 
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
   if (view) viewRef.current = view
