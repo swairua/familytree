@@ -66,6 +66,46 @@
 }
 .tree-canvas:active { cursor: grabbing; }
 
+/* Gradual render progress bar */
+.tree-render-progress {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(400px, 90%);
+  height: 24px;
+  background: #f7f4f0;
+  border: 1px solid #ddd8d4;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 12;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+.tree-render-bar {
+  flex: 1;
+  height: 10px;
+  background: #e8e2dd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.tree-render-fill {
+  height: 100%;
+  background: var(--heritage-burgundy);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+.tree-render-label {
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
 .tree-container .empty-state {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
   text-align: center; color: var(--text-light); z-index: 5;

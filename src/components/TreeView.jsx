@@ -52,6 +52,24 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return () => ro.disconnect()
   }, [])
 
+  // ---- gradual node rendering ----
+  const RENDER_BATCH = 200   // nodes per frame
+  const [renderedCount, setRenderedCount] = useState(0)
+  const renderCompleteRef = useRef(false)
+
+  useEffect(() => {
+    const total = treeLayout.nodes.length
+    if (total === 0 || renderCompleteRef.current) return
+    if (renderedCount >= total) {
+      renderCompleteRef.current = true
+      return
+    }
+    const frame = requestAnimationFrame(() => {
+      setRenderedCount(c => Math.min(c + RENDER_BATCH, total))
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [renderedCount, treeLayout.nodes.length, total])
+
   const extractYear = useCallback((date) => {
     if (!date) return ''
     const m = date.match(/\b(\d{4})\b/)
@@ -889,6 +907,19 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       >
         {view && (
           <>
+            {renderedCount < treeLayout.nodes.length && (
+              <div className="tree-render-progress">
+                <div className="tree-render-bar">
+                  <div
+                    className="tree-render-fill"
+                    style={{ width: `${Math.min(100, (renderedCount / treeLayout.nodes.length) * 100)}%` }}
+                  />
+                </div>
+                <span className="tree-render-label">
+                  Rendering {renderedCount} of {treeLayout.nodes.length} people…
+                </span>
+              </div>
+            )}
             <svg
               id="tree-svg"
               width="100%"
@@ -924,7 +955,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                     className={`tree-link ${link.type || ''}`}
                   />
                 ))}
-                {treeLayout.nodes.map(renderNode)}
+                {treeLayout.nodes.slice(0, renderedCount).map(renderNode)}
               </g>
             </svg>
 
