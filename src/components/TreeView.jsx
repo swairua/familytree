@@ -987,14 +987,14 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                 {sortedNodes.map(node => {
                   const pd = personData.get(node.id)
                   return (
-                    <>
-                      <clipPath key={`card-${pd.safeId}`} id={`node-card-clip-${pd.safeId}`}>
+                    <React.Fragment key={`defs-${pd.safeId}`}>
+                      <clipPath id={`node-card-clip-${pd.safeId}`}>
                         <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
                       </clipPath>
-                      <clipPath key={`avatar-${pd.safeId}`} id={`node-avatar-clip-${pd.safeId}`}>
+                      <clipPath id={`node-avatar-clip-${pd.safeId}`}>
                         <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
                       </clipPath>
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </defs>
