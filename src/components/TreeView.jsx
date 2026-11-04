@@ -359,17 +359,16 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   const view = useMemo(() => {
     if (zoom !== null && pan !== null) return { zoom, pan }
     if (!viewport.w || !viewport.h) return null
-    // Show tree at a readable zoom level (not zoomed all the way out)
     const treeW = treeLayout.width
     const treeH = treeLayout.height
-    if (!treeW || !treeH) return { zoom: 0.5, pan: { x: 20, y: 20 } }
-    // Fit to width or height, whichever is more constraining, but cap at 0.6
+    if (!treeW || !treeH) return { zoom: 0.3, pan: { x: 20, y: 20 } }
+    // Show at a readable zoom level (cap at 0.4) so nodes are visible
     const z = Math.min(viewport.w / treeW, viewport.h / treeH)
-    const clamped = Math.max(0.1, Math.min(0.6, z))
+    const clamped = Math.max(0.1, Math.min(0.4, z))
     return {
       zoom: clamped,
       pan: {
-        x: (viewport.w - treeW * clamped) / 2,
+        x: 20,
         y: 20,
       },
     }
