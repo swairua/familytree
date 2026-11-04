@@ -57,19 +57,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   const [renderedCount, setRenderedCount] = useState(0)
   const renderCompleteRef = useRef(false)
 
-  useEffect(() => {
-    const total = treeLayout.nodes.length
-    if (total === 0 || renderCompleteRef.current) return
-    if (renderedCount >= total) {
-      renderCompleteRef.current = true
-      return
-    }
-    const frame = requestAnimationFrame(() => {
-      setRenderedCount(c => Math.min(c + RENDER_BATCH, total))
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [renderedCount, treeLayout.nodes.length, total])
-
   const extractYear = useCallback((date) => {
     if (!date) return ''
     const m = date.match(/\b(\d{4})\b/)
@@ -271,6 +258,35 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   }, [flatLayout])
 
   const treeLayout = layoutMode === 'vertical' ? verticalLayout : flatLayout
+
+  // Gradual node rendering (incremental batches so first paint is fast)
+  const renderFrameRef = useRef(null)
+  useEffect(() => {
+    renderCompleteRef.current = false
+    setRenderedCount(0)
+    const total = treeLayout.nodes.length
+    if (total === 0) return
+
+    let cancelled = false
+    const scheduleNext = () => {
+      if (cancelled) return
+      renderFrameRef.current = requestAnimationFrame(() => {
+        if (cancelled) return
+        setRenderedCount(prev => {
+          const next = Math.min(prev + RENDER_BATCH, total)
+          if (next >= total) renderCompleteRef.current = true
+          return next
+        })
+        if (!renderCompleteRef.current) scheduleNext()
+      })
+    }
+    scheduleNext()
+
+    return () => {
+      cancelled = true
+      if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current)
+    }
+  }, [treeLayout])
 
   const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
     if (!vw || !vh || !box || !box.w || !box.h) return null
