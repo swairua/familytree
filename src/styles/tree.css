@@ -52,8 +52,6 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  contain: layout paint size;
-  will-change: transform;
   background-color: var(--heritage-canvas);
   background-image:
     linear-gradient(rgba(255,255,255,0.32) 1px, transparent 1px),
@@ -65,46 +63,6 @@
   -webkit-user-select: none;
 }
 .tree-canvas:active { cursor: grabbing; }
-
-/* Gradual render progress bar */
-.tree-render-progress {
-  position: absolute;
-  top: 44px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(400px, 90%);
-  height: 24px;
-  background: #f7f4f0;
-  border: 1px solid #ddd8d4;
-  border-radius: 12px;
-  overflow: hidden;
-  z-index: 12;
-  font-size: 0.7rem;
-  color: var(--text-light);
-  padding: 2px 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: var(--shadow);
-}
-.tree-render-bar {
-  flex: 1;
-  height: 10px;
-  background: #e8e2dd;
-  border-radius: 5px;
-  overflow: hidden;
-}
-.tree-render-fill {
-  height: 100%;
-  background: var(--heritage-burgundy);
-  border-radius: 5px;
-  transition: width 0.3s ease;
-}
-.tree-render-label {
-  white-space: nowrap;
-  font-size: 0.68rem;
-  font-weight: 600;
-}
 
 .tree-container .empty-state {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -118,8 +76,8 @@
 .tree-container .empty-state p { margin-bottom: 20px; font-size: 0.85rem; }
 
 /* Tree SVG */
-#tree-content { will-change: transform; transform-box: fill-box; }
-.tree-node { cursor: pointer; content-visibility: auto; contain-intrinsic-size: 270px 150px; }
+#tree-content { will-change: transform; }
+.tree-node { cursor: pointer; }
 .tree-node rect, .tree-node circle, .tree-node path { vector-effect: non-scaling-stroke; }
 /* pill-shaped node card, living = green, deceased = pink */
 .tree-node .node-card { fill: none; stroke: #7fb069; stroke-width: 1.5px; }

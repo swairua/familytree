@@ -52,11 +52,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return () => ro.disconnect()
   }, [])
 
-  // ---- gradual node rendering ----
-  const RENDER_BATCH = 50   // nodes per frame (smaller = faster first paint)
-  const [renderedCount, setRenderedCount] = useState(0)
-  const renderCompleteRef = useRef(false)
-
   const extractYear = useCallback((date) => {
     if (!date) return ''
     const m = date.match(/\b(\d{4})\b/)
@@ -286,47 +281,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
 
   const treeLayout = layoutMode === 'vertical' ? verticalLayout : flatLayout
 
-  // Sort nodes by distance from viewport center so visible nodes render first
-  const sortedNodes = useMemo(() => {
-    if (treeLayout.nodes.length === 0 || !viewport.w || !viewport.h) return treeLayout.nodes
-    const cx = viewport.w / 2
-    const cy = viewport.h / 2
-    return [...treeLayout.nodes].sort((a, b) => {
-      const da = Math.hypot(a.x + NODE_WIDTH / 2 - cx, a.y + NODE_HEIGHT / 2 - cy)
-      const db = Math.hypot(b.x + NODE_WIDTH / 2 - cx, b.y + NODE_HEIGHT / 2 - cy)
-      return da - db
-    })
-  }, [treeLayout.nodes, viewport])
-
-  // Gradual node rendering (incremental batches so first paint is fast)
-  const renderFrameRef = useRef(null)
-  useEffect(() => {
-    renderCompleteRef.current = false
-    setRenderedCount(0)
-    const total = treeLayout.nodes.length
-    if (total === 0) return
-
-    let cancelled = false
-    const scheduleNext = () => {
-      if (cancelled) return
-      renderFrameRef.current = requestAnimationFrame(() => {
-        if (cancelled) return
-        setRenderedCount(prev => {
-          const next = Math.min(prev + RENDER_BATCH, total)
-          if (next >= total) renderCompleteRef.current = true
-          return next
-        })
-        if (!renderCompleteRef.current) scheduleNext()
-      })
-    }
-    scheduleNext()
-
-    return () => {
-      cancelled = true
-      if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current)
-    }
-  }, [treeLayout])
-
   const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
     if (!vw || !vh || !box || !box.w || !box.h) return null
     const z = Math.min((vw - pad * 2) / box.w, (vh - pad * 2) / box.h)
@@ -405,8 +359,10 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   const view = useMemo(() => {
     if (zoom !== null && pan !== null) return { zoom, pan }
     if (!viewport.w || !viewport.h) return null
-    return legibleDefault()
-  }, [zoom, pan, viewport, legibleDefault])
+    const fit = fitAll()
+    if (fit) return fit
+    return { zoom: 0.5, pan: { x: 20, y: 20 } }
+  }, [zoom, pan, viewport, fitAll])
 
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
   if (view) viewRef.current = view
@@ -959,19 +915,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       >
         {view && (
           <>
-            {renderedCount < sortedNodes.length && (
-              <div className="tree-render-progress">
-                <div className="tree-render-bar">
-                  <div
-                    className="tree-render-fill"
-                    style={{ width: `${Math.min(100, (renderedCount / sortedNodes.length) * 100)}%` }}
-                  />
-                </div>
-                <span className="tree-render-label">
-                  Rendering {renderedCount} of {sortedNodes.length} people…
-                </span>
-              </div>
-            )}
             <svg
               id="tree-svg"
               width="100%"
@@ -984,7 +927,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                 <filter id="tree-glow-hover" x="-30%" y="-40%" width="160%" height="180%">
                   <feDropShadow dx="0" dy="5" stdDeviation="9" floodColor="rgba(76, 63, 56, 0.32)" />
                 </filter>
-                {sortedNodes.map(node => {
+                {treeLayout.nodes.map(node => {
                   const pd = personData.get(node.id)
                   return (
                     <React.Fragment key={`defs-${pd.safeId}`}>
@@ -1007,7 +950,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                     className={`tree-link ${link.type || ''}`}
                   />
                 ))}
-                {sortedNodes.slice(0, renderedCount).map(renderNode)}
+                {treeLayout.nodes.map(renderNode)}
               </g>
             </svg>
 
