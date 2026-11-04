@@ -357,13 +357,18 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   }, [viewport, treeLayout, individuals, fitRect])
 
   const view = useMemo(() => {
-    if (zoom !== null && pan !== null) return { zoom, pan }
-    if (!viewport.w || !viewport.h) return null
-    const def = legibleDefault()
-    if (def) return def
-    const fit = fitAll()
-    if (fit) return fit
-    return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    try {
+      if (zoom !== null && pan !== null) return { zoom, pan }
+      if (!viewport.w || !viewport.h) return null
+      const def = legibleDefault()
+      if (def) return def
+      const fit = fitAll()
+      if (fit) return fit
+      return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    } catch (e) {
+      console.error('TreeView view error:', e)
+      return { zoom: 0.5, pan: { x: 20, y: 20 } }
+    }
   }, [zoom, pan, viewport, legibleDefault, fitAll])
 
   const viewRef = useRef({ zoom: 1, pan: { x: 20, y: 20 } })
@@ -858,7 +863,12 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
 
   const renderNode = (node) => {
     const pd = personData.get(node.id)
-    if (!pd) return null
+    if (!pd) {
+      const person = individuals.get(node.id)
+      if (!person) return null
+      // Fallback for missing personData
+      return null
+    }
     const isSelected = selectedId === node.id
 
     return (
