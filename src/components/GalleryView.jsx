@@ -207,13 +207,22 @@ function GalleryView({ individuals, onSelectPerson }) {
           <div className={viewMode === 'masonry' ? 'gallery-masonry' : `gallery-grid gallery-${viewMode}`}>
             {visiblePhotos.map((photo, i) => renderGalleryItem(photo, i))}
           </div>
-          {page < totalPages && (
-            <div className="gallery-loadmore">
-              <button className="btn btn-primary" onClick={() => setPage(p => p + 1)}>
-                Load more ({photos.length - page * PAGE_SIZE} remaining)
-              </button>
+          <div className="gallery-pagination">
+            <span className="gallery-count">
+              {Math.min(page * PAGE_SIZE, photos.length)} of {photos.length}
+            </span>
+            <div className="gallery-page-list">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                <button
+                  key={pg}
+                  className={`btn btn-icon ${pg === page ? 'active' : ''}`}
+                  onClick={() => setPage(pg)}
+                >
+                  {pg}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </>
       )}
     </div>
