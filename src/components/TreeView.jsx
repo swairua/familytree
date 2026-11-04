@@ -11,7 +11,7 @@ const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
 const AVATAR_R = 46
 
-function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
+function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
   const contentGroupRef = useRef(null)
   const minimapSvgRef = useRef(null)
@@ -38,21 +38,10 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
   const familyCount = families.size
   const selectedPerson = selectedId ? individuals.get(selectedId) : null
 
-  const setContainerRef = useCallback((el) => {
-    containerRef.current = el
-    if (el) {
-      const rect = el.getBoundingClientRect()
-      setViewport({ w: rect.width, h: rect.height })
-      const ro = new ResizeObserver((entries) => {
-        const r = entries[0].contentRect
-        setViewport({ w: r.width, h: r.height })
-      })
-      ro.observe(el)
-      containerRef._ro = ro
-    } else if (containerRef._ro) {
-      containerRef._ro.disconnect()
-      containerRef._ro = null
-    }
+  const extractYear = useCallback((date) => {
+    if (!date) return ''
+    const m = date.match(/\b(\d{4})\b/)
+    return m ? m[1] : ''
   }, [])
 
   // ---- structural layout (top-down vertical tree) ----
@@ -96,10 +85,7 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     if (roots.length === 0) roots = Array.from(individuals.keys())
 
     roots.sort((a, b) => {
-      const yearOf = (x) => {
-        const m = (x.birthYear || '').match(/\d{4}/)
-        return m ? +m[0] : 9999
-      }
+      const yearOf = (x) => extractYear(x.birthDate || '') ? +extractYear(x.birthDate || '') : 9999
       const d = yearOf(individuals.get(a)) - yearOf(individuals.get(b))
       return d !== 0 ? d : (a < b ? -1 : 1)
     })
@@ -713,11 +699,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
     setSelectedId(id)
   }, [])
 
-  const extractYear = useCallback((date) => {
-    const match = date.match(/\d{4}/)
-    return match ? match[0] : date
-  }, [])
-
   const formatDates = useCallback((person) => {
     const birth = person.birthDate ? extractYear(person.birthDate) : '?'
     const death = person.deathDate ? extractYear(person.deathDate) : ''
@@ -849,15 +830,6 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
         onClick={(e) => { e.stopPropagation(); handlePersonClick(node.id) }}
         onDoubleClick={(e) => { e.stopPropagation(); drillTo(node.id) }}
       >
-        <defs key={`defs-${safeId}`}>
-          <clipPath id={`node-card-clip-${safeId}`}>
-            <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
-          </clipPath>
-          <clipPath id={`node-avatar-clip-${safeId}`}>
-            <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
-          </clipPath>
-        </defs>
-
         <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={0} r="3" />
         <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT} r="3" />
         <circle className="node-port node-port-left" cx={0} cy={NODE_HEIGHT / 2} r="3" />
@@ -883,9 +855,9 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
           )}
         </g>
 
-        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 22} text-anchor="start">{truncateText(name, 26)}</text>
-        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 6} text-anchor="start">{formatDates(person)}</text>
-        {person.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 30} text-anchor="start">{truncateText(person.birthPlace, 24)}</text>}
+        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 20} text-anchor="start" dominant-baseline="middle">{truncateText(name, 20)}</text>
+        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 8} text-anchor="start" dominant-baseline="middle">{formatDates(person)}</text>
+        {person.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 32} text-anchor="start" dominant-baseline="middle">{truncateText(person.birthPlace, 18)}</text>}
 
         <circle className={`node-gender-badge gender-${gender}`} cx={NODE_WIDTH - 22} cy={22} r="9" />
         {deceased && <circle className="node-deceased" cx={NODE_WIDTH - 22} cy={NODE_HEIGHT - 22} r="7" />}
@@ -915,6 +887,19 @@ function TreeView({ data, individuals, families, onSelectPerson, onOpenPersonMod
                 <filter id="tree-glow-hover" x="-30%" y="-40%" width="160%" height="180%">
                   <feDropShadow dx="0" dy="5" stdDeviation="9" floodColor="rgba(76, 63, 56, 0.32)" />
                 </filter>
+                {treeLayout.nodes.map(node => {
+                  const safeId = node.id.replace(/[^a-zA-Z0-9_-]/g, '')
+                  return (
+                    <defs key={`defs-${safeId}`}>
+                      <clipPath id={`node-card-clip-${safeId}`}>
+                        <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
+                      </clipPath>
+                      <clipPath id={`node-avatar-clip-${safeId}`}>
+                        <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
+                      </clipPath>
+                    </defs>
+                  )
+                })}
               </defs>
 
               <g ref={contentGroupRef} id="tree-content" transform={`translate(${view.pan.x}, ${view.pan.y}) scale(${view.zoom})`}>

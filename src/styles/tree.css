@@ -99,9 +99,9 @@
 .tree-node .node-photo-failed { display: none; }
 .tree-node .node-initials { fill: var(--heritage-ink); font-size: 14px; font-weight: 900; letter-spacing: 0.5px; opacity: 0.9; dominant-baseline: middle; }
 
-.tree-node .node-name { font-size: 15px; font-weight: 900; fill: var(--heritage-ink); text-anchor: start; letter-spacing: 0.3px; }
-.tree-node .node-dates { font-size: 12px; fill: #8a827c; text-anchor: start; letter-spacing: 0.2px; }
-.tree-node .node-place { font-size: 11px; fill: #a69e98; text-anchor: start; letter-spacing: 0.2px; font-style: italic; }
+.tree-node .node-name { font-size: 13px; font-weight: 900; fill: var(--heritage-ink); text-anchor: start; letter-spacing: 0.3px; }
+.tree-node .node-dates { font-size: 11px; fill: #8a827c; text-anchor: start; letter-spacing: 0.2px; }
+.tree-node .node-place { font-size: 10px; fill: #a69e98; text-anchor: start; letter-spacing: 0.2px; font-style: italic; }
 
 .tree-node .node-gender-badge { fill: var(--unknown); stroke: #ffffff; stroke-width: 1.8px; }
 .tree-node.gender-male .node-gender-badge { fill: var(--male); }
