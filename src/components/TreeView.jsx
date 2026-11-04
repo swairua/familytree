@@ -291,17 +291,12 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     if (treeLayout.nodes.length === 0 || !viewport.w || !viewport.h) return treeLayout.nodes
     const cx = viewport.w / 2
     const cy = viewport.h / 2
-    const z = (view ? view.zoom : 1)
-    const px = (view ? view.pan.x : 0) / z
-    const py = (view ? view.pan.y : 0) / z
-    const centerX = cx - px
-    const centerY = cy - py
     return [...treeLayout.nodes].sort((a, b) => {
-      const da = Math.hypot(a.x + NODE_WIDTH / 2 - centerX, a.y + NODE_HEIGHT / 2 - centerY)
-      const db = Math.hypot(b.x + NODE_WIDTH / 2 - centerX, b.y + NODE_HEIGHT / 2 - centerY)
+      const da = Math.hypot(a.x + NODE_WIDTH / 2 - cx, a.y + NODE_HEIGHT / 2 - cy)
+      const db = Math.hypot(b.x + NODE_WIDTH / 2 - cx, b.y + NODE_HEIGHT / 2 - cy)
       return da - db
     })
-  }, [treeLayout.nodes, viewport, view])
+  }, [treeLayout.nodes, viewport])
 
   // Gradual node rendering (incremental batches so first paint is fast)
   const renderFrameRef = useRef(null)
