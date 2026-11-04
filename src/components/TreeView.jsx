@@ -38,6 +38,20 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   const familyCount = families.size
   const selectedPerson = selectedId ? individuals.get(selectedId) : null
 
+  // Measure canvas container for viewport-aware fit/reset
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      setViewport({ w: r.width, h: r.height })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const extractYear = useCallback((date) => {
     if (!date) return ''
     const m = date.match(/\b(\d{4})\b/)
@@ -890,14 +904,14 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                 {treeLayout.nodes.map(node => {
                   const safeId = node.id.replace(/[^a-zA-Z0-9_-]/g, '')
                   return (
-                    <defs key={`defs-${safeId}`}>
-                      <clipPath id={`node-card-clip-${safeId}`}>
+                    <>
+                      <clipPath key={`card-${safeId}`} id={`node-card-clip-${safeId}`}>
                         <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
                       </clipPath>
-                      <clipPath id={`node-avatar-clip-${safeId}`}>
+                      <clipPath key={`avatar-${safeId}`} id={`node-avatar-clip-${safeId}`}>
                         <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
                       </clipPath>
-                    </defs>
+                    </>
                   )
                 })}
               </defs>
