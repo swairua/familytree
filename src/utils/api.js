@@ -33,6 +33,10 @@ export async function fetchExport() {
   return request('tree.php?action=export')
 }
 
+export async function fetchRecentActivity() {
+  return request('recent.php')
+}
+
 export async function importGedcom(gedcomText) {
   return request('tree.php?action=import', {
     method: 'POST',

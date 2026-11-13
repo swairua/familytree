@@ -13,7 +13,7 @@ import ImportView from './components/ImportView'
 import GalleryView from './components/GalleryView'
 import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
-import { fetchExport, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
+import { fetchExport, fetchRecentActivity, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
 
 function App() {
   const [data, setData] = useState(null)
@@ -25,6 +25,7 @@ function App() {
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
+  const [recentActivity, setRecentActivity] = useState({ entries: [], syncedAt: null })
 
   useEffect(() => {
     let cancelled = false
@@ -72,6 +73,14 @@ function App() {
         }
       })
 
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchRecentActivity()
+      .then(res => { if (!cancelled && res.ok) setRecentActivity(res) })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [])
 
@@ -269,6 +278,7 @@ function App() {
           families={families}
           onSelectPerson={handleSelectPerson}
           onSwitchView={handleSwitchView}
+          recentActivity={recentActivity}
         />
       )}
 

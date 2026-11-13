@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
+
   useEffect(() => {
     const onClick = (e) => {
       if (navRef.current && !navRef.current.contains(e.target)) setOpenMenu(null)
@@ -14,88 +15,106 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
   const navItems = [
     { id: 'home', label: 'Home', icon: 'fa-home', children: [
         { id: 'home', label: 'Overview' },
-        { id: 'events', label: 'Family Events' },
-        { id: 'stats', label: 'Family Statistics' },
-        { id: 'members', label: 'Site Members' },
+        { id: 'events', label: 'Family events' },
+        { id: 'stats', label: 'Family statistics' },
+        { id: 'members', label: 'Site members' },
     ]},
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap' },
     { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
     { id: 'gallery', label: 'Photos', icon: 'fa-images' },
-    { id: 'search', label: 'DNA', icon: 'fa-dna' },
+    { id: 'research', label: 'DNA', icon: 'fa-dna' },
     { id: 'research', label: 'Research', icon: 'fa-book' },
   ]
 
+  const isHomeActive = ['home','events','stats','members'].includes(currentView)
+
   return (
-    <header className="main-header">
-      <div className="header-left">
-        <button className="mobile-menu-btn" onClick={onToggleMobileSidebar} title="Open menu">
-          <i className="fas fa-bars"></i>
-        </button>
-        <div className="logo">
-          <span className="logo-mark" aria-hidden="true">
-            <i className="fas fa-tree"></i>
-          </span>
-          <span className="logo-wordmark">Wairua</span>
-          <span className="logo-context">Family site</span>
+    <header className="mh-header">
+      {/* Utility bar */}
+      <div className="mh-utility">
+        <div className="mh-utility-left">
+          <button className="mh-site-name" onClick={() => onSwitchView('home')}>
+            Wairua Web Site
+            <i className="fas fa-caret-down"></i>
+          </button>
+          <button className="mh-util-btn" onClick={onSyncClick} title="Sync from MyHeritage">
+            <i className={`fas ${syncing ? 'fa-spinner fa-spin' : 'fa-sync'}`}></i>
+          </button>
+          <button className="mh-util-btn" onClick={onImportClick} title="Import GEDCOM">
+            <i className="fas fa-file-import"></i>
+          </button>
+          <button className="mh-util-btn" title="Site settings">
+            <i className="fas fa-cog"></i>
+          </button>
+        </div>
+        <div className="mh-utility-right">
+          <button className="mh-premium">Go PremiumPlus</button>
+          <button className="mh-util-btn mh-cart" title="Cart">
+            <i className="fas fa-shopping-cart"></i>
+            <span className="mh-cart-badge">1</span>
+          </button>
+          <button className="mh-user">
+            <i className="fas fa-user-circle"></i>
+            <span>Simon Gichuki</span>
+            <i className="fas fa-caret-down"></i>
+          </button>
+          <button className="mh-util-btn" title="Help">
+            <i className="fas fa-question-circle"></i>
+            <span className="mh-help-label">Help</span>
+            <i className="fas fa-caret-down"></i>
+          </button>
+          <button className="mh-util-btn" title="English">
+            <i className="fas fa-globe"></i>
+            <span className="mh-help-label">English</span>
+          </button>
         </div>
       </div>
-      <nav className="main-nav">
-        {navItems.map(item => (
-          item.children ? (
-            <div key={item.id} className="nav-dropdown" ref={navRef}>
-              <a
-                href="#"
-                className={`nav-link nav-home ${['home','events','stats','members'].includes(currentView) ? 'active' : ''}`}
-                onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
-              >
-                <span>{item.label}</span>
-                <i
-                  className="fas fa-caret-down nav-caret"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenu(openMenu === item.id ? null : item.id) }}
-                ></i>
-              </a>
-              <div className={`nav-dropdown-menu ${openMenu === item.id ? 'open' : ''}`}>
-                {item.children.map(child => (
-                  <a
-                    key={child.id}
-                    href="#"
-                    className={`nav-dropdown-item ${currentView === child.id ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); onSwitchView(child.id); setOpenMenu(null) }}
-                  >
-                    {child.label}
-                  </a>
-                ))}
+
+      {/* Nav row */}
+      <div className="mh-nav-row">
+        <div className="mh-logo">
+          <span className="mh-logo-icon"></span>
+          <span className="mh-logo-text">MyHeritage</span>
+        </div>
+        <nav className="mh-nav" ref={navRef}>
+          {navItems.map(item => (
+            item.children ? (
+              <div key={item.id} className="mh-nav-item mh-nav-dropdown">
+                <button
+                  className={`mh-nav-link ${isHomeActive ? 'active' : ''}`}
+                  onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
+                >
+                  {item.label}
+                </button>
+                <div className={`mh-dropdown ${openMenu === item.id ? 'open' : ''}`}>
+                  {item.children.map(child => (
+                    <button
+                      key={child.id}
+                      className={`mh-dropdown-item ${currentView === child.id ? 'active' : ''}`}
+                      onClick={() => { onSwitchView(child.id); setOpenMenu(null) }}
+                    >
+                      {child.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            <a
-              key={item.id}
-              href="#"
-              className={`nav-link ${currentView === item.id ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault()
-                onSwitchView(item.id)
-              }}
-            >
-              <span>{item.label}</span>
-            </a>
-          )
-        ))}
-      </nav>
-      <div className="header-actions">
-        <button
-          className="btn btn-sync"
-          onClick={onSyncClick}
-          disabled={syncing}
-          title="Re-pull the latest data from MyHeritage and update the database"
-        >
-          <i className={`fas ${syncing ? 'fa-spinner fa-spin' : 'fa-sync'}`}></i>
-          <span>{syncing ? 'Syncing...' : 'Sync'}</span>
-        </button>
-        <button className="btn btn-primary" onClick={onImportClick}>
-          <i className="fas fa-file-import"></i>
-          <span>Import GEDCOM</span>
-        </button>
+            ) : (
+              <div key={item.id} className="mh-nav-item">
+                <button
+                  className={`mh-nav-link ${currentView === item.id ? 'active' : ''}`}
+                  onClick={() => onSwitchView(item.id)}
+                >
+                  {item.label}
+                </button>
+              </div>
+            )
+          ))}
+        </nav>
+        <div className="mh-nav-right">
+          <button className="mobile-menu-btn" onClick={onToggleMobileSidebar} title="Open menu">
+            <i className="fas fa-bars"></i>
+          </button>
+        </div>
       </div>
     </header>
   )

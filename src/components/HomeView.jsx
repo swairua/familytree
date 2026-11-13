@@ -1,31 +1,27 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
-import { photoUrl } from '../utils/photoUrl'
 import '../styles/home.css'
 
-function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+
+function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentActivity }) {
   const peopleCount = individuals.size
-  const treeCount = Math.max(1, families.size > 0 ? 1 : 0)
   const photoCount = useMemo(() => {
     let n = 0
     for (const p of individuals.values()) if (p.photo) n++
     return n
   }, [individuals])
 
-  const recent = useMemo(() => {
-    const arr = Array.from(individuals.values())
-    // Prefer people with birth years, newest first
-    arr.sort((a, b) => {
-      const ya = parseInt((a.birthYear || '').toString().match(/\d{4}/)?.[0] || '0', 10)
-      const yb = parseInt((b.birthYear || '').toString().match(/\d{4}/)?.[0] || '0', 10)
-      return yb - ya
-    })
-    return arr.slice(0, 8)
-  }, [individuals])
+  const [researchName, setResearchName] = useState('')
+  const [researchLast, setResearchLast] = useState('')
+
+  const recentEntries = recentActivity?.entries || []
 
   const creator = useMemo(() => {
-    // Site creator = earliest root person (no parents) or first
+    for (const p of individuals.values()) {
+      if ((p.name || '').toLowerCase().includes('joseph')) return p
+    }
     for (const p of individuals.values()) {
       if (!p.parents || p.parents.length === 0) return p
     }
@@ -35,106 +31,79 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView }) {
   if (individuals.size === 0) {
     return (
       <div className="home-view">
-        <div className="home-container">
-          <div className="home-card" style={{ textAlign: 'center', padding: '40px' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.6rem', color: '#8b7355' }}></i>
-            <p style={{ marginTop: '10px', color: '#8b837d' }}>Loading family data...</p>
-          </div>
-        </div>
+        <div className="home-loading"><i className="fas fa-spinner fa-spin"></i> Loading family data...</div>
       </div>
     )
   }
 
   return (
     <div className="home-view">
+      {/* Hero */}
+      <div className="home-hero">
+        <h1 className="home-hero-title">Wairua Web Site</h1>
+      </div>
+
       <div className="home-container">
+        {/* Sidebar */}
         <aside className="home-sidebar">
-          <div className="profile-card">
-            <div className="profile-cover" />
-            <div className="profile-body">
-              <PersonAvatar person={creator} className="profile-avatar" />
-              <h2 className="profile-name">{creator ? cleanName(creator.name) : 'Wairua Family'}</h2>
-              <p className="profile-role">Site manager</p>
-              <div className="profile-stats">
-                <div className="stat">
-                  <span className="stat-value">{peopleCount.toLocaleString()}</span>
-                  <span className="stat-label">People</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">{treeCount}</span>
-                  <span className="stat-label">Family trees</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">{photoCount.toLocaleString()}</span>
-                  <span className="stat-label">Photos</span>
-                </div>
-              </div>
-              <div className="profile-actions">
-                <button className="btn btn-primary btn-block" onClick={() => onSwitchView('tree')}>
-                  <i className="fas fa-sitemap"></i> View family tree
-                </button>
-                <button className="btn btn-block" onClick={() => onSwitchView('gallery')}>
-                  <i className="fas fa-images"></i> View photos
-                </button>
+          <div className="home-profile-card">
+            <div className="home-profile-top">
+              <PersonAvatar person={creator} className="home-profile-avatar" />
+              <div className="home-profile-meta">
+                <h2>{creator ? cleanName(creator.name) : 'Joseph Gichuki'}</h2>
+                <p>Site creator <a className="mh-contact-link" href="mailto:contact@wairua.site">Contact</a></p>
               </div>
             </div>
+            <div className="home-stats">
+              <div className="home-stat"><span className="home-stat-value">{peopleCount.toLocaleString()}</span><span className="home-stat-label">People</span></div>
+              <div className="home-stat"><span className="home-stat-value">2</span><span className="home-stat-label">Family trees</span></div>
+              <div className="home-stat"><span className="home-stat-value">{photoCount.toLocaleString()}</span><span className="home-stat-label">Photos</span></div>
+            </div>
+            <p className="home-invite">Tell relatives and visitors about your <a href="#" onClick={e => { e.preventDefault(); onSwitchView('members') }}>family site</a>.</p>
+          </div>
+
+          <div className="home-research-card">
+            <h3>Research your ancestors</h3>
+            <p>in 42.2 billion historical records</p>
+            <form className="home-research-form" onSubmit={e => { e.preventDefault(); onSwitchView('research') }}>
+              <input
+                type="text"
+                placeholder="First & middle name"
+                value={researchName}
+                onChange={e => setResearchName(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Last name"
+                value={researchLast}
+                onChange={e => setResearchLast(e.target.value)}
+              />
+              <button type="submit" className="home-search-btn">Search</button>
+            </form>
           </div>
         </aside>
 
+        {/* Main content */}
         <section className="home-main">
-          <div className="home-card">
-            <div className="home-card-header">
-              <h1>Recent activity</h1>
-              <span className="home-card-sub">Latest updates to the Wairua family site</span>
-            </div>
-            <ul className="activity-list">
-              {recent.map((p) => (
-                <li key={p.id} className="activity-item" onClick={() => onSelectPerson(p.id)}>
-                  <PersonAvatar person={p} className="activity-avatar" />
-                  <div className="activity-content">
-                    <p className="activity-text">
-                      <strong>{cleanName(p.name)}</strong>
-                      {p.birthDate ? ` was born ${p.birthDate}` : ' was added to the family tree'}
-                      {p.birthPlace ? ` in ${p.birthPlace}` : ''}
-                    </p>
-                    <span className="activity-date">
-                      {p.birthYear || p.deathYear || 'Recently'}
-                    </span>
-                  </div>
-                  {photoUrl(p) ? (
-                    <img
-                      className="activity-thumb"
-                      src={photoUrl(p)}
-                      alt=""
-                      loading="lazy"
-                      onError={(e) => { e.currentTarget.style.display = 'none' }}
-                    />
-                  ) : (
-                    <div className="activity-thumb activity-thumb-placeholder">
-                      <i className="fas fa-user"></i>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className="home-card-footer">
-              <button className="btn btn-accent" onClick={() => onSwitchView('people')}>
-                View more
-              </button>
-            </div>
-          </div>
+          <div className="home-activity-card">
+            <h3 className="home-section-title">RECENT ACTIVITY</h3>
 
-          <div className="home-card">
-            <div className="home-card-header">
-              <h2>Quick links</h2>
-            </div>
-            <div className="quick-links">
-              <button onClick={() => onSwitchView('tree')}><i className="fas fa-sitemap"></i><span>Family tree</span></button>
-              <button onClick={() => onSwitchView('people')}><i className="fas fa-users"></i><span>People</span></button>
-              <button onClick={() => onSwitchView('search')}><i className="fas fa-search"></i><span>Search</span></button>
-              <button onClick={() => onSwitchView('gallery')}><i className="fas fa-images"></i><span>Photos</span></button>
-              <button onClick={() => onSwitchView('import')}><i className="fas fa-file-import"></i><span>Import GEDCOM</span></button>
-            </div>
+            {recentEntries.length === 0 && (
+              <p style={{ color: '#888', fontSize: '0.85rem' }}>No recent activity synced yet.</p>
+            )}
+
+            {recentEntries.slice(0, 10).map((entry, idx) => (
+              <div key={idx} className="home-activity-item">
+                <span className="home-activity-date">{entry.date}</span>
+                <div className="home-activity-text">
+                  {entry.lines.map((line, i) => (
+                    <p key={i} style={{ margin: 0, padding: '2px 0' }}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <button className="home-view-more" onClick={() => onSwitchView('events')}>View more</button>
           </div>
         </section>
       </div>
