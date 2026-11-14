@@ -717,46 +717,8 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       if ((p.name || '').toLowerCase().includes('simon gichuki wairua')) { targetId = id; break }
     }
     if (targetId) {
-      const p = treeLayout.posMap.get(targetId)
-      if (p) {
-        const zoom = 0.6
-        const pan = {
-          x: viewport.w / 2 - (p.x + NODE_WIDTH / 2) * zoom,
-          y: viewport.h / 2 - (p.y + NODE_HEIGHT / 2) * zoom,
-        }
-        viewRef.current = { zoom, pan }
-        setZoom(zoom)
-        setPan(pan)
-        applyView()
-        return
-      }
-    }
-    setZoom(null)
-    setPan(null)
-  }, [viewport, treeLayout, individuals])
-
-  useEffect(() => {
-    if (!viewport.w || !viewport.h) return
-    if (hasInteracted.current) return
-    if (individuals.size === 0 || !treeLayout.nodes.length) return
-    let targetId = null
-    for (const [id, p] of individuals) {
-      if ((p.name || '').toLowerCase().includes('simon gichuki wairua')) { targetId = id; break }
-    }
-    if (targetId) {
-      const p = treeLayout.posMap.get(targetId)
-      if (p) {
-        const zoom = 0.6
-        const pan = {
-          x: viewport.w / 2 - (p.x + NODE_WIDTH / 2) * zoom,
-          y: viewport.h / 2 - (p.y + NODE_HEIGHT / 2) * zoom,
-        }
-        viewRef.current = { zoom, pan }
-        setZoom(zoom)
-        setPan(pan)
-        applyView()
-        return
-      }
+      drillTo(targetId)
+      return
     }
     setZoom(null)
     setPan(null)
