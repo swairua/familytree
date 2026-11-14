@@ -18,6 +18,20 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
 
   const recentEntries = recentActivity?.entries || []
 
+  // Match activity lines to local individuals by name for thumbnails
+  const norm = (s) => (s || '').toLowerCase().replace(/[^a-z]/g, ' ').replace(/\s+/g, ' ').trim()
+  const personForLine = (line) => {
+    const n = norm(line)
+    for (const p of individuals.values()) {
+      const g = norm(p.givenName || '')
+      const s = norm(p.surname || '')
+      const full = norm(p.name || '')
+      if (full && n.includes(full)) return p
+      if (g && s && n.includes(g) && n.includes(s)) return p
+    }
+    return null
+  }
+
   const creator = useMemo(() => {
     for (const p of individuals.values()) {
       if ((p.name || '').toLowerCase().includes('joseph')) return p
@@ -92,16 +106,35 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
               <p style={{ color: '#888', fontSize: '0.85rem' }}>No recent activity synced yet.</p>
             )}
 
-            {recentEntries.slice(0, 10).map((entry, idx) => (
+            {recentEntries.slice(0, 10).map((entry, idx) => {
+              const person = personForLine(entry.text)
+              const thumb = person ? photoUrl(person) : null
+              return (
               <div key={idx} className="home-activity-item">
                 <span className="home-activity-date">{entry.date}</span>
-                <div className="home-activity-text">
-                  {entry.lines.map((line, i) => (
-                    <p key={i} style={{ margin: 0, padding: '2px 0' }}>{line}</p>
-                  ))}
+                <div className="home-activity-row">
+                  {thumb ? (
+                    <img
+                      className="home-activity-thumb"
+                      src={thumb}
+                      alt=""
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  ) : (
+                    <div className="home-activity-thumb home-activity-thumb-placeholder">
+                      <i className="fas fa-user"></i>
+                    </div>
+                  )}
+                  <div className="home-activity-text">
+                    {entry.lines.map((line, i) => (
+                      <p key={i} style={{ margin: 0, padding: '2px 0' }}>{line}</p>
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
 
             <button className="home-view-more" onClick={() => onSwitchView('events')}>View more</button>
           </div>
