@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 
@@ -792,46 +792,33 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return { box, treeW: treeLayout.width, treeH: treeLayout.height }
   }, [view, viewport, treeLayout])
 
-  const renderToolbar = (hasData) => (
-    <div className="tree-toolbar">
-      <div className="toolbar-left">
-        <span className="toolbar-label">Family tree</span>
-        <button className="btn btn-icon" onClick={() => { engage(); zoomBy(ZOOM_STEP) }} title="Zoom In (+)">
-          <i className="fas fa-plus"></i>
+  const renderTopBar = (hasData) => (
+    <div className="tree-topbar">
+      <div className="tree-topbar-row1">
+        <button className="tree-collapse-toggle" title="Toggle sidebar" onClick={() => onLayoutModeChange && onLayoutModeChange(layoutMode)}>
+          <i className="fas fa-chevron-right"></i>
         </button>
-        <button className="btn btn-icon" onClick={() => { engage(); zoomBy(1 / ZOOM_STEP) }} title="Zoom Out (-)">
-          <i className="fas fa-minus"></i>
-        </button>
-        <span className="toolbar-zoom">{Math.round((view ? view.zoom : 1) * 100)}%</span>
-        {hasData && (
-          <button className="btn btn-icon" onClick={fitView} title="Fit to screen (0)">
-            <i className="fas fa-expand"></i>
+        <div className="tree-breadcrumb">
+          <button className="tree-breadcrumb-btn">
+            <span className="tree-site">Wairua</span>
+            <i className="fas fa-caret-down"></i>
           </button>
-        )}
-        <button className="btn btn-icon" onClick={resetView} title="Reset (1)">
-          <i className="fas fa-home"></i>
-        </button>
-        {hasData && (
-          <button
-            className={`btn btn-icon layout-toggle ${layoutMode === 'vertical' ? 'active' : ''}`}
-            onClick={() => onLayoutModeChange && onLayoutModeChange(layoutMode === 'flat' ? 'vertical' : 'flat')}
-            title={layoutMode === 'flat' ? 'Vertical tree' : 'Generational rows'}
-          >
-            <i className={`fas ${layoutMode === 'flat' ? 'fa-arrows-alt-v' : 'fa-arrows-alt-h'}`}></i>
-          </button>
-        )}
-        {hasData && (
-          <button
-            className={`btn btn-icon ${minimapOpen ? 'active' : ''}`}
-            onClick={() => setMinimapOpen(m => !m)}
-            title="Toggle navigator"
-          >
-            <i className="fas fa-map"></i>
-          </button>
-        )}
+          <span className="tree-breadcrumb-sep">|</span>
+          <span className="tree-person">{selectedId && individuals.get(selectedId) ? cleanName(individuals.get(selectedId).name) : 'Mr SIMON GICHUKI WAIRUA'}</span>
+        </div>
+        <div className="tree-view-toggles">
+          <button className="tree-view-btn" title="Family tree list"><i className="fas fa-tree"></i></button>
+          <button className="tree-view-btn active" title="Pedigree view"><i className="fas fa-sitemap"></i><span>Pedigree view</span></button>
+          <button className="tree-view-btn" title="Fan chart"><i className="fas fa-fan"></i></button>
+          <button className="tree-view-btn" title="Family list"><i className="fas fa-table"></i></button>
+        </div>
       </div>
-      <div className="toolbar-center">
-        {hasData ? (
+      <div className="tree-topbar-row2">
+        <div className="tree-breadcrumb-2">
+          <button className="tree-collapse-toggle2" title="Toggle sidebar"><i className="fas fa-chevron-right"></i></button>
+          <span className="tree-count">{hasData ? `${personCount} of ${personCount} people` : 'No people loaded'}</span>
+        </div>
+        <div className="tree-search-area">
           <div className="tree-search">
             <i className="fas fa-search"></i>
             <input
@@ -846,34 +833,15 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
               </button>
             )}
           </div>
-        ) : (
-          <span>No family tree loaded</span>
-        )}
-      </div>
-      <div className="toolbar-right">
-        {hasData && showLegend && (
-          <div className="tree-legend">
-            <span className="legend-dot male" title="Male"></span> Male
-            <span className="legend-dot female" title="Female"></span> Female
-            <span className="legend-dot unknown" title="Unknown"></span> Unknown
-            <span className="legend-dot deceased" title="Deceased"></span> Deceased
-          </div>
-        )}
-        <button
-          className={`btn btn-icon ${showLegend ? 'active' : ''}`}
-          onClick={() => setShowLegend(s => !s)}
-          title="Toggle legend"
-        >
-          <i className="fas fa-list-ul"></i>
-        </button>
+          <button className="tree-gear" title="Settings"><i className="fas fa-cog"></i></button>
+        </div>
       </div>
     </div>
   )
-
   if (personCount === 0) {
     return (
       <div className="tree-container">
-        {renderToolbar(false)}
+        {renderTopBar(false)}
         <div className="tree-canvas" ref={containerRef}>
           <div className="tree-empty-state">
             <div className="empty-icon"><i className="fas fa-tree"></i></div>
@@ -957,7 +925,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
 
   return (
     <div className="tree-container">
-      {renderToolbar(true)}
+      {renderTopBar(true)}
       <div
         className="tree-canvas"
         ref={containerRef}
@@ -1031,6 +999,17 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
             )}
           </>
         )}
+        {view && (
+          <div className="tree-nav-sidebar">
+            <button className="tree-nav-btn" title="Search in tree"><i className="fas fa-search"></i></button>
+            <button className="tree-nav-btn" title="Colors"><i className="fas fa-palette"></i></button>
+            <button className="tree-nav-btn" onClick={fitView} title="Fit to screen"><i className="fas fa-expand"></i></button>
+            <button className="tree-nav-btn" onClick={resetView} title="Home"><i className="fas fa-home"></i></button>
+            <button className="tree-nav-btn" onClick={() => { engage(); zoomBy(ZOOM_STEP) }} title="Zoom in"><i className="fas fa-plus"></i></button>
+            <button className="tree-nav-btn" onClick={() => { engage(); zoomBy(1 / ZOOM_STEP) }} title="Zoom out"><i className="fas fa-minus"></i></button>
+          </div>
+        )}
+
         {selectedPerson && (
           <aside
             className="tree-profile-panel"
@@ -1152,3 +1131,5 @@ function truncateText(text, maxLength) {
 }
 
 export default TreeView
+
+

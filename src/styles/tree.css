@@ -1,4 +1,4 @@
-.tree-container { height: 100%; display: flex; flex-direction: column; position: relative; }
+﻿.tree-container { height: 100%; display: flex; flex-direction: column; position: relative; }
 
 .tree-toolbar {
   background: #fff;
@@ -186,3 +186,29 @@
 .tree-search i { color: #8b7355; font-size: 0.8rem; margin-right: 6px; }
 .tree-search input { border: none; outline: none; flex: 1; font-size: 0.8rem; }
 .tree-search-clear { background: none; border: none; color: #8b7355; cursor: pointer; padding: 2px; }
+
+.tree-topbar { background: #fff; border-bottom: 2px solid #e3e0dc; flex-shrink: 0; }
+.tree-topbar-row1, .tree-topbar-row2 { display: flex; align-items: center; padding: 0 14px; height: 46px; gap: 14px; background: #fff; }
+.tree-topbar-row2 { height: 42px; justify-content: space-between; border-top: 1px solid #f0ede9; }
+.tree-breadcrumb { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.tree-breadcrumb-btn { display: flex; align-items: center; gap: 5px; background: none; border: none; color: #222; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+.tree-breadcrumb-btn i { font-size: 0.6rem; opacity: 0.7; }
+.tree-breadcrumb-sep { color: #999; font-size: 1.1rem; }
+.tree-person { font-size: 0.95rem; font-weight: 600; color: #333; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.tree-collapse-toggle { background: none; border: none; color: #555; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; }
+.tree-collapse-toggle:hover { background: #f5f3ef; }
+.tree-view-toggles { display: flex; gap: 4px; }
+.tree-view-btn { background: transparent; border: none; color: #4a4a4a; font-size: 0.82rem; font-weight: 500; padding: 6px 12px; cursor: pointer; border-radius: 4px; border-bottom: 2px solid transparent; }
+.tree-view-btn:hover { background: #f5f3ef; }
+.tree-view-btn.active { color: #e08c2e; border-bottom-color: #e08c2e; font-weight: 700; }
+.tree-count { font-size: 0.78rem; color: #555; }
+.tree-search-area { display: flex; align-items: center; gap: 8px; }
+.tree-gear { background: none; border: none; color: #555; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
+.tree-gear:hover { background: #f5f3ef; }
+.tree-canvas { background-color: #f5f3ef; background-image: radial-gradient(circle, #e8e5e0 1px, transparent 1px); background-size: 14px 14px; }
+.tree-link.child, .tree-link.marriage { stroke: #c9c1ba; }
+.tree-link.marriage { stroke-dasharray: 4, 3; }
+.tree-nav-sidebar { position: absolute; right: 12px; bottom: 18px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+.tree-nav-btn { width: 38px; height: 38px; background: #fff; border: 1px solid #d9d5cf; border-radius: 8px; color: #4a4a4a; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; }
+.tree-nav-btn:hover { background: #f7f5f0; }
+
