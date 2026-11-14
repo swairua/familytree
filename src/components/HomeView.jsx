@@ -6,7 +6,7 @@ import '../styles/home.css'
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
-function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentActivity }) {
+function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentActivity, creatorId }) {
   const peopleCount = individuals.size
   const photoCount = useMemo(() => {
     let n = 0
@@ -76,14 +76,17 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
   }
 
   const creator = useMemo(() => {
+    if (creatorId && individuals.has(creatorId)) {
+      return individuals.get(creatorId)
+    }
     for (const p of individuals.values()) {
-      if ((p.name || '').toLowerCase().includes('joseph')) return p
+      if ((p.name || '').toLowerCase().includes('simon gichuki')) return p
     }
     for (const p of individuals.values()) {
       if (!p.parents || p.parents.length === 0) return p
     }
     return individuals.values().next().value
-  }, [individuals])
+  }, [individuals, creatorId])
 
   if (individuals.size === 0) {
     return (
@@ -107,8 +110,12 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
             <div className="home-profile-top">
               <PersonAvatar person={creator} className="home-profile-avatar" />
               <div className="home-profile-meta">
-                <h2>{creator ? cleanName(creator.name) : 'Joseph Gichuki'}</h2>
-                <p>Site creator <a className="mh-contact-link" href="mailto:contact@wairua.site">Contact</a></p>
+                <h2>{creator ? cleanName(creator.name) : 'Simon Gichuki Wairua'}</h2>
+                <p className="home-profile-detail">
+                  {creator?.birthDate && <span>Born {creator.birthDate}</span>}
+                  {creator?.birthPlace && <span> in {creator.birthPlace}</span>}
+                </p>
+                <p>Site creator <a className="mh-contact-link" href="mailto:gichukisimon@gmail.com">Contact</a></p>
               </div>
             </div>
             <div className="home-stats">

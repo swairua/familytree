@@ -326,6 +326,7 @@ function App() {
           onSelectPerson={handleSelectPerson}
           onSwitchView={handleSwitchView}
           recentActivity={recentActivity}
+          creatorId={currentUser?.individual_id || null}
         />
       )}
 
