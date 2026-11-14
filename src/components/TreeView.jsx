@@ -11,7 +11,7 @@ const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
 const AVATAR_R = 50
 
-function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
+function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange, anchorId }) {
   const containerRef = useRef(null)
   const contentGroupRef = useRef(null)
   const minimapSvgRef = useRef(null)
@@ -280,7 +280,58 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return { nodes, links, posMap, width: w, height: h }
   }, [flatLayout])
 
-  const treeLayout = layoutMode === 'vertical' ? verticalLayout : flatLayout
+  // ---- pedigree layout: left-to-right, anchored on logged-in user ----
+  const pedigreeLayout = useMemo(() => {
+    if (!anchorId || !individuals.has(anchorId)) return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
+
+    const SLOT = NODE_HEIGHT + 44
+    const DIST = NODE_WIDTH + 70
+    const MAX_DEPTH = 3
+
+    const nodes = []
+    const links = []
+    const posMap = new Map()
+
+    function place(id, depth, yStart) {
+      const person = individuals.get(id)
+      if (!person || depth > MAX_DEPTH) return 0
+      const spanSlots = 2 ** (MAX_DEPTH - depth)
+      const span = spanSlots * SLOT
+      const y = yStart + span / 2 - NODE_HEIGHT / 2
+      const x = depth * DIST
+      nodes.push({ id, x, y })
+      posMap.set(id, { x, y })
+      const parents = depth >= MAX_DEPTH ? [] : (person.parents || [])
+      const father = parents.find(p => individuals.get(p)?.gender === 'male')
+      const mother = parents.find(p => individuals.get(p)?.gender === 'female')
+      if (depth < MAX_DEPTH) {
+        const childSpan = (spanSlots / 2) * SLOT
+        if (father) {
+          place(father, depth + 1, yStart)
+          const fp = nodes.find(n => n.id === father)
+          links.push({ type: 'child', x1: x + NODE_WIDTH, y1: y + NODE_HEIGHT / 2, x2: (depth + 1) * DIST, y2: (fp?.y ?? 0) + NODE_HEIGHT / 2 })
+        }
+        if (mother) {
+          place(mother, depth + 1, yStart + childSpan)
+          const mp = nodes.find(n => n.id === mother)
+          links.push({ type: 'child', x1: x + NODE_WIDTH, y1: y + NODE_HEIGHT / 2, x2: (depth + 1) * DIST, y2: (mp?.y ?? 0) + NODE_HEIGHT / 2 })
+        }
+      }
+      return span
+    }
+
+    place(anchorId, 0, 0)
+
+    return {
+      nodes,
+      links,
+      posMap,
+      width: (MAX_DEPTH + 1) * DIST,
+      height: 2 ** MAX_DEPTH * SLOT,
+    }
+  }, [individuals, anchorId])
+
+  const treeLayout = layoutMode === 'pedigree' ? pedigreeLayout : layoutMode === 'vertical' ? verticalLayout : flatLayout
 
   const fitRect = useCallback((box, vw, vh, pad, minZ, maxZ) => {
     if (!vw || !vh || !box || !box.w || !box.h) return null
@@ -712,13 +763,22 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     if (!viewport.w || !viewport.h) return
     if (hasInteracted.current) return
     if (individuals.size === 0 || !treeLayout.nodes.length) return
-    let targetId = null
-    for (const [id, p] of individuals) {
-      if ((p.name || '').toLowerCase().includes('simon gichuki wairua')) { targetId = id; break }
-    }
+    const targetId = anchorId
     if (targetId) {
       const p = treeLayout.posMap.get(targetId)
       if (p) {
+        if (layoutMode === 'pedigree') {
+          const zoom = 0.8
+          const pan = {
+            x: 20,
+            y: viewport.h / 2 - (p.y + NODE_HEIGHT / 2) * zoom,
+          }
+          viewRef.current = { zoom, pan }
+          setZoom(zoom)
+          setPan(pan)
+          applyView()
+          return
+        }
         const zoom = 0.8
         const pan = {
           x: viewport.w / 2 - (p.x + NODE_WIDTH / 2) * zoom,
@@ -733,7 +793,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     }
     setZoom(null)
     setPan(null)
-  }, [viewport, treeLayout, individuals])
+  }, [viewport, treeLayout, individuals, anchorId, layoutMode])
 
   const drillTo = useCallback((id) => {
     const posMap = treeLayout.posMap
@@ -840,7 +900,8 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
         </div>
         <div className="tree-view-toggles">
           <button className="tree-view-btn" title="Family tree list"><i className="fas fa-tree"></i></button>
-          <button className="tree-view-btn active" title="Pedigree view"><i className="fas fa-sitemap"></i><span>Pedigree view</span></button>
+          <button className={`tree-view-btn ${layoutMode === 'flat' ? 'active' : ''}`} title="Top-down" onClick={() => onLayoutModeChange && onLayoutModeChange('flat')}><i className="fas fa-project-diagram"></i><span>Top-down</span></button>
+          <button className={`tree-view-btn ${layoutMode === 'pedigree' ? 'active' : ''}`} title="Pedigree view" onClick={() => onLayoutModeChange && onLayoutModeChange('pedigree')}><i className="fas fa-sitemap"></i><span>Pedigree view</span></button>
           <button className="tree-view-btn" title="Fan chart"><i className="fas fa-fan"></i></button>
           <button className="tree-view-btn" title="Family list"><i className="fas fa-table"></i></button>
         </div>

@@ -23,7 +23,7 @@ function App() {
   const [families, setFamilies] = useState(new Map())
   const [currentView, setCurrentView] = useState('home')
   const [selectedPersonId, setSelectedPersonId] = useState(null)
-  const [layoutMode, setLayoutMode] = useState('flat')
+  const [layoutMode, setLayoutMode] = useState('pedigree')
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [currentUser, setCurrentUser] = useState(null)
@@ -359,6 +359,7 @@ function App() {
           onOpenPersonModal={handleSelectPerson}
           layoutMode={layoutMode}
           onLayoutModeChange={setLayoutMode}
+          anchorId={currentUser?.individual_id || null}
         />
       )}
 
