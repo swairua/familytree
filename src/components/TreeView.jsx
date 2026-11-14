@@ -2,14 +2,14 @@
 import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 
-const NODE_WIDTH = 320
-const NODE_HEIGHT = 90
+const NODE_WIDTH = 380
+const NODE_HEIGHT = 110
 const H_GAP = 50
 const V_GAP = 70
 const ZOOM_MIN = 0.01
 const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
-const AVATAR_R = 46
+const AVATAR_R = 50
 
 function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange }) {
   const containerRef = useRef(null)
@@ -1189,5 +1189,6 @@ function truncateText(text, maxLength) {
 }
 
 export default TreeView
+
 
 
