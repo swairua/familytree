@@ -40,6 +40,41 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
     return best
   }
 
+  const peopleArray = useMemo(() => Array.from(individuals.values()), [individuals])
+  const renderLineWithLinks = (line) => {
+    if (!line) return null
+    const intervals = []
+    for (const p of peopleArray) {
+      const name = cleanName(p.name)
+      if (!name || name.length < 3) continue
+      const idx = line.toLowerCase().indexOf(name.toLowerCase())
+      if (idx !== -1) {
+        intervals.push({ start: idx, end: idx + name.length, p, name })
+      }
+    }
+    if (intervals.length === 0) return <span>{line}</span>
+    intervals.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
+    const nodes = []
+    let cursor = 0
+    let key = 0
+    for (const iv of intervals) {
+      if (iv.start < cursor) continue // skip overlaps
+      if (iv.start > cursor) nodes.push(<span key={key++}>{line.slice(cursor, iv.start)}</span>)
+      nodes.push(
+        <button
+          key={key++}
+          className="activity-deep-link"
+          onClick={(e) => { e.stopPropagation(); onSelectPerson(iv.p.id) }}
+        >
+          {iv.name}
+        </button>
+      )
+      cursor = iv.end
+    }
+    if (cursor < line.length) nodes.push(<span key={key++}>{line.slice(cursor)}</span>)
+    return nodes
+  }
+
   const creator = useMemo(() => {
     for (const p of individuals.values()) {
       if ((p.name || '').toLowerCase().includes('joseph')) return p
@@ -136,7 +171,7 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
                   )}
                   <div className="home-activity-text">
                     {entry.lines.map((line, i) => (
-                      <p key={i} style={{ margin: 0, padding: '2px 0' }}>{line}</p>
+                      <p key={i} style={{ margin: 0, padding: '2px 0' }}>{renderLineWithLinks(line)}</p>
                     ))}
                   </div>
                 </div>

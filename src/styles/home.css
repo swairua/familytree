@@ -536,3 +536,6 @@
   .mobile-menu-btn { display: inline-flex; align-items: center; }
 }
 .home-activity-thumb-placeholder { display: flex; align-items: center; justify-content: center; background: #f0ebe6; color: #a69e98; font-size: 1.2rem; width: 78px; height: 92px; border-radius: 4px; flex-shrink: 0; gap: 0; }
+
+.activity-deep-link { background: none; border: none; padding: 0; cursor: pointer; color: #1a73e8; font-weight: 700; font-size: inherit; text-decoration: underline; border-radius: 3px; }
+.activity-deep-link:hover { color: #0b57d0; background: #eef3fe; }
