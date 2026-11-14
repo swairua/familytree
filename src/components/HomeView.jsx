@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
+import { photoUrl } from '../utils/photoUrl'
 import '../styles/home.css'
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
