@@ -2,9 +2,9 @@
 import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
 
-const NODE_WIDTH = 270
-const NODE_HEIGHT = 150
-const H_GAP = 40
+const NODE_WIDTH = 320
+const NODE_HEIGHT = 90
+const H_GAP = 50
 const V_GAP = 70
 const ZOOM_MIN = 0.01
 const ZOOM_MAX = 3
@@ -880,28 +880,25 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return (
       <g
         key={node.id}
-        className={`tree-node gender-${pd.gender} ${pd.deceased ? 'deceased' : ''} ${isSelected ? 'selected' : ''}`}
+        className={`tree-node ${pd.deceased ? 'deceased' : 'living'} ${isSelected ? 'selected' : ''}`}
         data-id={node.id}
         transform={`translate(${node.x}, ${node.y})`}
         onClick={(e) => { e.stopPropagation(); handlePersonClick(node.id) }}
         onDoubleClick={(e) => { e.stopPropagation(); drillTo(node.id) }}
       >
-        <circle className="node-port node-port-top" cx={NODE_WIDTH / 2} cy={0} r="3" />
-        <circle className="node-port node-port-bottom" cx={NODE_WIDTH / 2} cy={NODE_HEIGHT} r="3" />
-        <circle className="node-port node-port-left" cx={0} cy={NODE_HEIGHT / 2} r="3" />
-        <circle className="node-port node-port-right" cx={NODE_WIDTH} cy={NODE_HEIGHT / 2} r="3" />
-
-        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" clipPath={`url(#node-card-clip-${pd.safeId})`} />
-        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" clipPath={`url(#node-card-clip-${pd.safeId})`} />
+        <rect className="node-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx={NODE_HEIGHT / 2} ry={NODE_HEIGHT / 2} clipPath={`url(#node-card-clip-${pd.safeId})`} />
+        <rect className="node-card-fill" width={NODE_WIDTH} height={NODE_HEIGHT} rx={NODE_HEIGHT / 2} ry={NODE_HEIGHT / 2} clipPath={`url(#node-card-clip-${pd.safeId})`} />
 
         <g className="node-avatar-wrap" clipPath={`url(#node-card-clip-${pd.safeId})`}>
-          <circle className="node-avatar-ring" cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
+          <circle className="node-avatar-ring" cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r={(NODE_HEIGHT / 2) - 4} />
           {pd.url ? (
             <image
               className="node-photo"
               href={pd.url}
-              x={AVATAR_R - AVATAR_R} y={NODE_HEIGHT / 2 - AVATAR_R}
-              width={AVATAR_R * 2} height={AVATAR_R * 2}
+              x="6"
+              y="4"
+              width={NODE_HEIGHT - 8}
+              height={NODE_HEIGHT - 8}
               clipPath={`url(#node-avatar-clip-${pd.safeId})`}
               preserveAspectRatio="xMidYMid slice"
               loading="lazy"
@@ -909,16 +906,18 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
-            <text className="node-initials" x={AVATAR_R} y={NODE_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">{pd.initials}</text>
+            <text className="node-initials" x={NODE_HEIGHT / 2} y={NODE_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">{pd.initials}</text>
+          )}
+          {pd.url && (
+            <g className="node-cam-badge" transform={`translate(${NODE_HEIGHT / 2 + 6}, ${NODE_HEIGHT - 5})`}>
+              <circle r="11" fill="#ffffff" stroke="#dddddd" strokeWidth="1" />
+              <path d="M -6 -1.5 h 3 l 1.5 -2 h 3 l 1.5 2 h 3 a 1.5 1.5 0 0 1 1.5 1.5 v 5 a 1.5 1.5 0 0 1 -1.5 1.5 h -12 a 1.5 1.5 0 0 1 -1.5 -1.5 v -5 a 1.5 1.5 0 0 1 1.5 -1.5 Z" fill="#666666" />
+            </g>
           )}
         </g>
 
-        <text className="node-name" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 - 20} textAnchor="start" dominantBaseline="middle">{truncateText(pd.name, 20)}</text>
-        <text className="node-dates" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 8} textAnchor="start" dominantBaseline="middle">{pd.birthYear || pd.deathYear ? `${pd.birthYear || '?'}${pd.deathYear ? ' \u2013 ' + pd.deathYear : ''}` : '?'}</text>
-        {pd.birthPlace && <text className="node-place" x={AVATAR_R * 2 + 18} y={NODE_HEIGHT / 2 + 32} textAnchor="start" dominantBaseline="middle">{truncateText(pd.birthPlace, 18)}</text>}
-
-        <circle className={`node-gender-badge gender-${pd.gender}`} cx={NODE_WIDTH - 22} cy={22} r="9" />
-        {pd.deceased && <circle className="node-deceased" cx={NODE_WIDTH - 22} cy={NODE_HEIGHT - 22} r="7" />}
+        <text className="node-name" x={NODE_HEIGHT + 10} y={NODE_HEIGHT / 2 - 12} textAnchor="start" dominantBaseline="middle">{pd.name.toUpperCase()}</text>
+        <text className="node-dates" x={NODE_HEIGHT + 10} y={NODE_HEIGHT / 2 + 14} textAnchor="start" dominantBaseline="middle">{pd.deceased ? '☠  Deceased' : `✱  ${individuals.get(node.id)?.birthDate || pd.birthYear || '?'}`}</text>
       </g>
     )
   }
@@ -950,10 +949,10 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
                   return (
                     <React.Fragment key={`defs-${pd.safeId}`}>
                       <clipPath id={`node-card-clip-${pd.safeId}`}>
-                        <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="14" ry="14" />
+                        <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx={NODE_HEIGHT / 2} ry={NODE_HEIGHT / 2} />
                       </clipPath>
                       <clipPath id={`node-avatar-clip-${pd.safeId}`}>
-                        <circle cx={AVATAR_R} cy={NODE_HEIGHT / 2} r={AVATAR_R} />
+                        <circle cx={NODE_HEIGHT / 2} cy={NODE_HEIGHT / 2} r={(NODE_HEIGHT / 2) - 4} />
                       </clipPath>
                     </React.Fragment>
                   )
