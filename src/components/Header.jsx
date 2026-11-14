@@ -19,14 +19,20 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         { id: 'stats', label: 'Family statistics' },
         { id: 'members', label: 'Site members' },
     ]},
-    { id: 'tree', label: 'Family tree', icon: 'fa-sitemap' },
+    { id: 'tree', label: 'Family tree', icon: 'fa-sitemap', children: [
+        { id: 'tree', label: 'My family tree' },
+        { id: 'gallery', label: 'My photos' },
+        { id: 'trees', label: 'Manage trees' },
+        { id: 'print', label: 'Print charts & books' },
+        { id: 'more', label: 'More…' },
+    ]},
     { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
     { id: 'gallery', label: 'Photos', icon: 'fa-images' },
     { id: 'research', label: 'DNA', icon: 'fa-dna' },
     { id: 'research', label: 'Research', icon: 'fa-book' },
   ]
 
-  const isHomeActive = ['home','events','stats','members'].includes(currentView)
+
 
   return (
     <header className="mh-header">
@@ -84,7 +90,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
             item.children ? (
               <div key={item.id} className="mh-nav-item mh-nav-dropdown">
                 <button
-                  className={`mh-nav-link ${isHomeActive ? 'active' : ''}`}
+                  className={`mh-nav-link ${item.children && item.children.some(child => child.id === currentView) ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
                 >
                   {item.label}

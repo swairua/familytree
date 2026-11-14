@@ -82,6 +82,36 @@ export async function updateIndividual(id, fields) {
   })
 }
 
+export async function uploadPhoto(individualId, file) {
+  const form = new FormData()
+  form.append('individualId', individualId || '')
+  form.append('photo', file)
+  const res = await fetch(`${API_BASE}/upload_photo.php`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: form,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || `Upload failed (${res.status})`)
+  }
+  return data
+}
+
+export async function createIndividual(childId, role, fields) {
+  const res = await fetch(`${API_BASE}/create_individual.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ childId, role, ...fields }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Error ${res.status}`)
+  }
+  return res.json()
+}
+
 export async function syncStatus() {
   return request('sync.php?action=status')
 }

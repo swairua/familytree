@@ -86,9 +86,6 @@ function AppLayout({
             {serverStatus.type === 'loading' && (
               <div className="server-banner loading"><i className="fas fa-spinner fa-spin"></i> {serverStatus.message}</div>
             )}
-            {serverStatus.type === 'success' && (
-              <div className="server-banner success"><i className="fas fa-database"></i> {serverStatus.message}</div>
-            )}
             {serverStatus.type === 'info' && (
               <div className="server-banner info"><i className="fas fa-info-circle"></i> {serverStatus.message}</div>
             )}

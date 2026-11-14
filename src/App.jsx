@@ -16,6 +16,9 @@ const PeopleView = lazy(() => import('./components/PeopleView'))
 const SearchView = lazy(() => import('./components/SearchView'))
 const ImportView = lazy(() => import('./components/ImportView'))
 const GalleryView = lazy(() => import('./components/GalleryView'))
+const TreesView = lazy(() => import('./components/TreesView'))
+const PrintView = lazy(() => import('./components/PrintView'))
+const MoreView = lazy(() => import('./components/MoreView'))
 
 function App() {
   const [data, setData] = useState(null)
@@ -389,6 +392,30 @@ function App() {
         <GalleryView
           individuals={individuals}
           onSelectPerson={handleSelectPerson}
+        />
+      )}
+
+      {currentView === 'trees' && (
+        <TreesView
+          individuals={individuals}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'print' && (
+        <PrintView
+          individuals={individuals}
+          families={families}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'more' && (
+        <MoreView
+          individuals={individuals}
+          onSwitchView={handleSwitchView}
+          onSyncClick={handleSync}
+          syncing={syncState.active}
         />
       )}
 
