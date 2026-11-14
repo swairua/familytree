@@ -4,10 +4,13 @@ import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
 import { fetchExport, fetchMe, fetchRecentActivity, importGedcom, logout, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
 import LoginView from './components/LoginView'
+import './styles/home.css'
 
 const HomeView = lazy(() => import('./components/HomeView'))
 const TreeView = lazy(() => import('./components/TreeView'))
 const DiscoveriesView = lazy(() => import('./components/DiscoveriesView'))
+const MatchesByPeopleView = lazy(() => import('./components/MatchesByPeopleView'))
+const MatchesBySourceView = lazy(() => import('./components/MatchesBySourceView'))
 const FamilyEventsView = lazy(() => import('./components/FamilyEventsView'))
 const FamilyStatsView = lazy(() => import('./components/FamilyStatsView'))
 const SiteMembersView = lazy(() => import('./components/SiteMembersView'))
@@ -347,6 +350,22 @@ function App() {
 
       {currentView === 'discoveries' && (
         <DiscoveriesView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'matchesByPeople' && (
+        <MatchesByPeopleView
+          individuals={individuals}
+          onSelectPerson={handleSelectPerson}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {currentView === 'matchesBySource' && (
+        <MatchesBySourceView
           individuals={individuals}
           onSelectPerson={handleSelectPerson}
           onSwitchView={handleSwitchView}
