@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react'
 import AppLayout from './components/AppLayout'
-import TreeView from './components/TreeView'
-import HomeView from './components/HomeView'
-import DiscoveriesView from './components/DiscoveriesView'
-import FamilyEventsView from './components/FamilyEventsView'
-import FamilyStatsView from './components/FamilyStatsView'
-import SiteMembersView from './components/SiteMembersView'
-import ResearchView from './components/ResearchView'
-import PeopleView from './components/PeopleView'
-import SearchView from './components/SearchView'
-import ImportView from './components/ImportView'
-import GalleryView from './components/GalleryView'
 import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
 import { fetchExport, fetchRecentActivity, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
+
+const HomeView = lazy(() => import('./components/HomeView'))
+const TreeView = lazy(() => import('./components/TreeView'))
+const DiscoveriesView = lazy(() => import('./components/DiscoveriesView'))
+const FamilyEventsView = lazy(() => import('./components/FamilyEventsView'))
+const FamilyStatsView = lazy(() => import('./components/FamilyStatsView'))
+const SiteMembersView = lazy(() => import('./components/SiteMembersView'))
+const ResearchView = lazy(() => import('./components/ResearchView'))
+const PeopleView = lazy(() => import('./components/PeopleView'))
+const SearchView = lazy(() => import('./components/SearchView'))
+const ImportView = lazy(() => import('./components/ImportView'))
+const GalleryView = lazy(() => import('./components/GalleryView'))
 
 function App() {
   const [data, setData] = useState(null)
@@ -272,6 +273,7 @@ function App() {
       syncState={syncState}
       serverStatus={serverStatus}
     >
+      <Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: '#8b7355' }}><i className="fas fa-spinner fa-spin"></i> Loading…</div>}>
       {currentView === 'home' && (
         <HomeView
           individuals={individuals}
@@ -359,6 +361,7 @@ function App() {
           onUpdatePerson={handleUpdatePerson}
         />
       )}
+      </Suspense>
     </AppLayout>
   )
 }

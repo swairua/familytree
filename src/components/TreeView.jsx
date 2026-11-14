@@ -21,6 +21,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   const [viewport, setViewport] = useState({ w: 0, h: 0 })
   const [showLegend, setShowLegend] = useState(true)
   const [minimapOpen, setMinimapOpen] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const isPanning = useRef(false)
   const startPos = useRef({ x: 0, y: 0 })
   const dragStart = useRef(null)
@@ -744,6 +745,27 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     animateTo(v)
   }, [treeLayout, viewport, individuals, fitRect, animateTo])
 
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return
+    const q = searchQuery.toLowerCase()
+    let bestId = null
+    let bestLen = 0
+    for (const [id, p] of individuals) {
+      const full = (p.name || '').toLowerCase()
+      if (full.includes(q)) {
+        const len = full.length
+        if (len < bestLen || bestLen === 0) {
+          bestId = id
+          bestLen = len
+        }
+      }
+    }
+    if (bestId) {
+      setSelectedId(bestId)
+      panTo(bestId)
+    }
+  }, [searchQuery])
+
   const handlePersonClick = useCallback((id) => {
     if (suppressClick.current) {
       suppressClick.current = false
@@ -810,7 +832,20 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       </div>
       <div className="toolbar-center">
         {hasData ? (
-          <span className="toolbar-hint">{personCount} people \u2022 {familyCount} families \u2022 drag or scroll to pan \u2022 Ctrl+scroll or pinch to zoom \u2022 0 to fit</span>
+          <div className="tree-search">
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Find a person..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="tree-search-clear" onClick={() => setSearchQuery('')} title="Clear">
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
         ) : (
           <span>No family tree loaded</span>
         )}

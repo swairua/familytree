@@ -181,3 +181,8 @@
 .tree-fab { position: absolute; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 9; }
 .tree-fab .btn { width: 38px; height: 38px; padding: 0; justify-content: center; background: #fff; border: 1px solid #d9d1cb; box-shadow: 0 2px 6px rgba(62,50,42,0.12); }
 .tree-fab .btn:hover { background: #f7f4f0; }
+
+.tree-search { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid #d9d1cb; border-radius: 6px; padding: 4px 8px; width: 220px; }
+.tree-search i { color: #8b7355; font-size: 0.8rem; margin-right: 6px; }
+.tree-search input { border: none; outline: none; flex: 1; font-size: 0.8rem; }
+.tree-search-clear { background: none; border: none; color: #8b7355; cursor: pointer; padding: 2px; }
