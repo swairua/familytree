@@ -37,6 +37,33 @@ export async function fetchRecentActivity() {
   return request('recent.php')
 }
 
+export async function login(email, password) {
+  const res = await fetch(`${API_BASE}/auth.php?action=login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, password }),
+  })
+  return res.json()
+}
+
+export async function logout() {
+  const res = await fetch(`${API_BASE}/auth.php?action=logout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
+export async function fetchMe() {
+  const res = await fetch(`${API_BASE}/auth.php?action=me`, {
+    credentials: 'same-origin',
+  })
+  return res.json()
+}
+
 export async function importGedcom(gedcomText) {
   return request('tree.php?action=import', {
     method: 'POST',

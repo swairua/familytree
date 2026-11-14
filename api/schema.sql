@@ -71,8 +71,21 @@ CREATE TABLE IF NOT EXISTS family_children (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------
--- Extended events (BIRT/DEAT/MARR/EDUC/CENS/RESI/etc.)
+-- App users (authentication / session management)
 -- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  email          VARCHAR(255) NOT NULL UNIQUE,
+  password_hash  VARCHAR(255) NOT NULL,
+  display_name   VARCHAR(255) NOT NULL DEFAULT '',
+  individual_id  VARCHAR(64) NULL,
+  role           ENUM('admin','member') NOT NULL DEFAULT 'member',
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_user_email (email),
+  KEY idx_user_individual (individual_id),
+  CONSTRAINT fk_user_individual FOREIGN KEY (individual_id) REFERENCES individuals(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS events (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   individual_id VARCHAR(64) NULL,

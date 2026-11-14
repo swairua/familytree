@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react'
 import AppLayout from './components/AppLayout'
 import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
-import { fetchExport, fetchRecentActivity, importGedcom, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
+import { fetchExport, fetchMe, fetchRecentActivity, importGedcom, logout, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
+import LoginView from './components/LoginView'
 
 const HomeView = lazy(() => import('./components/HomeView'))
 const TreeView = lazy(() => import('./components/TreeView'))
@@ -25,6 +26,8 @@ function App() {
   const [layoutMode, setLayoutMode] = useState('flat')
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
   const [recentActivity, setRecentActivity] = useState({ entries: [], syncedAt: null })
 
@@ -74,6 +77,15 @@ function App() {
         }
       })
 
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchMe()
+      .then(res => { if (!cancelled) setCurrentUser(res?.user ?? null) })
+      .catch(() => { if (!cancelled) setCurrentUser(null) })
+      .finally(() => { if (!cancelled) setAuthLoading(false) })
     return () => { cancelled = true }
   }, [])
 
@@ -253,7 +265,33 @@ function App() {
     setCurrentView(view)
   }, [])
 
+  const handleLogout = useCallback(() => {
+    logout().finally(() => {
+      setCurrentUser(null)
+      setCurrentView('home')
+    })
+  }, [])
+
   const selectedPerson = selectedPersonId ? individuals.get(selectedPersonId) : null
+
+  if (authLoading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', color: '#8b7355' }}>
+        <div><i className="fas fa-spinner fa-spin"></i> Loading…</div>
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <LoginView
+        onLoggedIn={(u) => {
+          setCurrentUser(u)
+          setCurrentView('tree')
+        }}
+      />
+    )
+  }
 
   return (
     <AppLayout
@@ -272,6 +310,7 @@ function App() {
       onLayoutModeChange={setLayoutMode}
       syncState={syncState}
       serverStatus={serverStatus}
+      onLogout={handleLogout}
     >
       <Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: '#8b7355' }}><i className="fas fa-spinner fa-spin"></i> Loading…</div>}>
       {currentView === 'home' && (

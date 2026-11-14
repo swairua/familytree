@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 
-function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar }) {
+function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar, onLogout }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
 
@@ -66,6 +66,9 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
           <button className="mh-util-btn" title="English">
             <i className="fas fa-globe"></i>
             <span className="mh-help-label">English</span>
+          </button>
+          <button className="mh-util-btn" title="Sign out" onClick={onLogout}>
+            <i className="fas fa-sign-out-alt"></i>
           </button>
         </div>
       </div>

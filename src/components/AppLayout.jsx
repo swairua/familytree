@@ -12,6 +12,7 @@ function AppLayout({
   onSyncClick, syncing,
   layoutMode, onLayoutModeChange,
   syncState, serverStatus,
+  onLogout,
   children,
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -49,6 +50,7 @@ function AppLayout({
         onSyncClick={onSyncClick}
         syncing={syncing}
         onToggleMobileSidebar={openMobileSidebar}
+        onLogout={onLogout}
       />
       <div className="app-body">
         <Sidebar
