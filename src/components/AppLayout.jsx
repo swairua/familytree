@@ -53,7 +53,7 @@ function AppLayout({
         onLogout={onLogout}
       />
       <div className="app-body">
-        {currentView !== 'tree' && (
+        {currentView !== 'tree' && currentView !== 'home' && (
         <Sidebar
           individuals={individuals}
           families={families}
