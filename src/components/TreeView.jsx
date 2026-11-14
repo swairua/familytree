@@ -759,16 +759,17 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
         if (posMap.has(c) && !visited.has(c)) stack.push(c)
       }
     }
-    // Include immediate parents of the selected person in the frame
-    // so the view shows ancestors above and descendants below.
-    for (const pid of rootPerson?.parents || []) {
-      const pp = posMap.get(pid)
-      if (pp) {
-        x0 = Math.min(x0, pp.x)
-        y0 = Math.min(y0, pp.y)
-        x1 = Math.max(x1, pp.x + NODE_WIDTH)
-        y1 = Math.max(y1, pp.y + NODE_HEIGHT)
-      }
+    // Focus on a compact window around the selected person:
+    // include immediate parents and children, not the whole branch.
+    const rootP = posMap.get(id)
+    if (rootP) {
+      const parents = rootPerson?.parents || []
+      const parentY = parents.map(pid => posMap.get(pid)?.y).filter(y => y != null)
+      const childY = (rootPerson?.children || []).map(cid => posMap.get(cid)?.y).filter(y => y != null)
+      y0 = parentY.length ? Math.min(...parentY) - NODE_HEIGHT * 0.4 : rootP.y - NODE_HEIGHT * 0.4
+      y1 = childY.length ? Math.max(...childY) + NODE_HEIGHT * 1.4 : rootP.y + NODE_HEIGHT * 1.4
+      x0 = rootP.x - NODE_WIDTH * 1.0
+      x1 = rootP.x + NODE_WIDTH * 4.6
     }
     const v = fitRect({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, viewport.w, viewport.h, 30, 0.12, 1.6)
     animateTo(v)
