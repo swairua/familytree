@@ -23,14 +23,21 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
   const norm = (s) => (s || '').toLowerCase().replace(/[^a-z]/g, ' ').replace(/\s+/g, ' ').trim()
   const personForLine = (line) => {
     const n = norm(line)
+    let best = null
+    let bestLen = 0
     for (const p of individuals.values()) {
       const g = norm(p.givenName || '')
       const s = norm(p.surname || '')
       const full = norm(p.name || '')
-      if (full && n.includes(full)) return p
-      if (g && s && n.includes(g) && n.includes(s)) return p
+      let len = 0
+      if (full && n.includes(full)) len = full.length
+      else if (g && s && n.includes(g) && n.includes(s)) len = g.length + s.length + 1
+      if (len > bestLen || (len === bestLen && p.photo && !(best && best.photo))) {
+        best = p
+        bestLen = len
+      }
     }
-    return null
+    return best
   }
 
   const creator = useMemo(() => {
