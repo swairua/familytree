@@ -717,8 +717,19 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       if ((p.name || '').toLowerCase().includes('simon gichuki wairua')) { targetId = id; break }
     }
     if (targetId) {
-      drillTo(targetId)
-      return
+      const p = treeLayout.posMap.get(targetId)
+      if (p) {
+        const zoom = 0.8
+        const pan = {
+          x: viewport.w / 2 - (p.x + NODE_WIDTH / 2) * zoom,
+          y: viewport.h / 2 - (p.y + NODE_HEIGHT / 2) * zoom,
+        }
+        viewRef.current = { zoom, pan }
+        setZoom(zoom)
+        setPan(pan)
+        applyView()
+        return
+      }
     }
     setZoom(null)
     setPan(null)
