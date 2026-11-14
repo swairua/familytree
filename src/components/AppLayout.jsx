@@ -53,6 +53,7 @@ function AppLayout({
         onLogout={onLogout}
       />
       <div className="app-body">
+        {currentView !== 'tree' && (
         <Sidebar
           individuals={individuals}
           families={families}
@@ -66,7 +67,7 @@ function AppLayout({
           onCloseMobile={closeMobileSidebar}
           onSyncClick={onSyncClick}
           syncing={syncing}
-        />
+        />)}
         <main className="main-content">
           <div className="status-stack">
             {syncState.active && (

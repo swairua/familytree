@@ -933,8 +933,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
               height={NODE_HEIGHT - 8}
               clipPath={`url(#node-avatar-clip-${pd.safeId})`}
               preserveAspectRatio="xMidYMid slice"
-              loading="lazy"
-              decode="async"
               onError={(e) => { e.currentTarget.classList.add('node-photo-failed') }}
             />
           ) : (
@@ -1003,31 +1001,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
               </g>
             </svg>
 
-            {minimapOpen && minimapBox && (
-              <div className="tree-minimap">
-                <div className="tree-minimap-label">Navigator</div>
-                <svg
-                  ref={minimapSvgRef}
-                  className="tree-minimap-svg"
-                  width="240"
-                  height="150"
-                  viewBox={`0 0 ${minimapBox.treeW} ${minimapBox.treeH}`}
-                  preserveAspectRatio="xMidYMid slice"
-                >
-                  <rect className="minimap-bounds" x="0" y="0" width={minimapBox.treeW} height={minimapBox.treeH} />
-                  {treeLayout.nodes.map(node => (
-                    <circle key={node.id} className="minimap-node" cx={node.x + NODE_WIDTH / 2} cy={node.y + NODE_HEIGHT / 2} r="2" />
-                  ))}
-                  <rect
-                    className="minimap-viewport"
-                    x={minimapBox.box.x}
-                    y={minimapBox.box.y}
-                    width={minimapBox.box.w}
-                    height={minimapBox.box.h}
-                  />
-                </svg>
-              </div>
-            )}
           </>
         )}
         {view && (
@@ -1162,6 +1135,7 @@ function truncateText(text, maxLength) {
 }
 
 export default TreeView
+
 
 
 
