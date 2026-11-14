@@ -360,6 +360,7 @@ function App() {
           layoutMode={layoutMode}
           onLayoutModeChange={setLayoutMode}
           anchorId={currentUser?.individual_id || null}
+          onUpdatePerson={handleUpdatePerson}
         />
       )}
 

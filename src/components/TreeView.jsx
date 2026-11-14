@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { photoUrl } from '../utils/photoUrl'
 import { cleanName } from '../utils/cleanName'
+import PersonSidebar from './PersonSidebar'
 
 const NODE_WIDTH = 380
 const NODE_HEIGHT = 110
@@ -11,13 +12,15 @@ const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
 const AVATAR_R = 50
 
-function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, layoutMode = 'flat', onLayoutModeChange, anchorId }) {
+function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, onUpdatePerson, layoutMode = 'flat', onLayoutModeChange, anchorId }) {
   const containerRef = useRef(null)
   const contentGroupRef = useRef(null)
   const minimapSvgRef = useRef(null)
   const [zoom, setZoom] = useState(null)
   const [pan, setPan] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
+  const [sideMode, setSideMode] = useState('profile')
+  const [addParentSlot, setAddParentSlot] = useState(null)
   const [viewport, setViewport] = useState({ w: 0, h: 0 })
   const [showLegend, setShowLegend] = useState(true)
   const [minimapOpen, setMinimapOpen] = useState(true)
@@ -59,10 +62,85 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return m ? m[1] : ''
   }, [])
 
+  // ---- pedigree layout: left-to-right, anchored on logged-in user ----
+  const extendedIndividuals = useMemo(() => {
+    if (layoutMode !== 'pedigree') return individuals
+    const map = new Map()
+    const visited = new Set()
+
+    function walk(id) {
+      if (visited.has(id)) return
+      const real = individuals.get(id)
+      if (!real) return
+      visited.add(id)
+
+      const cloned = { ...real, parents: [...(real.parents || [])] }
+      const fatherId = (real.parents || []).find(p => individuals.get(p)?.gender === 'male')
+      const motherId = (real.parents || []).find(p => individuals.get(p)?.gender === 'female')
+
+      const newParents = []
+      if (!fatherId) {
+        const ph = `ph_${id}_father`
+        map.set(ph, {
+          id: ph,
+          givenName: '',
+          surname: '',
+          name: 'Add father',
+          gender: 'male',
+          birthDate: '',
+          birthPlace: '',
+          deathDate: '',
+          deathPlace: '',
+          photo: '',
+          isPlaceholder: true,
+          parents: [],
+        })
+        newParents.push(ph)
+      } else {
+        newParents.push(fatherId)
+      }
+
+      if (!motherId) {
+        const ph = `ph_${id}_mother`
+        map.set(ph, {
+          id: ph,
+          givenName: '',
+          surname: '',
+          name: 'Add mother',
+          gender: 'female',
+          birthDate: '',
+          birthPlace: '',
+          deathDate: '',
+          deathPlace: '',
+          photo: '',
+          isPlaceholder: true,
+          parents: [],
+        })
+        newParents.push(ph)
+      } else {
+        newParents.push(motherId)
+      }
+
+      cloned.parents = newParents
+      map.set(id, cloned)
+
+      for (const pid of real.parents || []) walk(pid)
+    }
+
+    if (anchorId && individuals.has(anchorId)) {
+      walk(anchorId)
+    } else {
+      for (const [id] of individuals) walk(id)
+    }
+
+    return map
+  }, [individuals, anchorId, layoutMode])
+
+
   // ---- pre-compute person data (avoid repeated work per render) ----
   const personData = useMemo(() => {
     const map = new Map()
-    for (const [id, p] of individuals) {
+    for (const [id, p] of extendedIndividuals) {
       const name = cleanName(p.name)
       const url = photoUrl(p)
       const parts = name.split(' ').filter(Boolean)
@@ -81,7 +159,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       })
     }
     return map
-  }, [individuals, extractYear])
+  }, [extendedIndividuals, extractYear])
 
   // ---- structural layout (top-down vertical tree) ----
   const flatLayout = useMemo(() => {
@@ -126,7 +204,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     roots.sort((a, b) => {
       const yearOf = (id) => {
         const d = personData.get(id)
-        return d.birthYear ? +d.birthYear : 9999
+        return d && d.birthYear ? +d.birthYear : 9999
       }
       const d = yearOf(a) - yearOf(b)
       return d !== 0 ? d : (a < b ? -1 : 1)
@@ -280,7 +358,6 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     return { nodes, links, posMap, width: w, height: h }
   }, [flatLayout])
 
-  // ---- pedigree layout: left-to-right, anchored on logged-in user ----
   const pedigreeLayout = useMemo(() => {
     if (!anchorId || !individuals.has(anchorId)) return { nodes: [], links: [], posMap: new Map(), width: 0, height: 0 }
 
@@ -293,7 +370,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     const posMap = new Map()
 
     function place(id, depth, yStart) {
-      const person = individuals.get(id)
+      const person = extendedIndividuals.get(id)
       if (!person || depth > MAX_DEPTH) return 0
       const spanSlots = 2 ** (MAX_DEPTH - depth)
       const span = spanSlots * SLOT
@@ -302,8 +379,8 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       nodes.push({ id, x, y })
       posMap.set(id, { x, y })
       const parents = depth >= MAX_DEPTH ? [] : (person.parents || [])
-      const father = parents.find(p => individuals.get(p)?.gender === 'male')
-      const mother = parents.find(p => individuals.get(p)?.gender === 'female')
+      const father = parents.find(p => extendedIndividuals.get(p)?.gender === 'male')
+      const mother = parents.find(p => extendedIndividuals.get(p)?.gender === 'female')
       if (depth < MAX_DEPTH) {
         const childSpan = (spanSlots / 2) * SLOT
         if (father) {
@@ -329,7 +406,7 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       width: (MAX_DEPTH + 1) * DIST,
       height: 2 ** MAX_DEPTH * SLOT,
     }
-  }, [individuals, anchorId])
+  }, [individuals, extendedIndividuals, anchorId])
 
   const treeLayout = layoutMode === 'pedigree' ? pedigreeLayout : layoutMode === 'vertical' ? verticalLayout : flatLayout
 
@@ -970,6 +1047,25 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     }
     const isSelected = selectedId === node.id
 
+    if (pd.isPlaceholder) {
+      const parts = (node.id || '').split('_')
+      const childId = parts.slice(1, -1).join('_')
+      const role = node.id.endsWith('_mother') ? 'mother' : 'father'
+      const label = pd.name.toUpperCase()
+      return (
+        <g
+          key={node.id}
+          className={`tree-node placeholder ${isSelected ? 'selected' : ''}`}
+          data-id={node.id}
+          transform={`translate(${node.x}, ${node.y})`}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setAddParentSlot({ childId, role }) }}
+        >
+          <rect className="node-card placeholder-card" width={NODE_WIDTH} height={NODE_HEIGHT} rx={NODE_HEIGHT / 2} ry={NODE_HEIGHT / 2} />
+          <text className="node-placeholder-text" x={NODE_WIDTH / 2} y={NODE_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">{`+ ${label}`}</text>
+        </g>
+      )
+    }
+
     return (
       <g
         key={node.id}
@@ -1009,6 +1105,11 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
 
         <text className="node-name" x={NODE_HEIGHT + 10} y={NODE_HEIGHT / 2 - 12} textAnchor="start" dominantBaseline="middle">{pd.name.toUpperCase()}</text>
         <text className="node-dates" x={NODE_HEIGHT + 10} y={NODE_HEIGHT / 2 + 14} textAnchor="start" dominantBaseline="middle">{pd.deceased ? '☠  Deceased' : `✱  ${individuals.get(node.id)?.birthDate || pd.birthYear || '?'}`}</text>
+
+        <g className="node-hover-pen" transform={`translate(${NODE_WIDTH - 18}, ${NODE_HEIGHT - 18})`} onClick={(e) => { e.stopPropagation(); setSelectedId(node.id); setSideMode('edit') }}>
+          <circle r="13" fill="#ffffff" stroke="#c9c1ba" strokeWidth="1" />
+          <path d="M -5 5 L 5 -5 M 2 -8 L 9 -1" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
       </g>
     )
   }
@@ -1016,11 +1117,23 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
   return (
     <div className="tree-container">
       {renderTopBar(true)}
-      <div
-        className="tree-canvas"
-        ref={containerRef}
-        onMouseDown={handleMouseDown}
-      >
+      <div className="tree-body">
+        {selectedPerson && (
+          <PersonSidebar
+            person={selectedPerson}
+            individuals={individuals}
+            families={families}
+            onClose={() => setSelectedId(null)}
+            onSelectPerson={(id) => { setSelectedId(id); panTo(id) }}
+            onUpdatePerson={onUpdatePerson}
+            initialMode={sideMode}
+          />
+        )}
+        <div
+          className="tree-canvas"
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+        >
         {view && (
           <>
             <svg
@@ -1074,118 +1187,17 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
             <button className="tree-nav-btn" onClick={() => { engage(); zoomBy(1 / ZOOM_STEP) }} title="Zoom out"><i className="fas fa-minus"></i></button>
           </div>
         )}
+      </div>
+      </div>
 
-        {selectedPerson && (
-          <aside
-            className="tree-profile-panel"
-            aria-label="Selected person"
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            <div className="tree-profile-heading">
-              <span className="tree-profile-kicker">Selected person</span>
-              <button className="tree-profile-close" onClick={() => setSelectedId(null)} title="Deselect">
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="tree-profile-avatar-large" style={{ position: 'relative' }}>
-              <img
-                src={photoUrl(selectedPerson) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%2399424b'%3E${selectedPerson.name ? selectedPerson.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
-                alt={cleanName(selectedPerson.name)}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(62,50,42,0.2)' }}
-                onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%2399424b'%3E${selectedPerson.name ? selectedPerson.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
-              />
-            </div>
-            <h2>{cleanName(selectedPerson.name)}</h2>
-            <p className="tree-profile-dates">
-              {formatDates(selectedPerson)}
-              {selectedPerson.birthPlace && <span>{selectedPerson.birthPlace}</span>}
-            </p>
-
-            {selectedPerson.parents && selectedPerson.parents.length > 0 && (
-              <div className="tree-profile-family">
-                <span className="family-label"><i className="fas fa-user-friends"></i> Parents</span>
-                <div className="family-links">
-                  {selectedPerson.parents.map(pid => {
-                    const p = individuals.get(pid)
-                    if (!p) return null
-                    return (
-                      <button key={pid} className="family-link" onClick={() => { setSelectedId(pid); panTo(pid) }}>
-                        <img
-                          src={photoUrl(p) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${p.name ? p.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
-                          alt={cleanName(p.name)}
-                          className="family-link-avatar"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${p.name ? p.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
-                        />
-                        <span>{truncateText(cleanName(p.name), 22)}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {selectedPerson.spouses && selectedPerson.spouses.length > 0 && (
-              <div className="tree-profile-family">
-                <span className="family-label"><i className="fas fa-heart"></i> Spouse{selectedPerson.spouses.length > 1 ? 's' : ''}</span>
-                <div className="family-links">
-                  {selectedPerson.spouses.map(sid => {
-                    const s = individuals.get(sid)
-                    if (!s) return null
-                    return (
-                      <button key={sid} className="family-link" onClick={() => { setSelectedId(sid); panTo(sid) }}>
-                        <img
-                          src={photoUrl(s) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${s.name ? s.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
-                          alt={cleanName(s.name)}
-                          className="family-link-avatar"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${s.name ? s.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
-                        />
-                        <span>{truncateText(cleanName(s.name), 22)}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {selectedPerson.children && selectedPerson.children.length > 0 && (
-              <div className="tree-profile-family">
-                <span className="family-label"><i className="fas fa-child"></i> Children</span>
-                <div className="family-links">
-                  {selectedPerson.children.map(cid => {
-                    const c = individuals.get(cid)
-                    if (!c) return null
-                    return (
-                      <button key={cid} className="family-link" onClick={() => { setSelectedId(cid); panTo(cid) }}>
-                        <img
-                          src={photoUrl(c) || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${c.name ? c.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`}
-                          alt={cleanName(c.name)}
-                          className="family-link-avatar"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                          onError={(e) => { e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%2399424b'%3E${c.name ? c.name.split(' ').map(pp => pp[0]).join('').toUpperCase().slice(0, 2) : '?' }%3C/text%3E%3C/svg%3E`; }}
-                        />
-                        <span>{truncateText(cleanName(c.name), 22)}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="tree-profile-actions">
-              <button className="btn btn-primary btn-sm" onClick={() => onOpenPersonModal && onOpenPersonModal(selectedPerson.id)}>
-                <i className="fas fa-user"></i> Full Details
-              </button>
-              <button className="btn btn-sm" onClick={() => drillTo(selectedPerson.id)} title="Zoom to this person's family branch">
-                <i className="fas fa-sitemap"></i> Drill Down
-              </button>
-            </div>
-          </aside>
+        {addParentSlot && (
+          <AddParentModal
+            childId={addParentSlot.childId}
+            role={addParentSlot.role}
+            onClose={() => setAddParentSlot(null)}
+          />
         )}
       </div>
-    </div>
   )
 }
 
@@ -1196,6 +1208,8 @@ function truncateText(text, maxLength) {
 }
 
 export default TreeView
+
+
 
 
 
