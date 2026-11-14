@@ -716,12 +716,30 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
     }
   }, [viewport, treeLayout])
 
+  const autoFocusedRef = useRef(false)
+  useEffect(() => {
+    if (hasInteracted.current) return
+    if (individuals.size === 0) return
+    if (autoFocusedRef.current) return
+    let targetId = null
+    for (const [id, p] of individuals) {
+      const full = (p.name || '').toLowerCase()
+      if (full.includes('simon gichuki wairua')) { targetId = id; break }
+    }
+    if (targetId) {
+      autoFocusedRef.current = true
+      drillTo(targetId)
+      setSelectedId(targetId)
+    }
+  }, [individuals, viewport, treeLayout])
+
   const drillTo = useCallback((id) => {
     const posMap = treeLayout.posMap
     const p = posMap.get(id)
     if (!p || !viewport.w || !viewport.h) return
     const visited = new Set()
     const stack = [id]
+    const rootPerson = individuals.get(id)
     let x0 = p.x, y0 = p.y, x1 = p.x + NODE_WIDTH, y1 = p.y + NODE_HEIGHT
     while (stack.length) {
       const cur = stack.pop()
@@ -739,6 +757,17 @@ function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, la
       }
       for (const c of person?.children || []) {
         if (posMap.has(c) && !visited.has(c)) stack.push(c)
+      }
+    }
+    // Include immediate parents of the selected person in the frame
+    // so the view shows ancestors above and descendants below.
+    for (const pid of rootPerson?.parents || []) {
+      const pp = posMap.get(pid)
+      if (pp) {
+        x0 = Math.min(x0, pp.x)
+        y0 = Math.min(y0, pp.y)
+        x1 = Math.max(x1, pp.x + NODE_WIDTH)
+        y1 = Math.max(y1, pp.y + NODE_HEIGHT)
       }
     }
     const v = fitRect({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, viewport.w, viewport.h, 30, 0.12, 1.6)
