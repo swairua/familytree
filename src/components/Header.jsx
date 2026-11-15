@@ -26,8 +26,18 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         { id: 'print', label: 'Print charts & books' },
         { id: 'more', label: 'More…' },
     ]},
-    { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass' },
-    { id: 'gallery', label: 'Photos', icon: 'fa-images' },
+    { id: 'discoveries', label: 'Discoveries', icon: 'fa-compass', children: [
+        { id: 'matchesByPeople', label: 'Matches by people' },
+        { id: 'matchesBySource', label: 'Matches by source' },
+    ]},
+    { id: 'gallery', label: 'Photos', icon: 'fa-images', children: [
+        { id: 'gallery', label: 'My photos' },
+        { id: 'colorize', label: 'Colorize photos' },
+        { id: 'enhance', label: 'Enhance photos' },
+        { id: 'nostalgia', label: 'Deep Nostalgia™' },
+        { id: 'livememory', label: 'LiveMemory™' },
+        { id: 'scribeai', label: 'Scribe AI' },
+    ]},
     { id: 'research', label: 'DNA', icon: 'fa-dna' },
     { id: 'research', label: 'Research', icon: 'fa-book' },
   ]

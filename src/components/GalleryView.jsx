@@ -1,254 +1,217 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { cleanName } from '../utils/cleanName'
 import { photoUrl } from '../utils/photoUrl'
 import PhotoLightbox from './PhotoLightbox'
-
-const extractYear = (date) => {
-  if (!date) return ''
-  const m = date.match(/\b(\d{4})\b/)
-  return m ? m[1] : ''
-}
+import '../styles/gallery.css'
 
 function GalleryView({ individuals, onSelectPerson }) {
-  const [viewMode, setViewMode] = useState('grid')
-  const [lightboxIndex, setLightboxIndex] = useState(-1)
-  const [filter, setFilter] = useState('photos')
-  const [page, setPage] = useState(1)
-  const PAGE_SIZE = 24
-
   const photos = useMemo(() => {
-    const list = []
+    const arr = []
     for (const [, p] of individuals) {
       const url = photoUrl(p)
-      if (filter === 'photos' && !url) continue
-      list.push({
+      if (!url) continue
+      arr.push({
         id: p.id,
         name: cleanName(p.name),
         url,
-        birthYear: extractYear(p.birthDate || ''),
-        deathYear: extractYear(p.deathDate || ''),
-        birthPlace: p.birthPlace || '',
+        birthYear: p.birthYear || '',
+        deathYear: p.deathDate || '',
         gender: p.gender || 'unknown',
       })
     }
-    list.sort((a, b) => (a.birthYear || 'zzzz').localeCompare(b.birthYear || 'zzzz'))
-    return list
-  }, [individuals, filter])
+    arr.sort((a, b) => (b.birthYear || '').localeCompare(a.birthYear || '') || (a.name || '').localeCompare(b.name || ''))
+    return arr
+  }, [individuals])
 
-  const totalPages = Math.ceil(photos.length / PAGE_SIZE)
-  const visiblePhotos = photos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const albums = useMemo(() => {
+    return [{ id: 'all', title: 'Family photos', count: photos.length }]
+  }, [photos])
 
-  const decades = useMemo(() => {
-    if (viewMode !== 'timeline') return []
-    const groups = {}
-    for (const p of photos) {
-      const m = (p.birthYear || '').match(/(\d{3})0/)
-      const decade = m ? `${m[1]}0s` : 'Unknown'
-      if (!groups[decade]) groups[decade] = []
-      groups[decade].push(p)
-    }
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [photos, viewMode])
+  const [filter, setFilter] = useState('photos')
+  const [query, setQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(48)
+  const [lightboxIndex, setLightboxIndex] = useState(-1)
+  const sentinelRef = useRef(null)
 
-  useEffect(() => { setPage(1) }, [filter, viewMode])
+  const filteredPhotos = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return photos
+    return photos.filter(p => (p.name || '').toLowerCase().includes(q))
+  }, [photos, query])
+
+  const visiblePhotos = useMemo(() => filteredPhotos.slice(0, visibleCount), [filteredPhotos, visibleCount])
+
+  // Load more photos automatically as the user scrolls (infinite scroll)
+  useEffect(() => {
+    if (visibleCount >= filteredPhotos.length) return
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          setVisibleCount(prev => Math.min(prev + 48, filteredPhotos.length))
+        }
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [filteredPhotos.length, visibleCount])
+
+  useEffect(() => { setVisibleCount(48) }, [query, filter])
 
   const openLightbox = (index) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(-1)
-  const nextPhoto = () => setLightboxIndex(i => Math.min(i + 1, photos.length - 1))
+  const nextPhoto = () => setLightboxIndex(i => Math.min(i + 1, filteredPhotos.length - 1))
   const prevPhoto = () => setLightboxIndex(i => Math.max(i - 1, 0))
 
   if (individuals.size === 0) {
     return (
-      <div className="gallery-container">
-        <div className="gallery-header">
-          <h2><i className="fas fa-images"></i> Photo Gallery</h2>
-        </div>
-        <div className="empty-state">
+      <div className="photos-page">
+        <div className="photos-empty">
           <i className="fas fa-images"></i>
           <h2>No photos</h2>
-          <p>Import a GEDCOM file to see photos</p>
+          <p>Import a GEDCOM file to see photos.</p>
         </div>
       </div>
     )
   }
 
-  const renderGalleryItem = (photo, globalIndex) => {
-    const dates = []
-    if (photo.birthYear) dates.push(photo.birthYear)
-    if (photo.deathYear) dates.push(photo.deathYear)
-    const dateStr = dates.length ? dates.join(' \u2013 ') : ''
-    return (
-      <div
-        key={photo.id}
-        className={`gallery-item loaded gender-${photo.gender}`}
-        onClick={() => openLightbox(globalIndex)}
-      >
-        {photo.url ? (
-          <img src={photo.url} alt={photo.name} loading={globalIndex < 12 ? 'eager' : 'lazy'} decoding="async" fetchPriority={globalIndex < 4 ? 'high' : 'auto'} />
-        ) : (
-          <div className={`gallery-placeholder gender-${photo.gender}`}>
-            <i className="fas fa-user"></i>
-          </div>
-        )}
-        <div className="gallery-item-overlay">
-          <span className="gallery-item-name">{photo.name}</span>
-          <div className="gallery-item-meta">
-            {photo.gender !== 'unknown' && (
-              <span className={`gallery-item-gender gender-${photo.gender}`} title={photo.gender}>
-                <i className={`fas ${photo.gender === 'male' ? 'fa-mars' : 'fa-venus'}`}></i>
-              </span>
-            )}
-            {dateStr && <span className="gallery-item-dates">{dateStr}</span>}
-            {photo.birthPlace && <span className="gallery-item-place">{photo.birthPlace}</span>}
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const isAllMode = filter === 'all'
+  const isPeopleMode = filter === 'people'
+  const isAlbumsMode = filter === 'albums'
+
+  const headerCount = isAllMode
+    ? photos.length
+    : isPeopleMode
+      ? individuals.size
+      : albums.length
+
+  const gridItems = isAlbumsMode ? albums : photos
 
   return (
-    <div className="gallery-layout">
-      <aside className="gallery-sidebar">
-        <h3 className="gallery-sidebar-title">Media</h3>
-        <button className={`gallery-side-item ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-          <i className="fas fa-th-large"></i> All media items
-        </button>
-        <button className={`gallery-side-item ${filter === 'photos' ? 'active' : ''}`} onClick={() => setFilter('photos')}>
-          <i className="fas fa-user"></i> People
-        </button>
-        <button className="gallery-side-item" onClick={() => setFilter('photos')}>
-          <i className="fas fa-folder"></i> Albums
-        </button>
-      </aside>
-      <div className="gallery-container gallery-main">
-      <div className="gallery-header">
-        <div className="gallery-header-left">
-          <h2><i className="fas fa-images"></i> Photos</h2>
-          <span className="gallery-count">
-            Showing {visiblePhotos.length} of {photos.length} &bull; Page {page} of {totalPages}
-          </span>
-        </div>
-        <button className="btn btn-primary" title="Upload (coming soon)" disabled>
-          <i className="fas fa-upload"></i> Upload
-        </button>
-        <div className="gallery-controls">
-          <div className="gallery-filter-group">
+    <div className="photos-page">
+      <div className="photos-layout">
+        {/* Left sidebar */}
+        <aside className="photos-sidebar">
+          <nav className="photos-sidebar-nav" aria-label="Photos navigation">
             <button
-              className={`btn btn-sm ${filter === 'photos' ? 'btn-primary' : ''}`}
+              className={`sidebar-item ${filter === 'photos' ? 'active' : ''}`}
               onClick={() => setFilter('photos')}
             >
-              <i className="fas fa-camera"></i> With Photos
+              <i className="fas fa-th-large" aria-hidden="true"></i>
+              <span className="sidebar-label">All media items</span>
+              <span className="sidebar-badge">{photos.length.toLocaleString()}</span>
             </button>
             <button
-              className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : ''}`}
-              onClick={() => setFilter('all')}
+              className={`sidebar-item ${filter === 'people' ? 'active' : ''}`}
+              onClick={() => setFilter('people')}
             >
-              <i className="fas fa-users"></i> All People
+              <i className="fas fa-user-friends" aria-hidden="true"></i>
+              <span className="sidebar-label">People</span>
+              <span className="sidebar-badge">{individuals.size.toLocaleString()}</span>
             </button>
+            <button
+              className={`sidebar-item ${filter === 'albums' ? 'active' : ''}`}
+              onClick={() => setFilter('albums')}
+            >
+              <i className="fas fa-images" aria-hidden="true"></i>
+              <span className="sidebar-label">Albums</span>
+              <span className="sidebar-badge">{albums.length}</span>
+            </button>
+          </nav>
+          <div className="photos-sidebar-footer">
+            <div className="sidebar-note">
+              <strong>{photos.length.toLocaleString()}</strong> media items
+              <span> · {albums.length} albums · {individuals.size.toLocaleString()} people</span>
+            </div>
           </div>
-          <div className="gallery-view-group">
-            <button
-              className={`btn btn-icon ${viewMode === 'masonry' ? 'active' : ''}`}
-              onClick={() => setViewMode('masonry')}
-              title="Masonry view"
-            >
-              <i className="fas fa-th-large"></i>
-            </button>
-            <button
-              className={`btn btn-icon ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Grid view"
-            >
-              <i className="fas fa-th"></i>
-            </button>
-            <button
-              className={`btn btn-icon ${viewMode === 'timeline' ? 'active' : ''}`}
-              onClick={() => setViewMode('timeline')}
-              title="Timeline view"
-            >
-              <i className="fas fa-stream"></i>
-            </button>
-            <button
-              className={`btn btn-icon ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="List view"
-            >
-              <i className="fas fa-list"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+        </aside>
 
-      {viewMode === 'timeline' ? (
-        <div className="gallery-timeline">
-          {decades.map(([decade, items]) => (
-            <div key={decade} className="timeline-decade">
-              <h3 className="timeline-decade-label">{decade}</h3>
-              <div className="timeline-decade-items">
-                {items.map((photo, i) => {
-                  const globalIndex = photos.indexOf(photo)
-                  return renderGalleryItem(photo, globalIndex)
-                })}
-              </div>
+        {/* Main content */}
+        <section className="photos-main">
+          <div className="photos-header">
+            <div className="photos-header-left">
+              <h1>{isAlbumsMode ? 'Albums' : 'My photos'}</h1>
+              <p className="photos-count">
+                {isAlbumsMode
+                  ? albums.length
+                  : headerCount.toLocaleString()}
+                {' '}media item{(isAlbumsMode ? albums.length : headerCount) === 1 ? '' : 's'}
+              </p>
             </div>
-          ))}
-        </div>
-      ) : viewMode === 'list' ? (
-        <div className="gallery-list">
-          {visiblePhotos.map((photo, i) => (
-            <div
-              key={photo.id}
-              className="gallery-list-item"
-              onClick={() => openLightbox(i)}
-            >
-              <div className={`gallery-list-avatar gender-${photo.gender}`}>
-                {photo.url ? (
-                  <img src={photo.url} alt={photo.name} loading={i < 12 ? 'eager' : 'lazy'} decoding="async" fetchPriority={i < 4 ? 'high' : 'auto'} />
-                ) : (
-                  <i className="fas fa-user"></i>
-                )}
-              </div>
-              <div className="gallery-list-info">
-                <span className="gallery-list-name">{photo.name}</span>
-                <span className="gallery-list-dates">
-                  {photo.birthYear || 'Unknown'}
-                  {photo.deathYear ? ` — ${photo.deathYear}` : ''}
-                </span>
-              </div>
-              <div className="gallery-list-action">
-                <i className="fas fa-chevron-right"></i>
-              </div>
+            <div className="photos-header-right">
+              <label className="photos-search">
+                <i className="fas fa-search" aria-hidden="true"></i>
+                <input
+                  type="search"
+                  placeholder="Find a photo..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Search photos"
+                />
+              </label>
+              <button className="photos-upload" type="button" title="Upload photos">
+                <i className="fas fa-upload" aria-hidden="true"></i> Upload
+              </button>
             </div>
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className={viewMode === 'masonry' ? 'gallery-masonry' : `gallery-grid gallery-${viewMode}`}>
-            {visiblePhotos.map((photo, i) => renderGalleryItem(photo, i))}
           </div>
-          <div className="gallery-pagination">
-            <span className="gallery-count">
-              {Math.min(page * PAGE_SIZE, photos.length)} of {photos.length}
-            </span>
-            <div className="gallery-page-list">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-                <button
-                  key={pg}
-                  className={`btn btn-icon ${pg === page ? 'active' : ''}`}
-                  onClick={() => setPage(pg)}
-                >
-                  {pg}
-                </button>
+
+          {isAlbumsMode ? (
+            <div className="albums-grid">
+              {albums.map(album => (
+                <div key={album.id} className="album-card">
+                  <div className="album-cover" aria-hidden="true">
+                    {photos.slice(0, 1).map(p => (
+                      <img key={p.id} src={p.url} alt="" />
+                    ))}
+                  </div>
+                  <div className="album-meta">
+                    <strong>{album.title}</strong>
+                    <span>{album.count.toLocaleString()} media items</span>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          ) : (
+            <>
+              {filteredPhotos.length === 0 ? (
+                <div className="photos-no-results">No photos match “{query}”.</div>
+              ) : (
+                <div className="photos-grid">
+                  {visiblePhotos.map((photo, idx) => (
+                    <button
+                      key={photo.id}
+                      className="photo-tile"
+                      onClick={() => openLightbox(idx)}
+                      title={photo.name}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.name}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="photo-overlay">
+                        <span className="photo-name">{photo.name}</span>
+                        {photo.birthYear && (
+                          <span className="photo-year">{photo.birthYear}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {visibleCount < filteredPhotos.length && (
+                <div ref={sentinelRef} className="photos-sentinel" aria-hidden="true" />
+              )}
+            </>
+          )}
+        </section>
+      </div>
 
       {lightboxIndex >= 0 && (
         <PhotoLightbox
-          photos={photos}
+          photos={filteredPhotos.length ? filteredPhotos : photos}
           lightboxIndex={lightboxIndex}
           onClose={closeLightbox}
           onNext={nextPhoto}

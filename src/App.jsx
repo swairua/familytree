@@ -22,6 +22,7 @@ const GalleryView = lazy(() => import('./components/GalleryView'))
 const TreesView = lazy(() => import('./components/TreesView'))
 const PrintView = lazy(() => import('./components/PrintView'))
 const MoreView = lazy(() => import('./components/MoreView'))
+const FeatureView = lazy(() => import('./components/FeatureView'))
 
 function App() {
   const [data, setData] = useState(null)
@@ -369,6 +370,13 @@ function App() {
         <MatchesBySourceView
           individuals={individuals}
           onSelectPerson={handleSelectPerson}
+          onSwitchView={handleSwitchView}
+        />
+      )}
+
+      {['colorize', 'enhance', 'nostalgia', 'livememory', 'scribeai'].includes(currentView) && (
+        <FeatureView
+          featureKey={currentView}
           onSwitchView={handleSwitchView}
         />
       )}
