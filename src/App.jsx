@@ -24,6 +24,7 @@ const PrintView = lazy(() => import('./components/PrintView'))
 const MoreView = lazy(() => import('./components/MoreView'))
 const FeatureView = lazy(() => import('./components/FeatureView'))
 const AccountView = lazy(() => import('./components/AccountView'))
+const SettingsView = lazy(() => import('./components/SettingsView'))
 const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
 const SignUpView = lazy(() => import('./components/SignUpView'))
 
@@ -375,6 +376,24 @@ function App() {
           currentUser={currentUser}
           onSelectPerson={handleSelectPerson}
         />
+      )}
+
+      {currentView === 'settings' && (
+        currentUser?.role === 'admin' ? (
+          <SettingsView
+            currentUser={currentUser}
+            onSwitchView={handleSwitchView}
+          />
+        ) : (
+          <div className="view-page">
+            <div className="account-container">
+              <div className="view-card">
+                <h2 className="account-card-title">Settings</h2>
+                <p className="account-error" role="alert">Administrator access required.</p>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {currentView === 'account' && (

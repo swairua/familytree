@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
-import { cleanName } from '../utils/cleanName'
 import { fetchUsers, userAction, userSetPassword, userSetEmail } from '../utils/api'
 import '../styles/sitemembers.css'
+
+const PAGE_SIZE = 10
+const isPlaceholderEmail = (email) => (email || '').endsWith('@placeholder.invalid')
 
 function SiteMembersView({ currentUser, onSelectPerson }) {
   const [users, setUsers] = useState([])
@@ -11,6 +13,7 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
   const [busyId, setBusyId] = useState(null)
   const [sort, setSort] = useState('status')
   const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
 
   const load = async () => {
     setLoading(true)
@@ -105,6 +108,16 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
     return sorted
   }, [users, query, sort])
 
+  // Reset to first page when the filter/sort changes
+  useEffect(() => { setPage(1) }, [query, sort])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageItems = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  )
+
   const pendingCount = users.filter(u => u.status === 'pending').length
   const myId = currentUser?.id
 
@@ -161,11 +174,11 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((u, i) => {
+                {pageItems.map((u, i) => {
                   const self = myId != null && String(u.id) === String(myId)
                   return (
                     <tr key={u.id} className={u.status === 'pending' ? 'sm-row-pending' : ''}>
-                      <td>{i + 1}</td>
+                      <td>{(currentPage - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="sm-name">
                         <PersonAvatar
                           person={{
@@ -180,7 +193,9 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                           {self && <span className="sm-you-badge">you</span>}
                         </div>
                       </td>
-                      <td>{u.email}</td>
+                      <td>{isPlaceholderEmail(u.email)
+                        ? <span className="sm-muted" title="Placeholder — real address not set yet">— not set</span>
+                        : u.email}</td>
                       <td>
                         {u.individual_id ? (
                           <button className="sm-link" onClick={() => onSelectPerson && onSelectPerson(u.individual_id)}>
@@ -251,6 +266,39 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                 })}
               </tbody>
             </table>
+            <div className="sm-pagination">
+              <span className="sm-pagination-info">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="sm-pagination-controls">
+                <button
+                  className="btn btn-sm btn-page"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  aria-label="Previous page"
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <button
+                    key={n}
+                    className={`btn btn-sm btn-page ${n === currentPage ? 'active' : ''}`}
+                    onClick={() => setPage(n)}
+                    aria-current={n === currentPage ? 'page' : undefined}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-sm btn-page"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  aria-label="Next page"
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

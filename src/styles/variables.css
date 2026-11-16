@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --primary: #2c7a4b;
   --primary-dark: #1e5c38;
   --primary-light: #4a9d6e;
@@ -22,9 +22,7 @@
   --heritage-teal: #398d96;
   --heritage-canvas: #eeece9;
   --heritage-ink: #403b38;
-  --header-height: 56px;
-  --sidebar-width: 260px;
-  --sidebar-collapsed-width: 0px;
-  --resizer-width: 5px;
+  --header-height: 56px;  --resizer-width: 5px;
 }
+
 

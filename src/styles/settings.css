@@ -1,0 +1,50 @@
+.settings-hint {
+  font-size: 0.78rem;
+  color: #7a7267;
+  margin: 0;
+  line-height: 1.45;
+  background: #faf8f5;
+  border: 1px solid #ece6dd;
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+
+.settings-note {
+  font-size: 0.78rem;
+  color: #5c554c;
+  margin: 14px 0 0;
+  line-height: 1.45;
+  border-top: 1px solid #f0ece6;
+  padding-top: 12px;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #3a332d;
+  cursor: pointer;
+}
+.settings-toggle input { cursor: pointer; }
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+
+.account-form select {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd6cd;
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+}
+.account-form select:focus-visible {
+  outline: 2px solid #e08c2e;
+  outline-offset: 1px;
+  border-color: #e08c2e;
+}

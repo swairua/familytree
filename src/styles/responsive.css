@@ -9,37 +9,6 @@
   .header-actions .btn span { display: none; }
   .header-actions { min-width: auto; }
 
-  .sidebar {
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    bottom: 0;
-    z-index: 90;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 280px;
-  }
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-  .sidebar.collapsed {
-    width: 280px;
-  }
-  .sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    top: var(--header-height);
-    background: rgba(0,0,0,0.4);
-    z-index: 89;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .sidebar-backdrop.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
 
   .pane-resizer { display: none; }
   .split-pane { flex-direction: column; }

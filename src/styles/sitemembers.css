@@ -116,3 +116,27 @@
 .sm-avatar.unknown { background: #e08c2e; color: #fff; }
 .btn-setemail { background: #eef4ff; color: #1a5bbf; border: 1px solid #c9d8f2; }
 .btn-setemail:hover { background: #dde9fb; }
+.sm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid #f0ece6;
+  flex-wrap: wrap;
+}
+.sm-pagination-info { font-size: 0.8rem; color: #8b837d; }
+.sm-pagination-controls { display: flex; gap: 4px; }
+.btn-page {
+  background: #fff;
+  border: 1px solid #d9d1cb;
+  color: #3e322a;
+  min-width: 30px;
+  font-weight: 700;
+}
+.btn-page:hover { background: #f7f4f0; }
+.btn-page.active {
+  background: #e08c2e;
+  border-color: #cb7a24;
+  color: #fff;
+}

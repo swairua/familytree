@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 
-function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar, onLogout, currentUser }) {
+function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onLogout, currentUser }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
   const isAdmin = currentUser?.role === 'admin'
@@ -19,6 +19,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         { id: 'events', label: 'Family events' },
         { id: 'stats', label: 'Family statistics' },
         ...(isAdmin ? [{ id: 'members', label: 'Site members' }] : []),
+        ...(isAdmin ? [{ id: 'settings', label: 'Settings' }] : []),
     ]},
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap', children: [
         { id: 'tree', label: 'My family tree' },
@@ -60,9 +61,11 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
           <button className="mh-util-btn" onClick={onImportClick} title="Import GEDCOM">
             <i className="fas fa-file-import"></i>
           </button>
-          <button className="mh-util-btn" title="Site settings">
-            <i className="fas fa-cog"></i>
-          </button>
+          {isAdmin && (
+            <button className="mh-util-btn" onClick={() => onSwitchView('settings')} title="Site settings">
+              <i className="fas fa-cog"></i>
+            </button>
+          )}
         </div>
         <div className="mh-utility-right">
           <button className="mh-premium">Go PremiumPlus</button>
@@ -99,7 +102,12 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         <nav className="mh-nav" ref={navRef}>
           {navItems.map(item => (
             item.children ? (
-              <div key={item.id} className="mh-nav-item mh-nav-dropdown">
+              <div
+                key={item.id}
+                className="mh-nav-item mh-nav-dropdown"
+                onMouseEnter={() => setOpenMenu(item.id)}
+                onMouseLeave={() => setOpenMenu(null)}
+              >
                 <button
                   className={`mh-nav-link ${item.children && item.children.some(child => child.id === currentView) ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); onSwitchView(item.id); setOpenMenu(openMenu === item.id ? null : item.id) }}
@@ -130,11 +138,6 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
             )
           ))}
         </nav>
-        <div className="mh-nav-right">
-          <button className="mobile-menu-btn" onClick={onToggleMobileSidebar} title="Open menu">
-            <i className="fas fa-bars"></i>
-          </button>
-        </div>
       </div>
     </header>
   )

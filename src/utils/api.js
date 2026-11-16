@@ -114,6 +114,33 @@ export async function userSetPassword(id, password) {
   return res.json()
 }
 
+export async function fetchSettings() {
+  const res = await fetch(`${API_BASE}/settings.php?action=get`, {
+    credentials: 'same-origin',
+  })
+  return res.json()
+}
+
+export async function updateSettings(patch) {
+  const res = await fetch(`${API_BASE}/settings.php?action=set`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(patch),
+  })
+  return res.json()
+}
+
+export async function sendTestEmail(to) {
+  const res = await fetch(`${API_BASE}/settings.php?action=send-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ to }),
+  })
+  return res.json()
+}
+
 export async function userSetEmail(id, email) {
   const res = await fetch(`${API_BASE}/auth.php?action=user-set-email`, {
     method: 'POST',

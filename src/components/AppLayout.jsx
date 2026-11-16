@@ -1,7 +1,5 @@
-import React, { useState, useCallback } from 'react'
+import React from 'react'
 import Header from './Header'
-import Sidebar from './Sidebar'
-import SplitPane from './SplitPane'
 
 function AppLayout({
   currentView, onSwitchView,
@@ -16,60 +14,19 @@ function AppLayout({
   currentUser,
   children,
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed(c => !c)
-  }, [])
-
-  const openMobileSidebar = useCallback(() => {
-    setSidebarMobileOpen(true)
-  }, [])
-
-  const closeMobileSidebar = useCallback(() => {
-    setSidebarMobileOpen(false)
-  }, [])
-
-  const handleNavClick = useCallback((view) => {
-    onSwitchView(view)
-    setSidebarMobileOpen(false)
-  }, [onSwitchView])
-
-  const handleSelectFromSidebar = useCallback((id) => {
-    onSelectPerson(id)
-    setSidebarMobileOpen(false)
-  }, [onSelectPerson])
-
   return (
     <div className="app">
       <Header
         currentView={currentView}
-        onSwitchView={handleNavClick}
+        onSwitchView={onSwitchView}
         onImportClick={onImportClick}
         hasData={!!data}
         onSyncClick={onSyncClick}
         syncing={syncing}
-        onToggleMobileSidebar={openMobileSidebar}
         onLogout={onLogout}
         currentUser={currentUser}
       />
       <div className="app-body">
-        {currentView !== 'tree' && currentView !== 'home' && (
-        <Sidebar
-          individuals={individuals}
-          families={families}
-          currentView={currentView}
-          onSwitchView={handleNavClick}
-          onSelectPerson={handleSelectFromSidebar}
-          selectedPersonId={selectedPersonId}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-          isMobileOpen={sidebarMobileOpen}
-          onCloseMobile={closeMobileSidebar}
-          onSyncClick={onSyncClick}
-          syncing={syncing}
-        />)}
         <main className="main-content">
           <div className="status-stack">
             {syncState.active && (
@@ -103,4 +60,3 @@ function AppLayout({
 }
 
 export default AppLayout
-

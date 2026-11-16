@@ -90,6 +90,11 @@ CREATE TABLE IF NOT EXISTS users (
   KEY idx_user_individual (individual_id),
   CONSTRAINT fk_user_individual FOREIGN KEY (individual_id) REFERENCES individuals(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS app_settings (
+  `key`       VARCHAR(100) NOT NULL PRIMARY KEY,
+  `value`     TEXT NOT NULL,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS events (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   individual_id VARCHAR(64) NULL,
