@@ -1,0 +1,34 @@
+# This directory is shared with the Apache document root, but it is NOT a
+# public web root. The app is served by Vite (dev) or by a dedicated vhost
+# (prod, see docs/deploy.md). Apache on this host needs to expose only:
+#   /familytree/api/*.php
+#   /familytree/data/photos/*.jpg
+# Everything else in the repo is blocked here.
+
+Options -Indexes +FollowSymLinks
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Dotfiles/directories anywhere (.env, .git/, .htaccess, ...)
+  RewriteRule (^|/)\. - [F,L]
+
+  # Subtrees that must never be public
+  RewriteRule ^node_modules/ - [F,L]
+  RewriteRule ^src/ - [F,L]
+  RewriteRule ^docs/ - [F,L]
+  RewriteRule ^data/(?!photos/) - [F,L]
+
+  # Source/build files (public app code is served by Vite or dist/, not here)
+  RewriteRule \.(mjs|cjs|ts|cts|mts|jsx|js|map|sql|md|log|ini|ged|png|jpg\.bak)$ - [F,L]
+
+  # Credentials, scraped state, tooling manifests
+  RewriteRule ^myheritage_ - [F,L]
+  RewriteRule ^site_members - [F,L]
+  RewriteRule ^package(-lock)?\.json$ - [F,L]
+  RewriteRule ^vite\.config\.js$ - [F,L]
+  RewriteRule ^composer\.(json|lock)$ - [F,L]
+
+  # Sensitive API internals (belt and braces; api/.htaccess also denies)
+  RewriteRule ^api/(config\.local\.php|schema\.sql|.*\.local\.php)$ - [F,L]
+</IfModule>

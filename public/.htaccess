@@ -1,0 +1,41 @@
+# Apache config bundled with the built app (copied to dist/.htaccess by vite).
+# Requires AllowOverride All (the XAMPP vhosts already allow it) and
+# mod_headers / mod_deflate / mod_expires (all standard in XAMPP).
+#
+# Layout this assumes (see docs/deploy.md):
+#   <vhost root>           -> htdocs/familytree/dist (the SPA)
+#   /api/*  (alias)        -> htdocs/familytree/api  (PHP)
+#   /data/* (alias)        -> htdocs/familytree/data (photos, static)
+
+Options -Indexes +FollowSymLinks
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/json application/javascript application/xml image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+  # HTML must always revalidate so new deploys go live immediately
+  SetEnvIf Request_URI "\.html?$" NO_CACHE_HTML
+  SetEnvIf Request_URI "^/?$" NO_CACHE_HTML
+  Header set Cache-Control "no-cache, must-revalidate" env=NO_CACHE_HTML
+
+  # Vite emits content-hashed files under /assets/ — safe to cache forever
+  SetEnvIf Request_URI "^/assets/" FINGERPRINTED
+  Header set Cache-Control "public, max-age=31536000, immutable" env=FINGERPRINTED
+
+  # Emails link images only through /api (photo.php) — those are already cached
+  # by photo.php itself; if photos are ever aliased statically instead, use a week:
+  SetEnvIf Request_URI "^/data/photos/" PHOTO
+  Header set Cache-Control "public, max-age=604800" env=PHOTO
+
+  # API responses must never be cached by proxies — except photo.php, which
+  # does its own week-long ETag caching and is the hot image path
+  SetEnvIf Request_URI "^/api/" NO_STORE
+  SetEnvIf Request_URI "^/api/photo\.php" !NO_STORE
+  Header set Cache-Control "no-store" env=NO_STORE
+
+  # Small security headers
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

@@ -1,0 +1,7 @@
+# Defense in depth for the API directory: even if the parent rules are ever
+# relaxed, these must never be served.
+<FilesMatch "^(config\.local\.php|schema\.sql|.*\.local\.php|.*credentials.*\.json)$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes
