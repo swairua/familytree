@@ -538,6 +538,7 @@ function App() {
           individuals={individuals}
           families={families}
           onSwitchView={handleSwitchView}
+          currentUser={currentUser}
         />
       )}
 
