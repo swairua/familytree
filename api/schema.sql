@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS users (
   individual_id  VARCHAR(64) NULL,
   role           ENUM('admin','member') NOT NULL DEFAULT 'member',
   status         ENUM('pending','active','rejected') NOT NULL DEFAULT 'active',
+  photo          VARCHAR(255) NOT NULL DEFAULT '',
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_user_email (email),

@@ -1,7 +1,8 @@
 export function photoUrl(person) {
   if (!person || !person.photo) return null
-  // photo is stored as "2000001.jpg" (local file name in data/photos)
-  if (/^\d+\.jpg$/i.test(person.photo)) {
+  // photo is stored as "2000001.jpg" (tree individuals) or "m7.jpg" (member uploads)
+  // both live in data/photos/
+  if (/^([0-9]+|m[0-9]+)\.jpg$/i.test(person.photo)) {
     // In dev, serve the file directly from Vite's static root (much faster
     // than routing through PHP). In production, use the caching PHP endpoint.
     if (import.meta.env.DEV) {

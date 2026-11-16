@@ -86,3 +86,33 @@
 .btn-delete:hover { background: #f8dcda; }
 .btn-setpw { background: #fff8ec; color: #a05a00; border: 1px solid #e8d1a6; }
 .btn-setpw:hover { background: #ffefd0; }
+
+/* Member photos */
+.sm-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50%;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #e8e2da;
+  flex: 0 0 auto;
+}
+.sm-avatar.avatar-photo {
+  background: #e8e2da;
+}
+.sm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sm-avatar.avatar-initials {
+  background: #e08c2e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.sm-avatar.unknown { background: #e08c2e; color: #fff; }
+.btn-setemail { background: #eef4ff; color: #1a5bbf; border: 1px solid #c9d8f2; }
+.btn-setemail:hover { background: #dde9fb; }

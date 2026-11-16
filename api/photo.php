@@ -31,7 +31,7 @@ if (!empty($_GET['file'])) {
 }
 
 // Strict whitelist: only digit-based jpg filenames (prevents path traversal).
-if (!preg_match('/^[0-9]+\.jpg$/', $name)) {
+if (!preg_match('/^([0-9]+|m[0-9]+)\.jpg$/', $name)) {
     send_error('Bad file', 400);
 }
 

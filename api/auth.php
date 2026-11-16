@@ -14,6 +14,7 @@
  *   POST auth.php?action=user-approve    { id }                              (admin)
  *   POST auth.php?action=user-reject     { id }                              (admin)
  *   POST auth.php?action=user-set-password { id, password }                  (admin)
+ *   POST auth.php?action=user-set-email    { id, email }                     (admin)
  *   POST auth.php?action=user-delete     { id }                              (admin)
  *
  * CLI:
@@ -237,7 +238,7 @@ switch ($action) {
     case 'users-list':
         admin_user_or_403($pdo);
         $stmt = $pdo->query(
-            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, i.name AS individual_name
+            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender
 '
             . ' FROM users u LEFT JOIN individuals i ON i.id = u.individual_id
 '
@@ -245,6 +246,29 @@ switch ($action) {
         );
         $list = $stmt->fetchAll();
         send_json(['ok' => true, 'users' => $list]);
+        break;
+
+    case 'user-set-email':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        admin_user_or_403($pdo);
+        $body = read_json_body();
+        $id = (int)($body['id'] ?? 0);
+        $email = trim((string)($body['email'] ?? ''));
+        if ($id <= 0) send_error('Missing user id', 400);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            send_error('Please enter a valid email address', 400);
+        }
+        $dup = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = ? AND id <> ?');
+        $dup->execute([$email, $id]);
+        if ((int)$dup->fetchColumn() > 0) {
+            send_error('That email is already used by another account', 409);
+        }
+        $upd = $pdo->prepare('UPDATE users SET email = ? WHERE id = ?');
+        $upd->execute([mb_substr($email, 0, 255), $id]);
+        if ($upd->rowCount() === 0) send_error('User not found', 404);
+        send_json(['ok' => true]);
         break;
 
     case 'user-set-password':

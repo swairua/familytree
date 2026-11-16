@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { fetchUsers, userAction, userSetPassword } from '../utils/api'
+import PersonAvatar from './PersonAvatar'
+import { cleanName } from '../utils/cleanName'
+import { fetchUsers, userAction, userSetPassword, userSetEmail } from '../utils/api'
 import '../styles/sitemembers.css'
 
 function SiteMembersView({ currentUser, onSelectPerson }) {
@@ -28,6 +30,27 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
   }
 
   useEffect(() => { load() }, [])
+
+  const setEmail = async (u) => {
+    const next = window.prompt(`Set a real email for ${u.display_name || u.email}\nLeave it as-is or type the member's address:`, u.email)
+    if (next === null) return
+    const trimmed = next.trim()
+    if (trimmed === u.email) return
+    setBusyId(u.id)
+    setError('')
+    try {
+      const res = await userSetEmail(u.id, trimmed)
+      if (res.ok) {
+        await load()
+      } else {
+        setError(res.error || 'Could not set email')
+      }
+    } catch (err) {
+      setError(err.message || 'Could not set email')
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   const setPassword = async (u) => {
     const pw = window.prompt(`Set a new password for ${u.email}\n(at least 8 characters, share it with the member privately):`)
@@ -144,9 +167,14 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                     <tr key={u.id} className={u.status === 'pending' ? 'sm-row-pending' : ''}>
                       <td>{i + 1}</td>
                       <td className="sm-name">
-                        <div className="sm-avatar" aria-hidden="true">
-                          <i className="fas fa-user-circle"></i>
-                        </div>
+                        <PersonAvatar
+                          person={{
+                            name: u.individual_name || u.display_name || '',
+                            photo: u.photo || u.individual_photo || '',
+                            gender: u.individual_gender || 'unknown',
+                          }}
+                          className="sm-avatar"
+                        />
                         <div>
                           <span>{u.display_name || 'Unnamed'}</span>
                           {self && <span className="sm-you-badge">you</span>}
@@ -186,6 +214,14 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                               <i className="fas fa-ban"></i> Reject
                             </button>
                           )}
+                          <button
+                            className="btn btn-sm btn-setemail"
+                            disabled={busyId === u.id}
+                            onClick={() => setEmail(u)}
+                            title="Set the member's email"
+                          >
+                            <i className="fas fa-envelope"></i>
+                          </button>
                           <button
                             className="btn btn-sm btn-setpw"
                             disabled={busyId === u.id}
