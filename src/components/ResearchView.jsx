@@ -100,8 +100,8 @@ function ResearchView({ individuals, onSelectPerson }) {
       <div className="research-container">
         <div className="research-grid">
           <section className="research-card research-form-card">
-            <h2>Search records</h2>
-            <p className="research-sub">Find ancestors in census &amp; voter lists</p>
+            <h2>Search the family tree</h2>
+            <p className="research-sub">Find people in your records — birth, marriage, death and census notes from the tree</p>
             <form onSubmit={handleSearch}>
               <div className="research-row">
                 <label>First name</label>
@@ -159,12 +159,16 @@ function ResearchView({ individuals, onSelectPerson }) {
             <div className="research-info-img" aria-hidden="true">
               <i className="fas fa-scroll"></i>
             </div>
-            <h2>Census &amp; Voter Lists</h2>
+            <h2>Family records</h2>
             <p>
-              Census records capture snapshots of families at a moment in time — names, ages, occupations and residences.
-              Use the search to find matching individuals in your family tree and discover new relatives.
+              Search everyone we have on file — names, birth years, places, occupations and notes.
+              Filters run against the people in your tree; use the AI assistant to fill the form from a
+              plain-English request like &quot;everyone born in Nyeri before 1960&quot;.
             </p>
-            <a href="#" className="research-readmore" onClick={e => e.preventDefault()}>Read more</a>
+            <p className="research-ai-hint" style={{ marginTop: 12 }}>
+              Historical record collections (census, voter registers, BMD) are not connected yet.
+              Ask the site administrator about linking a FamilySearch account.
+            </p>
           </section>
         </div>
 
