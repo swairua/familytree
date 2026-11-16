@@ -34,6 +34,8 @@ export default function PersonSidebar({
       occupation: person.occupation || '',
       education: person.education || '',
       religion: person.religion || '',
+      email: person.email || '',
+      phone: person.phone || '',
       photo: person.photo || '',
       notes: Array.isArray(person.notes) ? person.notes.join('\n') : (person.notes || ''),
     })
@@ -86,6 +88,8 @@ export default function PersonSidebar({
         occupation: form.occupation.trim(),
         education: form.education.trim(),
         religion: form.religion.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
         photo: form.photo.trim(),
         notes: form.notes.split('\n').map(s => s.trim()).filter(Boolean),
       })
@@ -168,6 +172,8 @@ export default function PersonSidebar({
           {person?.occupation && <div className="detail-row"><span className="detail-label">Occupation</span><span>{person.occupation}</span></div>}
           {person?.education && <div className="detail-row"><span className="detail-label">Education</span><span>{person.education}</span></div>}
           {person?.religion && <div className="detail-row"><span className="detail-label">Religion</span><span>{person.religion}</span></div>}
+          {person?.email && <div className="detail-row"><span className="detail-label">Email</span><span><a href={`mailto:${person.email}`}>{person.email}</a></span></div>}
+          {person?.phone && <div className="detail-row"><span className="detail-label">Phone</span><span><a href={`tel:${person.phone}`}>{person.phone}</a></span></div>}
 
           {families && families.size > 0 && (
             <div className="sidepanel-section">
@@ -224,6 +230,8 @@ export default function PersonSidebar({
           <div className="edit-field"><label htmlFor="edit-occupation">Occupation</label><input id="edit-occupation" value={form.occupation} onChange={e => update('occupation', e.target.value)} /></div>
           <div className="edit-field"><label htmlFor="edit-education">Education</label><input id="edit-education" value={form.education} onChange={e => update('education', e.target.value)} /></div>
           <div className="edit-field"><label htmlFor="edit-religion">Religion</label><input id="edit-religion" value={form.religion} onChange={e => update('religion', e.target.value)} /></div>
+          <div className="edit-field"><label htmlFor="edit-email">Email</label><input id="edit-email" type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+          <div className="edit-field"><label htmlFor="edit-phone">Phone</label><input id="edit-phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} /></div>
           <div className="edit-field"><label htmlFor="edit-photo">Photo file</label><input id="edit-photo" value={form.photo} placeholder="e.g. 2000158.jpg" onChange={e => update('photo', e.target.value)} /></div>
           <div className="edit-field"><label htmlFor="edit-notes">Notes (one per line)</label><textarea id="edit-notes" value={form.notes} onChange={e => update('notes', e.target.value)} rows={3} /></div>
 
@@ -246,6 +254,8 @@ export default function PersonSidebar({
             {person?.deathDate && <li><span className="fact-label">Died</span>{person.deathDate}</li>}
             {person?.deathPlace && <li><span className="fact-label">Place</span>{person.deathPlace}</li>}
             {person?.occupation && <li><span className="fact-label">Occupation</span>{person.occupation}</li>}
+            {person?.email && <li><span className="fact-label">Email</span>{person.email}</li>}
+            {person?.phone && <li><span className="fact-label">Phone</span>{person.phone}</li>}
           </ul>
         </div>
       )}

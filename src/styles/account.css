@@ -1,0 +1,126 @@
+.account-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.account-card-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #2f2b27;
+  margin: 0 0 12px;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.account-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #6b655d;
+  text-transform: uppercase;
+}
+
+.account-form input {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd6cd;
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+}
+.account-form input:focus-visible {
+  outline: 2px solid #e08c2e;
+  outline-offset: 1px;
+  border-color: #e08c2e;
+}
+
+.account-error {
+  color: #b3261e;
+  background: #fde8e7;
+  border: 1px solid #f5c6c3;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 0.83rem;
+  margin: 0;
+}
+
+.account-success {
+  color: #1e6f3c;
+  background: #e8f6ec;
+  border: 1px solid #bfe6cd;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 0.83rem;
+  margin: 0;
+}
+
+.account-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.account-details-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.account-details-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #f0ece6;
+  padding-bottom: 12px;
+}
+.account-details-list > div:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.account-details-list dt {
+  font-size: 0.82rem;
+  color: #7a7267;
+}
+.account-details-list dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2f2b27;
+}
+
+.account-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: #eee;
+  color: #555;
+}
+.account-badge.admin { background: #e0ecff; color: #1a5bbf; }
+.account-badge.member { background: #eef1e6; color: #4a6b2a; }
+.account-badge.status-active { background: #e8f6ec; color: #1e6f3c; }
+.account-badge.status-pending { background: #fff3d6; color: #a05a00; }
+.account-badge.status-rejected { background: #fde8e7; color: #b3261e; }
+
+.account-note {
+  font-size: 0.8rem;
+  color: #5c554c;
+  margin: 14px 0 0;
+  line-height: 1.4;
+}

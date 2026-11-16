@@ -13,6 +13,7 @@ function AppLayout({
   layoutMode, onLayoutModeChange,
   syncState, serverStatus,
   onLogout,
+  currentUser,
   children,
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -51,6 +52,7 @@ function AppLayout({
         syncing={syncing}
         onToggleMobileSidebar={openMobileSidebar}
         onLogout={onLogout}
+        currentUser={currentUser}
       />
       <div className="app-body">
         {currentView !== 'tree' && currentView !== 'home' && (

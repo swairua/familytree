@@ -12,3 +12,75 @@
 .sm-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: #8b837d; font-weight: 700; background: #f7f4f0; }
 .sm-name { display: flex; align-items: center; gap: 8px; }
 .sm-avatar { width: 28px !important; height: 28px !important; font-size: 0.55rem !important; }
+
+/* Admin member console */
+.sm-error {
+  color: #b3261e;
+  background: #fde8e7;
+  border: 1px solid #f5c6c3;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  margin: 0 0 14px;
+}
+.sm-empty {
+  text-align: center;
+  color: #8b837d;
+  padding: 40px 12px;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.sm-empty i { font-size: 1.6rem; color: #c9c0b7; }
+.sm-avatar i { color: #a49a90; font-size: 1.4rem; width: 28px; text-align: center; }
+.sm-muted { color: #9a9189; font-style: italic; }
+.sm-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #b54b00;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.sm-link:hover { text-decoration: underline; }
+.sm-you-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1e6f3c;
+  background: #e8f6ec;
+  border-radius: 999px;
+  padding: 1px 8px;
+  vertical-align: middle;
+}
+.sm-row-pending { background: #fffdf5; }
+
+.sm-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: #eee;
+  color: #555;
+}
+.sm-role-admin { background: #e0ecff; color: #1a5bbf; }
+.sm-role-member { background: #eef1e6; color: #4a6b2a; }
+.sm-status-active { background: #e8f6ec; color: #1e6f3c; }
+.sm-status-pending { background: #fff3d6; color: #a05a00; }
+.sm-status-rejected { background: #fde8e7; color: #b3261e; }
+
+.sm-actions { display: flex; gap: 6px; align-items: center; }
+.btn-approve { background: #1e6f3c; color: #fff; border: none; }
+.btn-approve:hover { background: #175a30; }
+.btn-reject { background: #f5e9e7; color: #b3261e; border: 1px solid #e6c4c1; }
+.btn-reject:hover { background: #f8dcda; }
+.btn-delete { background: #fff; color: #b3261e; border: 1px solid #e6c4c1; }
+.btn-delete:hover { background: #f8dcda; }

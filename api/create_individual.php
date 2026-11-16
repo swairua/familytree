@@ -48,6 +48,8 @@ function normalize_person_fields(array $input): array
         'occupation' => trim((string)($input['occupation'] ?? '')),
         'education'  => trim((string)($input['education'] ?? '')),
         'religion'   => trim((string)($input['religion'] ?? '')),
+        'email'      => trim((string)($input['email'] ?? '')),
+        'phone'      => trim((string)($input['phone'] ?? '')),
         'gender'     => in_array(($input['gender'] ?? 'unknown'), ['male','female','unknown'], true) ? $input['gender'] : 'unknown',
         'photo'      => trim((string)($input['photo'] ?? '')),
         'notes'      => isset($input['notes']) ? (string) $input['notes'] : '',
@@ -102,8 +104,8 @@ $ins = $pdo->prepare(
     'INSERT INTO individuals
         (id, name, given_name, surname, prefix, suffix, nickname, gender,
          birth_date, birth_place, death_date, death_place, burial_date, burial_place,
-         occupation, education, religion, photo, notes, birth_year, death_year)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+         occupation, education, religion, email, phone, photo, notes, birth_year, death_year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
 $ins->execute([
     $newId,
@@ -123,6 +125,8 @@ $ins->execute([
     $n['occupation'],
     $n['education'],
     $n['religion'],
+    $n['email'],
+    $n['phone'],
     $n['photo'],
     $n['notes'],
     extract_year($n['birthDate']),

@@ -1,16 +1,37 @@
 import React, { useState } from 'react'
+import { registerAccount } from '../utils/api'
 import '../styles/login.css'
 
 export default function SignUpView({ onBackToLogin }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name.trim() || !email.trim()) return
-    setStatus('success')
+    setError('')
+    if (password !== confirm) {
+      setError('Passwords do not match')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await registerAccount({ name: name.trim(), email: email.trim(), password })
+      if (res.ok) {
+        setStatus('pending')
+      } else {
+        setError(res.error || 'Registration failed')
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -21,15 +42,15 @@ export default function SignUpView({ onBackToLogin }) {
           <span className="login-wordmark">TheWairuaHeritage</span>
         </div>
 
-        <h1 className="login-title">Request an account</h1>
+        <h1 className="login-title">Create your account</h1>
         <p className="login-sub">
-          New accounts are created by the site administrator.
+          New accounts are created by the site administrator and activated for you.
         </p>
 
-        {status === 'success' ? (
+        {status === 'pending' ? (
           <>
             <p className="login-error" role="status">
-              Your request has been received. The site administrator will review it.
+              Your account has been created and is pending approval. You will be able to sign in once the site administrator activates it.
             </p>
             <div className="login-actions">
               <button className="login-submit" type="button" onClick={onBackToLogin}>Back to sign in</button>
@@ -59,18 +80,47 @@ export default function SignUpView({ onBackToLogin }) {
               placeholder="gichukisimon@gmail.com"
             />
 
-            <label className="login-label" htmlFor="signup-message">Message (optional)</label>
-            <textarea
-              id="signup-message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Why you would like an account..."
-              rows={3}
-              className="login-textarea"
+            <label className="login-label" htmlFor="signup-password">Password</label>
+            <div className="login-password-wrap">
+              <input
+                id="signup-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="At least 8 characters"
+              />
+              <button
+                type="button"
+                className="login-toggle"
+                onClick={() => setShowPassword(v => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
+              </button>
+            </div>
+
+            <label className="login-label" htmlFor="signup-confirm">Confirm password</label>
+            <input
+              id="signup-confirm"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
+              required
+              minLength={8}
+              placeholder="Repeat your password"
             />
 
+            {error && <p className="login-error" role="alert">{error}</p>}
+
             <div className="login-actions">
-              <button className="login-submit" type="submit">Request account</button>
+              <button className="login-submit" type="submit" disabled={loading} aria-busy={loading}>
+                {loading ? 'Creating account...' : 'Create account'}
+              </button>
             </div>
             <p className="login-help">
               Already have an account?{' '}
@@ -78,7 +128,6 @@ export default function SignUpView({ onBackToLogin }) {
             </p>
           </form>
         )}
-
       </div>
     </div>
   )

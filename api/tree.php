@@ -38,6 +38,8 @@ const INDIVIDUAL_EDITABLE_FIELDS = [
     'occupation' => ['occupation', 255],
     'education'  => ['education', 255],
     'religion'   => ['religion', 128],
+    'email'      => ['email', 255],
+    'phone'      => ['phone', 255],
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -480,6 +482,8 @@ function row_to_individual(array $row): array
         'occupation' => $row['occupation'],
         'education' => $row['education'],
         'religion' => $row['religion'],
+        'email' => $row['email'] ?? '',
+        'phone' => $row['phone'] ?? '',
         'photo' => $row['photo'] ?? '',
         'notes' => $row['notes'] ? explode("\n", $row['notes']) : [],
         'sources' => [],

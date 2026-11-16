@@ -23,6 +23,7 @@ const TreesView = lazy(() => import('./components/TreesView'))
 const PrintView = lazy(() => import('./components/PrintView'))
 const MoreView = lazy(() => import('./components/MoreView'))
 const FeatureView = lazy(() => import('./components/FeatureView'))
+const AccountView = lazy(() => import('./components/AccountView'))
 const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
 const SignUpView = lazy(() => import('./components/SignUpView'))
 
@@ -326,6 +327,7 @@ function App() {
     <AppLayout
       currentView={currentView}
       onSwitchView={handleSwitchView}
+      currentUser={currentUser}
       onImportClick={() => setCurrentView('import')}
       individuals={individuals}
       families={families}
@@ -369,7 +371,19 @@ function App() {
       )}
 
       {currentView === 'members' && (
-        <SiteMembersView individuals={individuals} onSelectPerson={handleSelectPerson} />
+        <SiteMembersView
+          currentUser={currentUser}
+          onSelectPerson={handleSelectPerson}
+        />
+      )}
+
+      {currentView === 'account' && (
+        <AccountView
+          currentUser={currentUser}
+          onProfileUpdated={(u) => setCurrentUser(u)}
+          onSwitchView={handleSwitchView}
+          individuals={individuals}
+        />
       )}
 
       {currentView === 'discoveries' && (

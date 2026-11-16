@@ -57,6 +57,53 @@ export async function logout() {
   return res.json()
 }
 
+export async function registerAccount({ name, email, password }) {
+  const res = await fetch(`${API_BASE}/auth.php?action=register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ name, email, password }),
+  })
+  return res.json()
+}
+
+export async function changePassword({ current_password, new_password }) {
+  const res = await fetch(`${API_BASE}/auth.php?action=change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ current_password, new_password }),
+  })
+  return res.json()
+}
+
+export async function changeProfile({ display_name, email }) {
+  const res = await fetch(`${API_BASE}/auth.php?action=change-profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ display_name, email }),
+  })
+  return res.json()
+}
+
+export async function fetchUsers() {
+  const res = await fetch(`${API_BASE}/auth.php?action=users-list`, {
+    credentials: 'same-origin',
+  })
+  return res.json()
+}
+
+export async function userAction(action, id) {
+  const res = await fetch(`${API_BASE}/auth.php?action=${action}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ id }),
+  })
+  return res.json()
+}
+
 export async function fetchMe() {
   const res = await fetch(`${API_BASE}/auth.php?action=me`, {
     credentials: 'same-origin',

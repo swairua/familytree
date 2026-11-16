@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 
-function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar, onLogout }) {
+function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onToggleMobileSidebar, onLogout, currentUser }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
+  const isAdmin = currentUser?.role === 'admin'
 
   useEffect(() => {
     const onClick = (e) => {
@@ -12,12 +13,12 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { id: 'home', label: 'Home', icon: 'fa-home', children: [
         { id: 'home', label: 'Overview' },
         { id: 'events', label: 'Family events' },
         { id: 'stats', label: 'Family statistics' },
-        { id: 'members', label: 'Site members' },
+        ...(isAdmin ? [{ id: 'members', label: 'Site members' }] : []),
     ]},
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap', children: [
         { id: 'tree', label: 'My family tree' },
@@ -40,7 +41,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
     ]},
     { id: 'research', label: 'DNA', icon: 'fa-dna' },
     { id: 'research', label: 'Research', icon: 'fa-book' },
-  ]
+  ], [isAdmin])
 
 
 
@@ -50,7 +51,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
       <div className="mh-utility">
         <div className="mh-utility-left">
           <button className="mh-site-name" onClick={() => onSwitchView('home')}>
-            Wairua Web Site
+            TheWairuaHeritage
             <i className="fas fa-caret-down"></i>
           </button>
           <button className="mh-util-btn" onClick={onSyncClick} title="Sync from TheWairuaHeritage">
@@ -69,9 +70,9 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
             <i className="fas fa-shopping-cart"></i>
             <span className="mh-cart-badge">1</span>
           </button>
-          <button className="mh-user">
+          <button className="mh-user" onClick={() => onSwitchView('account')} title="My account">
             <i className="fas fa-user-circle"></i>
-            <span>Simon Gichuki</span>
+            <span>{currentUser?.display_name || 'Account'}</span>
             <i className="fas fa-caret-down"></i>
           </button>
           <button className="mh-util-btn" title="Help">

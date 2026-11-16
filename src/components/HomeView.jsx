@@ -100,7 +100,7 @@ function HomeView({ individuals, families, onSelectPerson, onSwitchView, recentA
     <div className="home-view">
       {/* Hero */}
       <div className="home-hero">
-        <h1 className="home-hero-title">Wairua Web Site</h1>
+        <h1 className="home-hero-title">TheWairuaHeritage</h1>
       </div>
 
       <div className="home-container">
