@@ -91,13 +91,19 @@ export async function ensurePhotos(people, outDir, { checkOnly = false, onProgre
   return { total: unique.length, downloaded: ok, failed: fails };
 }
 
-const arg = process.argv[2];
-if (arg === '--check' || arg === '-c') {
-  const peopleFile = process.argv[3] || 'data/captures/all_people_rel.json';
-  const outDir = process.argv[4] || 'data/photos';
-  await run(peopleFile, outDir, true);
-} else {
-  const peopleFile = arg || 'data/captures/all_people_rel.json';
-  const outDir = process.argv[3] || 'data/photos';
-  await run(peopleFile, outDir, false);
+// Only run the CLI when this file IS the entry point, not when imported by sync_myheritage.mjs.
+import { pathToFileURL, fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMain) {
+  const arg = process.argv[2];
+  if (arg === '--check' || arg === '-c') {
+    const peopleFile = process.argv[3] || 'data/captures/all_people_rel.json';
+    const outDir = process.argv[4] || 'data/photos';
+    await run(peopleFile, outDir, true);
+  } else {
+    const peopleFile = arg || 'data/captures/all_people_rel.json';
+    const outDir = process.argv[3] || 'data/photos';
+    await run(peopleFile, outDir, false);
+  }
 }
