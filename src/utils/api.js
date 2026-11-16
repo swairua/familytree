@@ -327,3 +327,37 @@ export async function aiSearch(prompt) {
   return res.json()
 }
 
+
+export async function fetchAlbums() {
+  const res = await fetch(`${API_BASE}/albums.php?action=list`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function fetchAlbum(id) {
+  const res = await fetch(`${API_BASE}/albums.php?action=view&id=${encodeURIComponent(id)}`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function createAlbum(name, description = '') {
+  return request('albums.php?action=create', { method: 'POST', body: JSON.stringify({ name, description }) })
+}
+
+export async function updateAlbum(id, name, description = '') {
+  return request('albums.php?action=rename', { method: 'POST', body: JSON.stringify({ id, name, description }) })
+}
+
+export async function deleteAlbum(id) {
+  return request('albums.php?action=delete', { method: 'POST', body: JSON.stringify({ id }) })
+}
+
+export async function addPhotosToAlbum(id, photos) {
+  return request('albums.php?action=add-photos', { method: 'POST', body: JSON.stringify({ id, photos }) })
+}
+
+export async function removePhotoFromAlbum(id, photo) {
+  return request('albums.php?action=remove-photo', { method: 'POST', body: JSON.stringify({ id, photo }) })
+}
+
+export async function setAlbumCover(id, photo) {
+  return request('albums.php?action=set-cover', { method: 'POST', body: JSON.stringify({ id, photo }) })
+}

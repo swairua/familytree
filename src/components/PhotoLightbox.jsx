@@ -72,12 +72,14 @@ function PhotoLightbox({ photos, lightboxIndex, onClose, onNext, onPrev, onSelec
             {photo.birthYear || 'Unknown'}
             {photo.deathYear ? ` — ${photo.deathYear}` : ''}
           </p>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => { onSelectPerson(photo.id); onClose() }}
-          >
-            <i className="fas fa-user"></i> View Profile
-          </button>
+          {onSelectPerson && photo.isPerson !== false && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => { onSelectPerson(photo.id); onClose() }}
+            >
+              <i className="fas fa-user"></i> View Profile
+            </button>
+          )}
         </div>
       </div>
     </div>

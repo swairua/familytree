@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+﻿import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { cleanName } from '../utils/cleanName'
 import { photoUrl } from '../utils/photoUrl'
 import PhotoLightbox from './PhotoLightbox'
+import AlbumsPanel from './AlbumsPanel'
 import '../styles/gallery.css'
 
 function GalleryView({ individuals, onSelectPerson }) {
@@ -12,6 +13,7 @@ function GalleryView({ individuals, onSelectPerson }) {
       if (!url) continue
       arr.push({
         id: p.id,
+        photo: p.photo,
         name: cleanName(p.name),
         url,
         birthYear: p.birthYear || '',
@@ -23,9 +25,7 @@ function GalleryView({ individuals, onSelectPerson }) {
     return arr
   }, [individuals])
 
-  const albums = useMemo(() => {
-    return [{ id: 'all', title: 'Family photos', count: photos.length }]
-  }, [photos])
+  const [albumCount, setAlbumCount] = useState(0)
 
   const [filter, setFilter] = useState('photos')
   const [query, setQuery] = useState('')
@@ -76,17 +76,15 @@ function GalleryView({ individuals, onSelectPerson }) {
     )
   }
 
-  const isAllMode = filter === 'all'
-  const isPeopleMode = filter === 'people'
   const isAlbumsMode = filter === 'albums'
 
-  const headerCount = isAllMode
-    ? photos.length
-    : isPeopleMode
+  const headerCount = isAlbumsMode
+    ? albumCount
+    : filter === 'people'
       ? individuals.size
-      : albums.length
+      : photos.length
 
-  const gridItems = isAlbumsMode ? albums : photos
+  const mediaNoun = isAlbumsMode ? 'album' : 'media item'
 
   return (
     <div className="photos-page">
@@ -116,13 +114,13 @@ function GalleryView({ individuals, onSelectPerson }) {
             >
               <i className="fas fa-images" aria-hidden="true"></i>
               <span className="sidebar-label">Albums</span>
-              <span className="sidebar-badge">{albums.length}</span>
+              <span className="sidebar-badge">{albumCount}</span>
             </button>
           </nav>
           <div className="photos-sidebar-footer">
             <div className="sidebar-note">
               <strong>{photos.length.toLocaleString()}</strong> media items
-              <span> · {albums.length} albums · {individuals.size.toLocaleString()} people</span>
+              <span> &middot; {albumCount} albums &middot; {individuals.size.toLocaleString()} people</span>
             </div>
           </div>
         </aside>
@@ -133,49 +131,38 @@ function GalleryView({ individuals, onSelectPerson }) {
             <div className="photos-header-left">
               <h1>{isAlbumsMode ? 'Albums' : 'My photos'}</h1>
               <p className="photos-count">
-                {isAlbumsMode
-                  ? albums.length
-                  : headerCount.toLocaleString()}
-                {' '}media item{(isAlbumsMode ? albums.length : headerCount) === 1 ? '' : 's'}
+                {headerCount.toLocaleString()} {mediaNoun}{headerCount === 1 ? '' : 's'}
               </p>
             </div>
-            <div className="photos-header-right">
-              <label className="photos-search">
-                <i className="fas fa-search" aria-hidden="true"></i>
-                <input
-                  type="search"
-                  placeholder="Find a photo..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Search photos"
-                />
-              </label>
-              <button className="photos-upload" type="button" title="Upload photos">
-                <i className="fas fa-upload" aria-hidden="true"></i> Upload
-              </button>
-            </div>
+            {!isAlbumsMode && (
+              <div className="photos-header-right">
+                <label className="photos-search">
+                  <i className="fas fa-search" aria-hidden="true"></i>
+                  <input
+                    type="search"
+                    placeholder="Find a photo..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    aria-label="Search photos"
+                  />
+                </label>
+                <button className="photos-upload" type="button" title="Upload photos">
+                  <i className="fas fa-upload" aria-hidden="true"></i> Upload
+                </button>
+              </div>
+            )}
           </div>
 
           {isAlbumsMode ? (
-            <div className="albums-grid">
-              {albums.map(album => (
-                <div key={album.id} className="album-card">
-                  <div className="album-cover" aria-hidden="true">
-                    {photos.slice(0, 1).map(p => (
-                      <img key={p.id} src={p.url} alt="" />
-                    ))}
-                  </div>
-                  <div className="album-meta">
-                    <strong>{album.title}</strong>
-                    <span>{album.count.toLocaleString()} media items</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <AlbumsPanel
+              photos={photos}
+              onSelectPerson={onSelectPerson}
+              onAlbumCountChange={setAlbumCount}
+            />
           ) : (
             <>
               {filteredPhotos.length === 0 ? (
-                <div className="photos-no-results">No photos match “{query}”.</div>
+                <div className="photos-no-results">No photos match â€œ{query}â€.</div>
               ) : (
                 <div className="photos-grid">
                   {visiblePhotos.map((photo, idx) => (

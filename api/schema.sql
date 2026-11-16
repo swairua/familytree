@@ -133,3 +133,26 @@ CREATE TABLE IF NOT EXISTS events (
   CONSTRAINT fk_ev_ind  FOREIGN KEY (individual_id) REFERENCES individuals(id) ON DELETE CASCADE,
   CONSTRAINT fk_ev_fam  FOREIGN KEY (family_id)     REFERENCES families(id)     ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- Photo albums (user-curated collections of files in data/photos/)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS albums (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  name         VARCHAR(120) NOT NULL,
+  description  VARCHAR(500) NOT NULL DEFAULT '',
+  cover_photo  VARCHAR(255) NOT NULL DEFAULT '',
+  created_by   INT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_created_by (created_by)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS album_photos (
+  album_id  INT NOT NULL,
+  photo     VARCHAR(255) NOT NULL,
+  added_by  INT NULL,
+  added_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (album_id, photo),
+  CONSTRAINT fk_album_photos_album FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE,
+  KEY idx_photo (photo)
+) ENGINE=InnoDB;
