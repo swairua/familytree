@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { fetchUsers, userAction } from '../utils/api'
+import { fetchUsers, userAction, userSetPassword } from '../utils/api'
 import '../styles/sitemembers.css'
 
 function SiteMembersView({ currentUser, onSelectPerson }) {
@@ -28,6 +28,25 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
   }
 
   useEffect(() => { load() }, [])
+
+  const setPassword = async (u) => {
+    const pw = window.prompt(`Set a new password for ${u.email}\n(at least 8 characters, share it with the member privately):`)
+    if (pw === null) return
+    if (pw.length < 8) {
+      window.alert('Password must be at least 8 characters.')
+      return
+    }
+    setBusyId(u.id)
+    setError('')
+    try {
+      const res = await userSetPassword(u.id, pw)
+      if (!res.ok) setError(res.error || 'Could not set password')
+    } catch (err) {
+      setError(err.message || 'Could not set password')
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   const act = async (action, id) => {
     setBusyId(id)
@@ -167,6 +186,14 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                               <i className="fas fa-ban"></i> Reject
                             </button>
                           )}
+                          <button
+                            className="btn btn-sm btn-setpw"
+                            disabled={busyId === u.id}
+                            onClick={() => setPassword(u)}
+                            title="Set a password for this member"
+                          >
+                            <i className="fas fa-key"></i>
+                          </button>
                           {!self && u.id !== 1 && (
                             <button
                               className="btn btn-sm btn-delete"

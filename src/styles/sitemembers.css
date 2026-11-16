@@ -84,3 +84,5 @@
 .btn-reject:hover { background: #f8dcda; }
 .btn-delete { background: #fff; color: #b3261e; border: 1px solid #e6c4c1; }
 .btn-delete:hover { background: #f8dcda; }
+.btn-setpw { background: #fff8ec; color: #a05a00; border: 1px solid #e8d1a6; }
+.btn-setpw:hover { background: #ffefd0; }

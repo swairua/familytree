@@ -13,6 +13,7 @@
  *   GET  auth.php?action=users-list                                          (admin)
  *   POST auth.php?action=user-approve    { id }                              (admin)
  *   POST auth.php?action=user-reject     { id }                              (admin)
+ *   POST auth.php?action=user-set-password { id, password }                  (admin)
  *   POST auth.php?action=user-delete     { id }                              (admin)
  *
  * CLI:
@@ -244,6 +245,23 @@ switch ($action) {
         );
         $list = $stmt->fetchAll();
         send_json(['ok' => true, 'users' => $list]);
+        break;
+
+    case 'user-set-password':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        admin_user_or_403($pdo);
+        $body = read_json_body();
+        $id = (int)($body['id'] ?? 0);
+        $newPassword = (string)($body['password'] ?? '');
+        if ($id <= 0) send_error('Missing user id', 400);
+        if (mb_strlen($newPassword) < 8) send_error('Password must be at least 8 characters', 400);
+        $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $upd->execute([$hash, $id]);
+        if ($upd->rowCount() === 0) send_error('User not found', 404);
+        send_json(['ok' => true]);
         break;
 
     case 'user-approve':

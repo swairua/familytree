@@ -104,6 +104,16 @@ export async function userAction(action, id) {
   return res.json()
 }
 
+export async function userSetPassword(id, password) {
+  const res = await fetch(`${API_BASE}/auth.php?action=user-set-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ id, password }),
+  })
+  return res.json()
+}
+
 export async function fetchMe() {
   const res = await fetch(`${API_BASE}/auth.php?action=me`, {
     credentials: 'same-origin',
