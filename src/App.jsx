@@ -41,6 +41,7 @@ function App() {
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [currentUser, setCurrentUser] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [initialThreadId, setInitialThreadId] = useState(null)
   const [resetToken, setResetToken] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
@@ -75,13 +76,18 @@ function App() {
   }, [])
 
 
-  // Deep link: /?view=reset-password&token=... opens the reset flow directly
+  // Deep link: /?view=reset-password&token=... opens the reset flow directly;
+  // /?view=messages&thread=N opens that message thread.
   useEffect(() => {
     try {
       const p = new URLSearchParams(window.location.search)
       if (p.get('view') === 'reset-password' && p.get('token')) {
         setResetToken(p.get('token'))
         setCurrentView('reset-password')
+      }
+      if (p.get('view') === 'messages' && p.get('thread')) {
+        setInitialThreadId(Number(p.get('thread')))
+        setCurrentView('messages')
       }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -567,6 +573,7 @@ function App() {
           currentUser={currentUser}
           onSwitchView={handleSwitchView}
           onUnreadRecount={refreshUnread}
+          initialThreadId={initialThreadId}
         />
       )}
       </Suspense>

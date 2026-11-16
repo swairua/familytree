@@ -75,35 +75,51 @@ function app_brand_email(string $preheader, string $title, string $bodyHtml): st
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TITLE_PLACEHOLDER</title>
+<style>
+  @media only screen and (max-width: 480px) {
+    .email-wrap { width: 100% !important; max-width: 100% !important; }
+    .px { padding-left: 16px !important; padding-right: 16px !important; }
+    .px-content { padding: 18px 16px 10px !important; }
+    .px-footer { padding: 0 16px 18px !important; }
+    .btn-wrap { margin: 18px 0 6px !important; }
+    .btn { display: block !important; width: 100% !important; max-width: 100% !important; padding: 14px 16px !important; text-align: center !important; box-sizing: border-box !important; font-size: 16px !important; }
+    .title h1 { font-size: 20px !important; }
+    .body-text { font-size: 15px !important; }
+    .small { font-size: 13px !important; }
+  }
+  @media only screen and (min-width: 481px) {
+    .btn { display: inline-block; }
+  }
+</style>
 </head>
 <body style="margin:0;padding:0;background:#f4f1ec;font-family:Georgia,serif;">
 <div style="display:none;max-height:0;overflow:hidden;">PREHEADER_PLACEHOLDER</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f1ec;">
 <tr>
-<td align="center" style="padding:28px 16px;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:100%;max-width:560px;">
+<td class="px" align="center" style="padding:28px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" class="email-wrap" style="width:100%;max-width:560px;">
 <tr>
 <td style="background:#152a1e;border-radius:10px 10px 0 0;padding:14px 22px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
 <td style="vertical-align:middle;">MARK_PLACEHOLDER
 <span style="color:#ffffff;font-size:17px;font-weight:bold;letter-spacing:0.04em;font-family:Georgia,serif;vertical-align:middle;padding-left:8px;">TheWairuaHeritage</span></td>
-<td align="right" style="vertical-align:middle;"><span style="color:#e08c2e;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Family Tree</span></td>
+<td align="right" style="vertical-align:middle;" class="small"><span style="color:#e08c2e;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Family Tree</span></td>
 </tr></table>
 </td>
 </tr>
 <tr>
-<td style="background:#1f3628;padding:16px 22px 18px;">
-<div style="color:#f5f3ef;font-family:Georgia,serif;font-size:22px;font-weight:bold;line-height:1.25;">TITLE_PLACEHOLDER</div>
+<td style="background:#1f3628;padding:16px 22px 18px;" class="title">
+<h1 style="color:#f5f3ef;font-family:Georgia,serif;font-size:22px;font-weight:bold;line-height:1.25;margin:0;">TITLE_PLACEHOLDER</h1>
 </td>
 </tr>
 <tr>
-<td style="background:#ffffff;padding:24px 26px 10px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;color:#2f2b27;font-family:Georgia,serif;font-size:15px;line-height:1.6;">
-BODY_PLACEHOLDER
+<td class="px-content" style="background:#ffffff;padding:24px 26px 10px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;color:#2f2b27;font-family:Georgia,serif;font-size:15px;line-height:1.6;">
+<div class="body-text">BODY_PLACEHOLDER</div>
 </td>
 </tr>
 <tr>
-<td style="background:#ffffff;padding:0 26px 22px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;border-bottom:1px solid #e7e2da;border-radius:0 0 10px 10px;">
-<div style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12px;font-family:Arial,sans-serif;line-height:1.5;">
+<td class="px-footer" style="background:#ffffff;padding:0 26px 22px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;border-bottom:1px solid #e7e2da;border-radius:0 0 10px 10px;">
+<div class="small" style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12px;font-family:Arial,sans-serif;line-height:1.5;">
 TheWairuaHeritage - Our family, our legacy.
 </div>
 </td>
@@ -137,12 +153,11 @@ HTML;
 
 function app_button(string $label, string $url): string
 {
-    return '<p style="text-align:center;margin:22px 0 6px;">
-  <a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'
+    return '<p class="btn-wrap" style="text-align:center;margin:22px 0 6px;"><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'
+        . ' class="btn"'
         . ' style="display:inline-block;background:#e08c2e;color:#ffffff;text-decoration:none;'
         . 'font-family:Arial,sans-serif;font-size:15px;font-weight:700;padding:13px 34px;'
-        . 'border-radius:24px;letter-spacing:0.02em;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>
-</p>';
+        . 'border-radius:24px;letter-spacing:0.02em;">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a></p>';
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +176,7 @@ function app_send_email(PDO $pdo, string $to, string $subject, string $bodyHtml,
     $from = $s['smtp_from_email'] !== '' ? $s['smtp_from_email'] : ($s['smtp_user'] !== '' ? $s['smtp_user'] : $to);
     $fromName = $s['smtp_from_name'] !== '' ? $s['smtp_from_name'] : 'TheWairuaHeritage';
 
-    $text = $bodyText ?? trim(strip_tags(preg_replace('/<\s*br\s*\/?>/i', "\n", $bodyHtml)));
+    $text = $bodyText ?? trim(strip_tags(preg_replace('#<style[^>]*>.*?</style>#isS', '', preg_replace('/<\s*br\s*\/?>/i', "\n", $bodyHtml))));
 
     return smtp_send_raw($s, $from, $fromName, $to, $subject, $text, $bodyHtml);
 }

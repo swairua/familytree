@@ -187,3 +187,46 @@
     height: auto;
   }
 }
+
+/* Search bar */
+.messages-search {
+  position: relative;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee7dc;
+}
+.messages-search > i.fa-search {
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  transform: translateY(-50%);
+  color: #8b7355;
+  z-index: 1;
+}
+.messages-search input[type="search"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 34px 8px 34px;
+  font-size: 0.84rem;
+  border: 1px solid #e2ddd7;
+  border-radius: 8px;
+  background: #faf8f5;
+  outline: none;
+}
+.messages-search input[type="search"]:focus-visible {
+  border-color: #e08c2e;
+  outline: 2px solid #e08c2e;
+  outline-offset: 1px;
+}
+.messages-search-clear {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #8b7355;
+  padding: 4px;
+}
+.messages-search-clear:hover { color: #2f2b27; }

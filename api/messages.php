@@ -10,6 +10,7 @@
  *   POST messages.php?action=mark-read    { id }
  *   POST messages.php?action=mark-all-read
  *   GET  messages.php?action=directory    (all authenticated users)
+ *   GET  messages.php?action=search&q=... (all authenticated users)
  */
 declare(strict_types=1);
 
@@ -38,6 +39,9 @@ try {
 
     $action = $_GET['action'] ?? 'inbox';
     switch ($action) {
+        case 'search':
+            handleSearch($pdo, $me);
+            break;
         case 'directory':
             handleDirectory($pdo);
             break;
@@ -80,6 +84,27 @@ function handleDirectory(PDO $pdo): void
          ORDER BY role = 'admin' DESC, display_name ASC"
     );
     send_json(['ok' => true, 'users' => $stmt->fetchAll()]);
+}
+
+function handleSearch(PDO $pdo, array $me): void
+{
+    $q = trim((string)($_GET['q'] ?? ''));
+    if (mb_strlen($q) < 2) {
+        send_json(['ok' => true, 'messages' => []]);
+    }
+    $like = '%' . $q . '%';
+    $stmt = $pdo->prepare(
+        'SELECT m.id, m.from_user_id, m.to_user_id, m.subject, m.body, m.is_read, m.created_at,'
+        . ' CASE WHEN m.to_user_id = ? THEN u_from.display_name ELSE u_to.display_name END AS other_name,'
+        . ' m.to_user_id AS target_id, m.from_user_id AS source_id'
+        . ' FROM messages m'
+        . ' JOIN users u_from ON u_from.id = m.from_user_id'
+        . ' JOIN users u_to ON u_to.id = m.to_user_id'
+        . ' WHERE (m.subject LIKE ? OR m.body LIKE ?) AND (m.to_user_id = ? OR m.from_user_id = ?)'
+        . ' ORDER BY m.created_at DESC LIMIT 100'
+    );
+    $stmt->execute([$me['id'], $like, $like, $me['id'], $me['id']]);
+    send_json(['ok' => true, 'messages' => $stmt->fetchAll()]);
 }
 
 function user_row(PDO $pdo, int $uid): ?array
@@ -166,7 +191,27 @@ function handleSend(PDO $pdo, array $me): void
 
     $stmt = $pdo->prepare('INSERT INTO messages (from_user_id, to_user_id, subject, body) VALUES (?, ?, ?, ?)');
     $stmt->execute([$me['id'], $toId, mb_substr($subject, 0, 255), $text]);
-    send_json(['ok' => true, 'id' => (int)$pdo->lastInsertId()]);
+    $msgId = (int)$pdo->lastInsertId();
+
+    // Best-effort: email the recipient if their address is real (not placeholder).
+    require_once __DIR__ . '/mail.php';
+    $from = user_row($pdo, $me['id']);
+    $fromName = $from['display_name'] ?? 'TheWairuaHeritage';
+    $recipientEmail = trim((string)($recipient['email'] ?? ''));
+    if (email_is_real($recipientEmail)) {
+        $link = app_public_url($pdo) . '/?view=messages&thread=' . $msgId;
+        app_send_branded($pdo, $recipientEmail,
+            'New message from ' . $fromName . ': ' . ($subject !== '' ? $subject : '(no subject)'),
+            'New message from ' . $fromName,
+            'New message',
+            '<p>Hi ' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . ' sent you a message on TheWairuaHeritage:</p>'
+            . '<blockquote style="margin:14px 0;padding:12px 14px;background:#faf8f5;border-left:4px solid #e08c2e;color:#3a332d;font-style:italic;">'
+            . nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8')) . '</blockquote>'
+            . app_button('Read and reply', $link)
+        );
+    }
+
+    send_json(['ok' => true, 'id' => $msgId]);
 }
 
 function handleMarkRead(PDO $pdo, array $me): void

@@ -107,6 +107,11 @@ export async function changeProfile({ display_name, email }) {
   return res.json()
 }
 
+export async function searchMessages(query) {
+  const res = await fetch(`${API_BASE}/messages.php?action=search&q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+  return res.json()
+}
+
 export async function fetchDirectory() {
   const res = await fetch(`${API_BASE}/messages.php?action=directory`, { credentials: 'same-origin' })
   return res.json()

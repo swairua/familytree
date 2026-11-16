@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { fetchInbox, fetchSent, fetchMessage, sendMessage, markMessageRead, markAllMessagesRead, fetchDirectory } from '../utils/api'
+import { fetchInbox, fetchSent, fetchMessage, sendMessage, markMessageRead, markAllMessagesRead, fetchDirectory, searchMessages } from '../utils/api'
 import '../styles/messages.css'
 
 const TABS = [
@@ -8,9 +8,12 @@ const TABS = [
   { id: 'compose', label: 'Compose' },
 ]
 
-function MessagesView({ currentUser, onSwitchView, onUnreadRecount }) {
+function MessagesView({ currentUser, onSwitchView, onUnreadRecount, initialThreadId }) {
   const [tab, setTab] = useState('inbox')
   const [folder, setFolder] = useState('inbox')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(null)
+  const [searching, setSearching] = useState(false)
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -41,6 +44,28 @@ function MessagesView({ currentUser, onSwitchView, onUnreadRecount }) {
   }, [])
 
   useEffect(() => { loadFolder(folder) }, [folder, loadFolder])
+
+  // Deep link from email notification: open specific thread
+  useEffect(() => {
+    if (initialThreadId) {
+      loadCurrentMessage(initialThreadId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialThreadId])
+
+  // Search debounce
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (q.length < 2) { setSearchResults(null); setSearching(false); return }
+    setSearching(true)
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchMessages(q)
+        if (res.ok) setSearchResults(res.messages || [])
+      } catch { /* ignore */ } finally { setSearching(false) }
+    }, 300)
+    return () => clearTimeout(t)
+  }, [searchQuery])
 
   const loadCurrentMessage = useCallback(async (id) => {
     setSelectedId(id)
@@ -111,16 +136,52 @@ function MessagesView({ currentUser, onSwitchView, onUnreadRecount }) {
         <aside className="messages-rail">
           <div className="messages-rail-header">
             <h1>Messages</h1>
-            <button className="btn btn-primary btn-sm" onClick={() => startCompose()}><i className="fas fa-pen"></i> Compose</button>
+            <button className="btn btn-primary btn-sm" onClick={() => { setSearchQuery(''); startCompose() }}><i className="fas fa-pen"></i> Compose</button>
           </div>
-          <div className="messages-tabs" role="tablist">
-            <button className={`messages-tab ${folder === 'inbox' ? 'active' : ''}`} role="tab" onClick={() => setFolder('inbox')}>
-              <i className="fas fa-inbox"></i> Inbox
-            </button>
-            <button className={`messages-tab ${folder === 'sent' ? 'active' : ''}`} role="tab" onClick={() => setFolder('sent')}>
-              <i className="fas fa-paper-plane"></i> Sent
-            </button>
+          <div className="messages-search">
+            <i className="fas fa-search"></i>
+            <input
+              type="search"
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search messages"
+            />
+            {searchQuery && (
+              <button className="messages-search-clear" onClick={() => setSearchQuery('')} title="Clear search" aria-label="Clear search">
+                <i className="fas fa-times"></i>
+              </button>
+            )}
           </div>
+          {searchResults !== null ? (
+            <div className="messages-list" role="list">
+              {searching && <div className="sm-empty"><i className="fas fa-spinner fa-spin"></i> Searching...</div>}
+              {!searching && searchResults.length === 0 && <p className="messages-empty"><i className="fas fa-search"></i> No messages match.</p>}
+              {!searching && searchResults.map(m => (
+                <button
+                  key={m.id}
+                  className={`messages-item ${selectedId === m.id ? 'active' : ''} ${!m.is_read && m.target_id === currentUser?.id ? 'unread' : ''}`}
+                  onClick={() => loadCurrentMessage(m.id)}
+                >
+                  <div className="messages-item-top">
+                    <strong>{m.other_name || 'Unknown'}</strong>
+                    <span className="messages-date">{new Date(m.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="messages-item-subject">{m.subject || '(no subject)'}</div>
+                  <div className="messages-item-preview">{(m.body || '').slice(0, 80)}</div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+            <div className="messages-tabs" role="tablist">
+              <button className={`messages-tab ${folder === 'inbox' ? 'active' : ''}`} role="tab" onClick={() => setFolder('inbox')}>
+                <i className="fas fa-inbox"></i> Inbox
+              </button>
+              <button className={`messages-tab ${folder === 'sent' ? 'active' : ''}`} role="tab" onClick={() => setFolder('sent')}>
+                <i className="fas fa-paper-plane"></i> Sent
+              </button>
+            </div>
           <div className="messages-list" role="list">
             {loading && <div className="sm-empty"><i className="fas fa-spinner fa-spin"></i> Loading...</div>}
             {error && <p className="account-error">{error}</p>}
@@ -147,6 +208,7 @@ function MessagesView({ currentUser, onSwitchView, onUnreadRecount }) {
               </div>
             )}
           </div>
+          </>)}
         </aside>
 
         {/* Right pane: content */}
