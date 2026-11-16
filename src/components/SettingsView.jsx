@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { fetchSettings, updateSettings, sendTestEmail, fetchUpcomingBirthdays, sendBirthdayReminders } from '../utils/api'
+import '../styles/viewpages.css'
 import '../styles/account.css'
 import '../styles/settings.css'
 

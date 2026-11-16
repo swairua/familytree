@@ -98,12 +98,12 @@ function birthday_html(array $list): string
     }
     $items = '';
     foreach ($list as $p) {
-        $age = $p['age'] !== null ? ' \u{1F382} Turns <strong>' . (int)$p['age'] . '</strong>' : '';
+        $age = $p['age'] !== null ? ' Turns <strong>' . (int)$p['age'] . '</strong>' : '';
         $items .= '<li style="margin:8px 0;"><strong>'
             . htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') . '</strong><br>'
             . '<span style="color:#8b837d;font-size:13px;">'
             . htmlspecialchars($p['birth_date'], ENT_QUOTES, 'UTF-8')
-            . ' · ' . htmlspecialchars($p['date'], ENT_QUOTES, 'UTF-8')
+            . ' - ' . htmlspecialchars($p['date'], ENT_QUOTES, 'UTF-8')
             . $age . '</span></li>';
     }
     return '<ul style="list-style:none;padding:0;">' . $items . '</ul>'
@@ -114,7 +114,7 @@ function send_birthday_digest(PDO $pdo, int $days): array
 {
     $list = collect_upcoming($pdo, $days);
     $today = new DateTimeImmutable('today');
-    $windowLabel = $today->format('j M') . ' – ' . $today->modify('+' . $days . ' days')->format('j M Y');
+    $windowLabel = $today->format('j M') . ' to ' . $today->modify('+' . $days . ' days')->format('j M Y');
     $body = '<p>The next <strong>' . $days . '</strong> days bring birthdays for our family:</p>'
         . birthday_html($list);
     $sent = 0;

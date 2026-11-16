@@ -59,77 +59,80 @@ function email_is_real(string $email): bool
 // ---------------------------------------------------------------------------
 // Branded HTML template (official look: dark utility bar, logo, orange CTA)
 // ---------------------------------------------------------------------------
-
 function app_brand_email(string $preheader, string $title, string $bodyHtml): string
 {
     $safePreheader = htmlspecialchars($preheader, ENT_QUOTES, 'UTF-8');
     $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-    // Very wide preheader padding so the snippet still shows without extra copy
-    $preheaderPad = str_repeat("\u{200B}\u{200C}\u{200D}\u{200E}\u{200F}\u{FEFF}", 60);
 
-    $mark = '<span style="display:inline-block;width:30px;height:30px;border-radius:50%;'
-        . 'border:4px solid #ffffff;box-sizing:border-box;vertical-align:-2px;"></span>';
+    $mark = '<span style="display:inline-block;width:30px;height:30px;'
+        . 'border-radius:50%;border:4px solid #ffffff;box-sizing:border-box;'
+        . 'vertical-align:-2px;"></span>';
 
-    return '<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+    $html = <<<'HTML'
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>' . $safeTitle . '</title>
+<title>TITLE_PLACEHOLDER</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f1ec;font-family:Georgia,\'Times New Roman\',serif;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' . $safePreheader . $preheaderPad . '</div>
+<body style="margin:0;padding:0;background:#f4f1ec;font-family:Georgia,serif;">
+<div style="display:none;max-height:0;overflow:hidden;">PREHEADER_PLACEHOLDER</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f1ec;">
-  <tr>
-    <td align="center" style="padding:28px 16px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:100%;max-width:560px;">
-
-        <!-- Brand header -->
-        <tr>
-          <td style="background:#152a1e;border-radius:10px 10px 0 0;padding:14px 22px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td style="vertical-align:middle;">' . $mark . '
-                  <span style="color:#ffffff;font-size:17px;font-weight:bold;letter-spacing:0.04em;font-family:Georgia,serif;vertical-align:middle;padding-left:8px;">TheWairuaHeritage</span>
-                </td>
-                <td align="right" style="vertical-align:middle;">
-                  <span style="color:#e08c2e;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Family Tree</span>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Title banner -->
-        <tr>
-          <td style="background:#1f3628;padding:16px 22px 18px;">
-            <div style="color:#f5f3ef;font-family:Georgia,serif;font-size:22px;font-weight:bold;line-height:1.25;">' . $safeTitle . '</div>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="background:#ffffff;padding:24px 26px 10px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;color:#2f2b27;font-family:Georgia,serif;font-size:15px;line-height:1.6;">
-            ' . $bodyHtml . '
-          </td>
-        </tr>
-
-        <!-- CTA row: preheader spacing if any buttons added in body -->
-        <tr>
-          <td style="background:#ffffff;padding:0 26px 22px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;border-bottom:1px solid #e7e2da;border-radius:0 0 10px 10px;">
-            <div style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12.5px;font-family:Arial,sans-serif;line-height:1.5;">
-              TheWairuaHeritage · Our family, our legacy.<br>
-              This message was sent automatically — please do not reply.
-            </div>
-          </td>
-        </tr>
-
-      </table>
-    </td>
-  </tr>
+<tr>
+<td align="center" style="padding:28px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:100%;max-width:560px;">
+<tr>
+<td style="background:#152a1e;border-radius:10px 10px 0 0;padding:14px 22px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+<td style="vertical-align:middle;">MARK_PLACEHOLDER
+<span style="color:#ffffff;font-size:17px;font-weight:bold;letter-spacing:0.04em;font-family:Georgia,serif;vertical-align:middle;padding-left:8px;">TheWairuaHeritage</span></td>
+<td align="right" style="vertical-align:middle;"><span style="color:#e08c2e;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Family Tree</span></td>
+</tr></table>
+</td>
+</tr>
+<tr>
+<td style="background:#1f3628;padding:16px 22px 18px;">
+<div style="color:#f5f3ef;font-family:Georgia,serif;font-size:22px;font-weight:bold;line-height:1.25;">TITLE_PLACEHOLDER</div>
+</td>
+</tr>
+<tr>
+<td style="background:#ffffff;padding:24px 26px 10px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;color:#2f2b27;font-family:Georgia,serif;font-size:15px;line-height:1.6;">
+BODY_PLACEHOLDER
+</td>
+</tr>
+<tr>
+<td style="background:#ffffff;padding:0 26px 22px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;border-bottom:1px solid #e7e2da;border-radius:0 0 10px 10px;">
+<div style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12px;font-family:Arial,sans-serif;line-height:1.5;">
+TheWairuaHeritage - Our family, our legacy.
+</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
 </table>
 </body>
-</html>';
+</html>
+HTML;
+
+    $html = str_replace(
+        ['TITLE_PLACEHOLDER', 'PREHEADER_PLACEHOLDER', 'MARK_PLACEHOLDER', 'BODY_PLACEHOLDER'],
+        [$safeTitle, $safePreheader, $mark, $bodyHtml],
+        $html
+    );
+
+    $lines = explode("\n", $html);
+    $out = [];
+    foreach ($lines as $line) {
+        if (strlen($line) > 950) {
+            $wrapped = wordwrap($line, 900, "\n", true);
+            $out = array_merge($out, explode("\n", $wrapped));
+        } else {
+            $out[] = $line;
+        }
+    }
+    return implode("\n", $out);
 }
 
 function app_button(string $label, string $url): string
@@ -281,6 +284,16 @@ function smtp_send_raw(array $cfg, string $from, string $fromName, string $to, s
         }
 
         $message = implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.\r\n";
+        // Hard safety net: cap every line at 990 bytes so Exim accepts it
+        $safeLines = [];
+        foreach (explode("\r\n", $message) as $line) {
+            while (strlen($line) > 990) {
+                $safeLines[] = substr($line, 0, 990);
+                $line = substr($line, 990);
+            }
+            $safeLines[] = $line;
+        }
+        $message = implode("\r\n", $safeLines);
         fwrite($fp, $message);
         $r = $readResponse();
         if (!$r || $r[0] !== 250) return ['ok' => false, 'error' => 'Message rejected by server'];
