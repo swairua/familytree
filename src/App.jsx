@@ -23,6 +23,8 @@ const TreesView = lazy(() => import('./components/TreesView'))
 const PrintView = lazy(() => import('./components/PrintView'))
 const MoreView = lazy(() => import('./components/MoreView'))
 const FeatureView = lazy(() => import('./components/FeatureView'))
+const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
+const SignUpView = lazy(() => import('./components/SignUpView'))
 
 function App() {
   const [data, setData] = useState(null)
@@ -290,12 +292,23 @@ function App() {
   }
 
   if (!currentUser) {
+    if (currentView === 'forgot-password') {
+      return (
+        <ForgotPasswordView onBackToLogin={() => setCurrentView('home')} />
+      )
+    }
+    if (currentView === 'signup') {
+      return (
+        <SignUpView onBackToLogin={() => setCurrentView('home')} />
+      )
+    }
     return (
       <LoginView
         onLoggedIn={(u) => {
           setCurrentUser(u)
           setCurrentView('tree')
         }}
+        onSwitchView={handleSwitchView}
       />
     )
   }
