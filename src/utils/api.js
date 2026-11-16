@@ -107,6 +107,61 @@ export async function changeProfile({ display_name, email }) {
   return res.json()
 }
 
+export async function fetchDirectory() {
+  const res = await fetch(`${API_BASE}/messages.php?action=directory`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function fetchInbox() {
+  const res = await fetch(`${API_BASE}/messages.php?action=inbox`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function fetchSent() {
+  const res = await fetch(`${API_BASE}/messages.php?action=sent`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function fetchMessage(id) {
+  const res = await fetch(`${API_BASE}/messages.php?action=view&id=${id}`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function sendMessage({ toUserId, subject, body }) {
+  const res = await fetch(`${API_BASE}/messages.php?action=send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ to_user_id: toUserId, subject, body }),
+  })
+  return res.json()
+}
+
+export async function markMessageRead(id) {
+  const res = await fetch(`${API_BASE}/messages.php?action=mark-read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ id }),
+  })
+  return res.json()
+}
+
+export async function markAllMessagesRead() {
+  const res = await fetch(`${API_BASE}/messages.php?action=mark-all-read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
+export async function fetchUnreadCount() {
+  const res = await fetch(`${API_BASE}/messages.php?action=unread-count`, { credentials: 'same-origin' })
+  return res.json()
+}
+
 export async function fetchUsers() {
   const res = await fetch(`${API_BASE}/auth.php?action=users-list`, {
     credentials: 'same-origin',

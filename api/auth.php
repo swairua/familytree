@@ -17,6 +17,7 @@
  *   POST auth.php?action=user-reject     { id }                              (admin)
  *   POST auth.php?action=user-set-password { id, password }                  (admin)
  *   POST auth.php?action=user-set-email    { id, email }                     (admin)
+ *   POST auth.php?action=user-set-deceased { id, deceased }                  (admin)
  *   POST auth.php?action=user-delete     { id }                              (admin)
  *
  * CLI:
@@ -370,7 +371,7 @@ switch ($action) {
     case 'users-list':
         admin_user_or_403($pdo);
         $stmt = $pdo->query(
-            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender
+            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, u.deceased, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender, i.death_date AS individual_death_date
 '
             . ' FROM users u LEFT JOIN individuals i ON i.id = u.individual_id
 '
@@ -435,6 +436,21 @@ switch ($action) {
             '<p>Hi,</p><p>An administrator updated the password for your TheWairuaHeritage account.</p>'
             . '<p>If you have any questions, contact the site administrator.</p>'
         );
+        send_json(['ok' => true]);
+        break;
+
+    case 'user-set-deceased':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        admin_user_or_403($pdo);
+        $body = read_json_body();
+        $id = (int)($body['id'] ?? 0);
+        $deceased = (bool)($body['deceased'] ?? false);
+        if ($id <= 0) send_error('Missing user id', 400);
+        $upd = $pdo->prepare('UPDATE users SET deceased = ? WHERE id = ?');
+        $upd->execute([$deceased ? 1 : 0, $id]);
+        if ($upd->rowCount() === 0) send_error('User not found', 404);
         send_json(['ok' => true]);
         break;
 

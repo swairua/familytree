@@ -250,3 +250,98 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* ========== Person detail page ========== */
+.detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.detail-actions {
+  display: flex;
+  gap: 8px;
+}
+.person-hero {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding: 24px;
+}
+.person-hero-avatar-wrap {
+  flex: 0 0 auto;
+}
+.person-hero-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e8e2da;
+}
+.person-hero-body h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #2f2b27;
+  margin: 0 0 8px;
+}
+.person-hero-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #6b655d;
+}
+.person-hero-meta i { color: #e08c2e; margin-right: 4px; }
+.person-death { color: #b3261e; }
+
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.family-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.family-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.family-member:hover { background: #faf8f5; border-color: #ece6dd; }
+.mini-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.member-name { font-size: 0.9rem; font-weight: 600; color: #2f2b27; flex: 1; }
+.member-relation { font-size: 0.72rem; color: #8b837d; }
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.event-item {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  font-size: 0.85rem;
+  color: #3a332d;
+  border-bottom: 1px solid #f0ece6;
+  padding: 6px 0;
+}
+.event-label { font-weight: 700; min-width: 100px; }
+
+.profile-note-inline {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0ece6;
+  color: #3a332d;
+}

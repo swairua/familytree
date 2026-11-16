@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS users (
   role           ENUM('admin','member') NOT NULL DEFAULT 'member',
   status         ENUM('pending','active','rejected') NOT NULL DEFAULT 'active',
   photo          VARCHAR(255) NOT NULL DEFAULT '',
+  deceased       TINYINT(1) NOT NULL DEFAULT 0,
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_user_email (email),
@@ -105,6 +106,19 @@ CREATE TABLE IF NOT EXISTS password_resets (
   KEY idx_reset_token (token_hash),
   KEY idx_reset_user (user_id),
   CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS messages (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  from_user_id INT NOT NULL,
+  to_user_id  INT NOT NULL,
+  subject     VARCHAR(255) NOT NULL DEFAULT '',
+  body        TEXT NOT NULL,
+  is_read     TINYINT(1) NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_msg_to (to_user_id, is_read),
+  KEY idx_msg_from (from_user_id),
+  CONSTRAINT fk_msg_from FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_msg_to   FOREIGN KEY (to_user_id)   REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS events (
   id            INT AUTO_INCREMENT PRIMARY KEY,

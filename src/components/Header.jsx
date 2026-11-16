@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 
-function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onLogout, currentUser }) {
+function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick, syncing, onLogout, currentUser, unreadCount = 0 }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
   const isAdmin = currentUser?.role === 'admin'
@@ -20,6 +20,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         { id: 'stats', label: 'Family statistics' },
         ...(isAdmin ? [{ id: 'members', label: 'Site members' }] : []),
         ...(isAdmin ? [{ id: 'settings', label: 'Settings' }] : []),
+        { id: 'messages', label: 'Messages' },
     ]},
     { id: 'tree', label: 'Family tree', icon: 'fa-sitemap', children: [
         { id: 'tree', label: 'My family tree' },
@@ -57,6 +58,10 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
           </button>
           <button className="mh-util-btn" onClick={onSyncClick} title="Sync from TheWairuaHeritage">
             <i className={`fas ${syncing ? 'fa-spinner fa-spin' : 'fa-sync'}`}></i>
+          </button>
+          <button className="mh-util-btn" onClick={() => onSwitchView('messages')} title={`Messages${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`} aria-label={`Messages${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}>
+            <i className="fas fa-envelope"></i>
+            {unreadCount > 0 && <span className="mh-util-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </button>
           <button className="mh-util-btn" onClick={onImportClick} title="Import GEDCOM">
             <i className="fas fa-file-import"></i>

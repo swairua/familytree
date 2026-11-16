@@ -12,7 +12,7 @@ const ZOOM_MAX = 3
 const ZOOM_STEP = 1.25
 const AVATAR_R = 50
 
-function TreeView({ individuals, families, onSelectPerson, onOpenPersonModal, onUpdatePerson, layoutMode = 'flat', onLayoutModeChange, anchorId }) {
+function TreeView({ individuals, families, onSelectPerson, onUpdatePerson, layoutMode = 'flat', onLayoutModeChange, anchorId }) {
   const containerRef = useRef(null)
   const contentGroupRef = useRef(null)
   const minimapSvgRef = useRef(null)

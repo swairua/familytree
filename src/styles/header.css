@@ -126,3 +126,18 @@
 .main-nav { display: flex; align-items: center; gap: 12px; justify-content: center; }
 .nav-link { text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #3e322a; padding: 6px 4px; }
 
+.mh-util-btn { position: relative; }
+.mh-util-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #b3261e;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 16px;
+  padding: 0 5px;
+  min-width: 16px;
+  text-align: center;
+}

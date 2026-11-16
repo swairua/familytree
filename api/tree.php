@@ -40,6 +40,7 @@ const INDIVIDUAL_EDITABLE_FIELDS = [
     'religion'   => ['religion', 128],
     'email'      => ['email', 255],
     'phone'      => ['phone', 255],
+    'photo'      => ['photo', 255],
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

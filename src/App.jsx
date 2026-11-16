@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react'
+﻿import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react'
 import AppLayout from './components/AppLayout'
-import PersonModal from './components/PersonModal'
 import { parseGEDCOM } from './utils/gedcomParser'
-import { fetchExport, fetchMe, fetchRecentActivity, importGedcom, logout, syncStatus, startSync, abortSync, updateIndividual } from './utils/api'
+import { fetchExport, fetchMe, fetchRecentActivity, importGedcom, logout, syncStatus, startSync, abortSync, updateIndividual, fetchUnreadCount } from './utils/api'
 import LoginView from './components/LoginView'
 import './styles/home.css'
 
@@ -27,7 +26,9 @@ const AccountView = lazy(() => import('./components/AccountView'))
 const SettingsView = lazy(() => import('./components/SettingsView'))
 const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
 const ResetPasswordView = lazy(() => import('./components/ResetPasswordView'))
+const PersonDetailView = lazy(() => import('./components/PersonDetailView'))
 const SignUpView = lazy(() => import('./components/SignUpView'))
+const MessagesView = lazy(() => import('./components/MessagesView'))
 
 function App() {
   const [data, setData] = useState(null)
@@ -39,10 +40,40 @@ function App() {
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [currentUser, setCurrentUser] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [resetToken, setResetToken] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
   const [recentActivity, setRecentActivity] = useState({ entries: [], syncedAt: null })
+  // Poll unread message count every 30s while signed in
+  useEffect(() => {
+    if (!currentUser) return
+    let cancelled = false
+    const tick = async () => {
+      try {
+        const res = await fetchUnreadCount()
+        if (!cancelled && res?.ok) setUnreadCount(res.count || 0)
+      } catch { /* ignore */ }
+    }
+    tick()
+    const t = setInterval(tick, 30000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [currentUser])
+
+  // Refresh unread count when switching views (cheap)
+  useEffect(() => {
+    if (!currentUser) return
+    fetchUnreadCount().then(r => { if (r?.ok) setUnreadCount(r.count || 0) }).catch(() => {})
+  }, [currentView, currentUser])
+
+  // Refetch unread count after auth-related actions
+  const refreshUnread = useCallback(async () => {
+    try {
+      const res = await fetchUnreadCount()
+      if (res?.ok) setUnreadCount(res.count || 0)
+    } catch { /* ignore */ }
+  }, [])
+
 
   // Deep link: /?view=reset-password&token=... opens the reset flow directly
   useEffect(() => {
@@ -80,7 +111,7 @@ function App() {
           const saved = localStorage.getItem('familyTreeData')
           if (saved) {
             applyData(JSON.parse(saved))
-            setServerStatus({ type: 'info', message: 'Server has no data yet — showing cached data. Use Import to load from database.' })
+            setServerStatus({ type: 'info', message: 'Server has no data yet â€” showing cached data. Use Import to load from database.' })
           } else {
             setServerStatus({ type: 'info', message: 'Server is ready. Import a GEDCOM file to begin.' })
           }
@@ -93,7 +124,7 @@ function App() {
         if (saved) {
           try {
             applyData(JSON.parse(saved))
-            setServerStatus({ type: 'error', message: `Server unavailable (${err.message}) — showing cached data.` })
+            setServerStatus({ type: 'error', message: `Server unavailable (${err.message}) â€” showing cached data.` })
           } catch {
             setServerStatus({ type: 'error', message: `Server unavailable (${err.message}).` })
           }
@@ -257,10 +288,7 @@ function App() {
 
   const handleSelectPerson = useCallback((id) => {
     setSelectedPersonId(id)
-  }, [])
-
-  const handleCloseModal = useCallback(() => {
-    setSelectedPersonId(null)
+    setCurrentView('person')
   }, [])
 
   const handleUpdatePerson = useCallback(async (id, fields) => {
@@ -302,7 +330,7 @@ function App() {
   if (authLoading) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', color: '#8b7355' }}>
-        <div><i className="fas fa-spinner fa-spin"></i> Loading…</div>
+        <div><i className="fas fa-spinner fa-spin"></i> Loadingâ€¦</div>
       </div>
     )
   }
@@ -310,7 +338,7 @@ function App() {
   if (!currentUser) {
     const authFallback = (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', color: '#8b7355' }}>
-        <div><i className="fas fa-spinner fa-spin"></i> Loading…</div>
+        <div><i className="fas fa-spinner fa-spin"></i> Loadingâ€¦</div>
       </div>
     )
     if (currentView === 'forgot-password') {
@@ -349,12 +377,12 @@ function App() {
     <AppLayout
       currentView={currentView}
       onSwitchView={handleSwitchView}
+      unreadCount={unreadCount}
       currentUser={currentUser}
       onImportClick={() => setCurrentView('import')}
       individuals={individuals}
       families={families}
       onSelectPerson={handleSelectPerson}
-      onOpenPersonModal={handleSelectPerson}
       selectedPersonId={selectedPersonId}
       data={data}
       onSyncClick={handleSync}
@@ -365,7 +393,7 @@ function App() {
       serverStatus={serverStatus}
       onLogout={handleLogout}
     >
-      <Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: '#8b7355' }}><i className="fas fa-spinner fa-spin"></i> Loading…</div>}>
+      <Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: '#8b7355' }}><i className="fas fa-spinner fa-spin"></i> Loadingâ€¦</div>}>
       {currentView === 'home' && (
         <HomeView
           individuals={individuals}
@@ -463,7 +491,6 @@ function App() {
           individuals={individuals}
           families={families}
           onSelectPerson={handleSelectPerson}
-          onOpenPersonModal={handleSelectPerson}
           layoutMode={layoutMode}
           onLayoutModeChange={setLayoutMode}
           anchorId={currentUser?.individual_id || null}
@@ -523,14 +550,22 @@ function App() {
         />
       )}
 
-      {selectedPerson && (
-        <PersonModal
+      {currentView === 'person' && selectedPerson && (
+        <PersonDetailView
           person={selectedPerson}
           individuals={individuals}
           families={families}
-          onClose={handleCloseModal}
           onSelectPerson={handleSelectPerson}
+          onBack={() => setCurrentView('tree')}
           onUpdatePerson={handleUpdatePerson}
+        />
+      )}
+
+      {currentView === 'messages' && (
+        <MessagesView
+          currentUser={currentUser}
+          onSwitchView={handleSwitchView}
+          onUnreadRecount={refreshUnread}
         />
       )}
       </Suspense>
@@ -539,4 +574,5 @@ function App() {
 }
 
 export default App
+
 

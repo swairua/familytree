@@ -4,7 +4,7 @@ import Header from './Header'
 function AppLayout({
   currentView, onSwitchView,
   individuals, families,
-  onSelectPerson, onOpenPersonModal,
+  onSelectPerson,
   selectedPersonId,
   data, onImportClick,
   onSyncClick, syncing,
@@ -12,6 +12,7 @@ function AppLayout({
   syncState, serverStatus,
   onLogout,
   currentUser,
+  unreadCount,
   children,
 }) {
   return (
@@ -25,6 +26,7 @@ function AppLayout({
         syncing={syncing}
         onLogout={onLogout}
         currentUser={currentUser}
+        unreadCount={unreadCount}
       />
       <div className="app-body">
         <main className="main-content">
