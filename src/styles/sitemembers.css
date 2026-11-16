@@ -140,3 +140,13 @@
   border-color: #cb7a24;
   color: #fff;
 }
+
+.sm-notifs-off {
+  background: #f3e3e3;
+  color: #8a3a3a;
+  font-size: 11px;
+}
+.sm-notifs-on {
+  color: #2f7a4f;
+  font-size: 12px;
+}

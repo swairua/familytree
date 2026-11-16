@@ -56,10 +56,41 @@ function email_is_real(string $email): bool
     return true;
 }
 
+function app_unsubscribe_url(PDO $pdo, string $email): ?string
+{
+    try {
+        $stmt = $pdo->prepare('SELECT id, email_unsubscribe_token FROM users WHERE email = ?');
+        $stmt->execute([trim($email)]);
+        $u = $stmt->fetch();
+        if (!$u) return null;
+        $token = (string)($u['email_unsubscribe_token'] ?? '');
+        if ($token === '') {
+            $token = bin2hex(random_bytes(32));
+            $pdo->prepare('UPDATE users SET email_unsubscribe_token = ? WHERE id = ?')->execute([$token, $u['id']]);
+        }
+        return app_public_url($pdo) . '/api/unsubscribe.php?token=' . $token;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function app_notifications_opted_out(PDO $pdo, string $email): bool
+{
+    try {
+        $stmt = $pdo->prepare('SELECT email_notifications FROM users WHERE email = ?');
+        $stmt->execute([trim($email)]);
+        $v = $stmt->fetchColumn();
+        if ($v === false) return false; // not a member account (e.g. admin test send): do not block
+        return (int)$v === 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Branded HTML template (official look: dark utility bar, logo, orange CTA)
 // ---------------------------------------------------------------------------
-function app_brand_email(string $preheader, string $title, string $bodyHtml): string
+function app_brand_email(string $preheader, string $title, string $bodyHtml, ?string $unsubscribeUrl = null): string
 {
     $safePreheader = htmlspecialchars($preheader, ENT_QUOTES, 'UTF-8');
     $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
@@ -119,8 +150,9 @@ function app_brand_email(string $preheader, string $title, string $bodyHtml): st
 </tr>
 <tr>
 <td class="px-footer" style="background:#ffffff;padding:0 26px 22px;border-left:1px solid #e7e2da;border-right:1px solid #e7e2da;border-bottom:1px solid #e7e2da;border-radius:0 0 10px 10px;">
-<div class="small" style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12px;font-family:Arial,sans-serif;line-height:1.5;">
+<div class="small" style="border-top:1px solid #eee7dc;padding-top:16px;color:#8b837d;font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">
 TheWairuaHeritage - Our family, our legacy.
+UNSUBSCRIBE_FOOTER
 </div>
 </td>
 </tr>
@@ -132,9 +164,17 @@ TheWairuaHeritage - Our family, our legacy.
 </html>
 HTML;
 
+    $unsubscribeFooter = '';
+    if ($unsubscribeUrl !== null) {
+        $safeUnsub = htmlspecialchars($unsubscribeUrl, ENT_QUOTES, 'UTF-8');
+        $unsubscribeFooter = '<br>Don&rsquo;t want these emails? '
+            . '<a href="' . $safeUnsub . '" style="color:#8b7355;text-decoration:underline;">Unsubscribe</a>'
+            . ' or <a href="' . $safeUnsub . '&amp;action=resubscribe" style="color:#8b7355;text-decoration:underline;">manage notifications</a>.';
+    }
+
     $html = str_replace(
-        ['TITLE_PLACEHOLDER', 'PREHEADER_PLACEHOLDER', 'MARK_PLACEHOLDER', 'BODY_PLACEHOLDER'],
-        [$safeTitle, $safePreheader, $mark, $bodyHtml],
+        ['TITLE_PLACEHOLDER', 'PREHEADER_PLACEHOLDER', 'MARK_PLACEHOLDER', 'BODY_PLACEHOLDER', 'UNSUBSCRIBE_FOOTER'],
+        [$safeTitle, $safePreheader, $mark, $bodyHtml, $unsubscribeFooter],
         $html
     );
 
@@ -164,7 +204,7 @@ function app_button(string $label, string $url): string
 // Sending
 // ---------------------------------------------------------------------------
 
-function app_send_email(PDO $pdo, string $to, string $subject, string $bodyHtml, ?string $bodyText = null): array
+function app_send_email(PDO $pdo, string $to, string $subject, string $bodyHtml, ?string $bodyText = null, array $extraHeaders = []): array
 {
     if (!email_is_real($to)) {
         return ['ok' => false, 'error' => 'Recipient has no deliverable address (placeholder or invalid)'];
@@ -178,19 +218,42 @@ function app_send_email(PDO $pdo, string $to, string $subject, string $bodyHtml,
 
     $text = $bodyText ?? trim(strip_tags(preg_replace('#<style[^>]*>.*?</style>#isS', '', preg_replace('/<\s*br\s*\/?>/i', "\n", $bodyHtml))));
 
-    return smtp_send_raw($s, $from, $fromName, $to, $subject, $text, $bodyHtml);
+    return smtp_send_raw($s, $from, $fromName, $to, $subject, $text, $bodyHtml, $extraHeaders);
 }
 
-function app_send_branded(PDO $pdo, string $to, string $subject, string $preheader, string $title, string $bodyHtml, ?string $bodyText = null): array
+/**
+ * Send a branded email.
+ *
+ * @param string $kind 'transactional' (account/security mail: always delivered,
+ *                      opt-out ignored) or 'notification' (messages, birthdays,
+ *                      digests: suppressed when the member has unsubscribed).
+ *                      Every branded email carries an unsubscribe link +
+ *                      List-Unsubscribe headers regardless of kind.
+ */
+function app_send_branded(PDO $pdo, string $to, string $subject, string $preheader, string $title, string $bodyHtml, ?string $bodyText = null, string $kind = 'transactional'): array
 {
-    return app_send_email($pdo, $to, $subject, app_brand_email($preheader, $title, $bodyHtml), $bodyText);
+    $unsubscribeUrl = app_unsubscribe_url($pdo, $to);
+    if ($kind === 'notification' && app_notifications_opted_out($pdo, $to)) {
+        return ['ok' => false, 'skipped' => true, 'error' => 'Member has unsubscribed from notification emails'];
+    }
+    $headers = [];
+    if ($unsubscribeUrl !== null) {
+        $headers[] = 'List-Unsubscribe: <' . $unsubscribeUrl . '>';
+        $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+    }
+    $text = $bodyText;
+    if ($text === null && $unsubscribeUrl !== null) {
+        $text = trim(strip_tags(preg_replace('#<style[^>]*>.*?</style>#isS', '', preg_replace('/<\s*br\s*\/?>/i', "\n", $bodyHtml))))
+            . "\n\nUnsubscribe: " . $unsubscribeUrl;
+    }
+    return app_send_email($pdo, $to, $subject, app_brand_email($preheader, $title, $bodyHtml, $unsubscribeUrl), $text, $headers);
 }
 
 // ---------------------------------------------------------------------------
 // Raw SMTP client (STARTTLS / SSL / none + AUTH LOGIN), multipart/alternative
 // ---------------------------------------------------------------------------
 
-function smtp_send_raw(array $cfg, string $from, string $fromName, string $to, string $subject, string $textBody, ?string $htmlBody = null): array
+function smtp_send_raw(array $cfg, string $from, string $fromName, string $to, string $subject, string $textBody, ?string $htmlBody = null, array $extraHeaders = []): array
 {
     $host = trim((string)($cfg['smtp_host'] ?? ''));
     if ($host === '') return ['ok' => false, 'error' => 'SMTP host is empty'];
@@ -279,6 +342,12 @@ function smtp_send_raw(array $cfg, string $from, string $fromName, string $to, s
             'MIME-Version: 1.0',
             'Date: ' . date(DATE_RFC2822),
         ];
+        foreach ($extraHeaders as $h) {
+            $h = trim((string)$h);
+            if ($h !== '' && strpos($h, "\r") === false && strpos($h, "\n") === false) {
+                $headers[] = $h;
+            }
+        }
 
         if ($htmlBody) {
             $boundary = '=_b_' . bin2hex(random_bytes(8));

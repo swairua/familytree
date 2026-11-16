@@ -125,7 +125,9 @@ function send_birthday_digest(PDO $pdo, int $days): array
             'Birthday reminders: ' . $windowLabel,
             'Upcoming birthdays',
             'This month in our family',
-            $body);
+            $body,
+            null,
+            'notification');
         if ($result['ok']) $sent++; else $skipped++;
     }
     return ['ok' => true, 'sent' => $sent, 'skipped' => $skipped, 'birthdays' => count($list)];

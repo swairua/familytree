@@ -371,7 +371,7 @@ switch ($action) {
     case 'users-list':
         admin_user_or_403($pdo);
         $stmt = $pdo->query(
-            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, u.deceased, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender, i.death_date AS individual_death_date
+            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, u.deceased, u.email_notifications, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender, i.death_date AS individual_death_date
 '
             . ' FROM users u LEFT JOIN individuals i ON i.id = u.individual_id
 '

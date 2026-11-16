@@ -170,6 +170,7 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                   <th>Linked person</th>
                   <th>Role</th>
                   <th>Status</th>
+                  <th title="Notification emails (new messages, birthdays)">Notifs</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -207,6 +208,9 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                       </td>
                       <td><span className={`sm-badge sm-role-${u.role}`}>{u.role}</span></td>
                       <td><span className={`sm-badge sm-status-${u.status}`}>{u.status}</span></td>
+                      <td>{Number(u.email_notifications) === 0
+                        ? <span className="sm-badge sm-notifs-off" title="Unsubscribed from notification emails"><i className="fas fa-bell-slash"></i> off</span>
+                        : <span className="sm-notifs-on" title="Receiving notification emails"><i className="fas fa-bell"></i></span>}</td>
                       <td>
                         <div className="sm-actions">
                           {u.status !== 'active' && (

@@ -200,14 +200,18 @@ function handleSend(PDO $pdo, array $me): void
     $recipientEmail = trim((string)($recipient['email'] ?? ''));
     if (email_is_real($recipientEmail)) {
         $link = app_public_url($pdo) . '/?view=messages&thread=' . $msgId;
+        $recipientName = trim((string)($recipient['display_name'] ?? ''));
+        $greet = $recipientName !== '' ? 'Hi ' . htmlspecialchars($recipientName, ENT_QUOTES, 'UTF-8') . ',' : 'Hello,';
         app_send_branded($pdo, $recipientEmail,
             'New message from ' . $fromName . ': ' . ($subject !== '' ? $subject : '(no subject)'),
             'New message from ' . $fromName,
             'New message',
-            '<p>Hi ' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . ' sent you a message on TheWairuaHeritage:</p>'
+            '<p>' . $greet . '</p><p>' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . ' sent you a message on TheWairuaHeritage:</p>'
             . '<blockquote style="margin:14px 0;padding:12px 14px;background:#faf8f5;border-left:4px solid #e08c2e;color:#3a332d;font-style:italic;">'
             . nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8')) . '</blockquote>'
-            . app_button('Read and reply', $link)
+            . app_button('Read and reply', $link),
+            null,
+            'notification'
         );
     }
 
