@@ -22,6 +22,7 @@ const TreesView = lazy(() => import('./components/TreesView'))
 const PrintView = lazy(() => import('./components/PrintView'))
 const MoreView = lazy(() => import('./components/MoreView'))
 const FeatureView = lazy(() => import('./components/FeatureView'))
+const DnaLearnView = lazy(() => import('./components/DnaLearnView'))
 const AccountView = lazy(() => import('./components/AccountView'))
 const SettingsView = lazy(() => import('./components/SettingsView'))
 const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
@@ -91,6 +92,9 @@ function App() {
       }
       if (p.get('view') === 'research') {
         setCurrentView('research')
+      }
+      if (p.get('view') === 'dna-learn') {
+        setCurrentView('dna-learn')
       }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -492,6 +496,10 @@ function App() {
           featureKey={currentView}
           onSwitchView={handleSwitchView}
         />
+      )}
+
+      {currentView === 'dna-learn' && (
+        <DnaLearnView onSwitchView={handleSwitchView} />
       )}
 
       {currentView === 'tree' && (

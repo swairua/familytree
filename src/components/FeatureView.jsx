@@ -66,18 +66,32 @@ const FEATURES = {
     icon: 'fa-dna',
     title: 'DNA Matching',
     subtitle: 'Find family connections across your DNA',
-    description: 'Order a FamilyTreeDNA or 23andMe kit, or upload your raw DNA to match relatives across the Wairua family and beyond.',
+    description: 'Order a MyHeritage DNA, AncestryDNA or 23andMe kit and discover relatives — then see how the Wairua branches connect, with your privacy protected.',
     bullets: [
       'Connect DNA relatives to your family tree',
       'Estimate shared ethnicity and origin regions',
       'Confirm uncertain branches with matches',
     ],
     cta: 'Learn about DNA testing',
+    ctaTarget: 'dna-learn',
+    headerCta: { icon: 'fa-book-open', label: 'Read the guide', view: 'dna-learn' },
+    howItWorks: [
+      { icon: 'fa-truck', title: '1. Order', text: 'Pick a provider; the kit ships to your door' },
+      { icon: 'fa-vial', title: '2. Swab', text: 'Cheek swab at home in a couple of minutes' },
+      { icon: 'fa-chart-pie', title: '3. Results', text: 'About 4–8 weeks: ethnicity + DNA matches' },
+    ],
   },
 }
 
 export default function FeatureView({ featureKey, onSwitchView }) {
   const content = FEATURES[featureKey] || FEATURES.colorize
+  const ctaTarget = content.ctaTarget || 'gallery'
+  const headerCta = content.headerCta || { icon: 'fa-images', label: 'My photos', view: 'gallery' }
+  const howItWorks = content.howItWorks || [
+    { icon: 'fa-upload', title: '1. Upload', text: 'Pick a photo from your gallery' },
+    { icon: 'fa-cogs', title: '2. Process', text: 'AI handles the heavy lifting' },
+    { icon: 'fa-save', title: '3. Save', text: 'Keep the result in your tree' },
+  ]
 
   return (
     <div className="view-page">
@@ -87,8 +101,8 @@ export default function FeatureView({ featureKey, onSwitchView }) {
             <h1>{content.title}</h1>
             <p className="view-sub">{content.subtitle}</p>
           </div>
-          <button className="btn btn-primary" onClick={() => onSwitchView('gallery')}>
-            <i className="fas fa-images"></i> My photos
+          <button className="btn btn-primary" onClick={() => onSwitchView(headerCta.view)}>
+            <i className={`fas ${headerCta.icon}`}></i> {headerCta.label}
           </button>
         </div>
 
@@ -105,7 +119,7 @@ export default function FeatureView({ featureKey, onSwitchView }) {
                   <li key={i}><i className="fas fa-check"></i> {b}</li>
                 ))}
               </ul>
-              <button className="btn btn-accent" onClick={() => onSwitchView('gallery')}>
+              <button className="btn btn-accent" onClick={() => onSwitchView(ctaTarget)}>
                 {content.cta}
               </button>
             </div>
@@ -117,21 +131,13 @@ export default function FeatureView({ featureKey, onSwitchView }) {
             <h2>How it works</h2>
           </div>
           <div className="view-grid">
-            <div className="view-tile">
-              <i className="fas fa-upload"></i>
-              <strong>1. Upload</strong>
-              <span>Pick a photo from your gallery</span>
-            </div>
-            <div className="view-tile">
-              <i className="fas fa-cogs"></i>
-              <strong>2. Process</strong>
-              <span>AI handles the heavy lifting</span>
-            </div>
-            <div className="view-tile">
-              <i className="fas fa-save"></i>
-              <strong>3. Save</strong>
-              <span>Keep the result in your tree</span>
-            </div>
+            {howItWorks.map((step, i) => (
+              <div className="view-tile" key={i}>
+                <i className={`fas ${step.icon}`}></i>
+                <strong>{step.title}</strong>
+                <span>{step.text}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
