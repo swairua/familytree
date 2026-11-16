@@ -53,7 +53,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
             Wairua Web Site
             <i className="fas fa-caret-down"></i>
           </button>
-          <button className="mh-util-btn" onClick={onSyncClick} title="Sync from MyHeritage">
+          <button className="mh-util-btn" onClick={onSyncClick} title="Sync from TheWairuaHeritage">
             <i className={`fas ${syncing ? 'fa-spinner fa-spin' : 'fa-sync'}`}></i>
           </button>
           <button className="mh-util-btn" onClick={onImportClick} title="Import GEDCOM">
@@ -93,7 +93,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
       <div className="mh-nav-row">
         <div className="mh-logo">
           <span className="mh-logo-icon"></span>
-          <span className="mh-logo-text">MyHeritage</span>
+          <span className="mh-logo-text">TheWairuaHeritage</span>
         </div>
         <nav className="mh-nav" ref={navRef}>
           {navItems.map(item => (

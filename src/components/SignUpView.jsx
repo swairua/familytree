@@ -18,7 +18,7 @@ export default function SignUpView({ onBackToLogin }) {
       <div className="login-card">
         <div className="login-logo">
           <div className="mh-mark" aria-hidden="true" />
-          <span className="login-wordmark">MyHeritage</span>
+          <span className="login-wordmark">TheWairuaHeritage</span>
         </div>
 
         <h1 className="login-title">Request an account</h1>

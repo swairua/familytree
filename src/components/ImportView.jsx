@@ -27,22 +27,22 @@ function ImportView({ onImport, status }) {
         <h2>Import GEDCOM File</h2>
         <p>
           GEDCOM is the standard format for family tree data. Export your tree from
-          MyHeritage as GEDCOM and import it here.
+          TheWairuaHeritage as GEDCOM and import it here.
         </p>
 
         <div className="import-steps">
           <div className="step">
             <span className="step-num">1</span>
             <div className="step-content">
-              <h3>Export from MyHeritage</h3>
-              <p>Log into MyHeritage → Family Tree → Manage → Export to GEDCOM</p>
+              <h3>Export from TheWairuaHeritage</h3>
+              <p>Log into TheWairuaHeritage → Family Tree → Manage → Export to GEDCOM</p>
             </div>
           </div>
           <div className="step">
             <span className="step-num">2</span>
             <div className="step-content">
               <h3>Download the .ged file</h3>
-              <p>MyHeritage will generate a GEDCOM file with all your family data</p>
+              <p>TheWairuaHeritage will generate a GEDCOM file with all your family data</p>
             </div>
           </div>
           <div className="step">

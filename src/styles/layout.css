@@ -65,3 +65,4 @@
 .sync-progress-bar::-webkit-progress-bar { background: transparent; }
 .sync-progress-bar::-webkit-progress-value { background: var(--heritage-teal); border-radius: 3px; transition: width 0.4s ease; }
 .sync-progress-bar::-moz-progress-bar { background: var(--heritage-teal); border-radius: 3px; }
+

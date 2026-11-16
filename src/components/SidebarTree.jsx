@@ -103,3 +103,4 @@ function SidebarTree({ individuals, families, onSelectPerson, selectedPersonId }
 }
 
 export default React.memo(SidebarTree)
+

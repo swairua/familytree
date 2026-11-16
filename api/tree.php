@@ -219,7 +219,7 @@ function handleExport(PDO $pdo): void
 
     send_json([
         'ok' => true,
-        'header' => ['sourceName' => 'MyHeritage (imported via PHP backend)'],
+        'header' => ['sourceName' => 'TheWairuaHeritage (imported via PHP backend)'],
         'individuals' => $individuals,
         'families' => $families,
         'sources' => [],
@@ -648,3 +648,4 @@ function attach_relationships(array $ind, PDO $pdo): array
 
     return $ind;
 }
+

@@ -1,6 +1,6 @@
 <?php
 /**
- * Serves locally-downloaded MyHeritage profile photos from data/photos/.
+ * Serves locally-downloaded TheWairuaHeritage profile photos from data/photos/.
  *
  *   GET photo.php?file=2000001.jpg
  *   GET photo.php?id=I2000001        (numeric gid only, strips optional I prefix)

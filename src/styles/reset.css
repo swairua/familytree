@@ -12,3 +12,4 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+

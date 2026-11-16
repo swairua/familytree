@@ -45,8 +45,8 @@ export default function MoreView({ individuals, onSwitchView, onSyncClick, synci
             </button>
             <button className="more-action" onClick={() => onSyncClick && onSyncClick()} disabled={syncing}>
               <i className="fas fa-sync"></i>
-              <strong>Sync from MyHeritage</strong>
-              <span>Re-pull the latest data from MyHeritage</span>
+              <strong>Sync from TheWairuaHeritage</strong>
+              <span>Re-pull the latest data from TheWairuaHeritage</span>
             </button>
             <button className="more-action" onClick={() => onSwitchView('members')}>
               <i className="fas fa-users"></i>

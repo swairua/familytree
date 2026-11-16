@@ -125,3 +125,4 @@ function extract_year(?string $date): ?int
     }
     return null;
 }
+

@@ -1,5 +1,5 @@
 /* ===========================================================
-   Homepage – MyHeritage-style layout
+   Homepage – TheWairuaHeritage-style layout
    =========================================================== */
 .home-view {
   height: 100%;
@@ -301,7 +301,7 @@
 }
 .home-view-more:hover { background: #cb7a24; }
 
-/* --- Header (matching MyHeritage) ----------------------------- */
+/* --- Header (matching TheWairuaHeritage) ----------------------------- */
 .mh-header {
   display: flex;
   flex-direction: column;
@@ -539,3 +539,4 @@
 
 .activity-deep-link { background: none; border: none; padding: 0; cursor: pointer; color: #1a73e8; font-weight: 700; font-size: inherit; text-decoration: underline; border-radius: 3px; }
 .activity-deep-link:hover { color: #0b57d0; background: #eef3fe; }
+

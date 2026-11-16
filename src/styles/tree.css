@@ -1,4 +1,4 @@
-﻿.tree-container { height: 100%; display: flex; flex-direction: column; position: relative; }
+.tree-container { height: 100%; display: flex; flex-direction: column; position: relative; }
 
 .tree-toolbar {
   background: #fff;
@@ -257,3 +257,4 @@
 
 .node-hover-pen { opacity: 0; transition: opacity 0.15s; cursor: pointer; }
 .tree-node:hover .node-hover-pen { opacity: 1; }
+

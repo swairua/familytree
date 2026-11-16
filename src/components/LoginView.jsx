@@ -33,10 +33,10 @@ export default function LoginView({ onLoggedIn, onSwitchView }) {
       <div className="login-card">
         <div className="login-logo">
           <div className="mh-mark" aria-hidden="true" />
-          <span className="login-wordmark">MyHeritage</span>
+          <span className="login-wordmark">TheWairuaHeritage</span>
         </div>
 
-        <h1 className="login-title">Wairua Web Site</h1>
+        <h1 className="login-title">Welcome back</h1>
         <p className="login-sub">Sign in to view your family tree</p>
 
         <form className="login-form" onSubmit={handleSubmit}>

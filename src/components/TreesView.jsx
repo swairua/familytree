@@ -113,7 +113,7 @@ export default function TreesView({ individuals, onSwitchView }) {
               <i className="fas fa-images"></i> Manage photos
             </button>
             <button className="btn" onClick={() => onSwitchView('sync')}>
-              <i className="fas fa-sync"></i> Sync from MyHeritage
+              <i className="fas fa-sync"></i> Sync from TheWairuaHeritage
             </button>
           </div>
         </div>

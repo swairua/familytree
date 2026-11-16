@@ -332,3 +332,4 @@ function PersonModal({ person, individuals, families, onClose, onSelectPerson, o
 }
 
 export default PersonModal
+

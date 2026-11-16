@@ -195,3 +195,4 @@ try {
     fwrite(STDERR, "ERROR: " . $e->getMessage() . "\n");
     exit(1);
 }
+

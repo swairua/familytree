@@ -495,7 +495,7 @@
   }
 }
 
-/* Photos page layout (MyHeritage-style) */
+/* Photos page layout (TheWairuaHeritage-style) */
 .gallery-layout { display: flex; gap: 16px; height: 100%; box-sizing: border-box; }
 .gallery-sidebar { width: 220px; flex-shrink: 0; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(62,50,42,0.08); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
 .gallery-sidebar-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #8b837d; margin: 0 0 8px; }
@@ -814,3 +814,4 @@
 }
 .photos-empty i { font-size: 2rem; color: #e08c2e; }
 .photos-empty h2 { font-size: 1.1rem; margin: 0; color: #2f2b27; }
+

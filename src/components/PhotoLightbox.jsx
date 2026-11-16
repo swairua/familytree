@@ -85,3 +85,4 @@ function PhotoLightbox({ photos, lightboxIndex, onClose, onNext, onPrev, onSelec
 }
 
 export default PhotoLightbox
+

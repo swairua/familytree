@@ -78,7 +78,7 @@ function Sidebar({
             disabled={syncing}
           >
             <i className={`fas ${syncing ? 'fa-sync fa-spin' : 'fa-sync'}`}></i>
-            <span>{syncing ? 'Syncing...' : 'Sync MyHeritage'}</span>
+            <span>{syncing ? 'Syncing...' : 'Sync TheWairuaHeritage'}</span>
           </button>
         </div>
       </aside>
@@ -87,3 +87,4 @@ function Sidebar({
 }
 
 export default React.memo(Sidebar)
+

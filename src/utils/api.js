@@ -136,3 +136,4 @@ export async function aiSearch(prompt) {
   }
   return res.json()
 }
+

@@ -1,6 +1,6 @@
 <?php
 /**
- * Sync endpoint: re-pull data from MyHeritage via the CDP browser and update
+ * Sync endpoint: re-pull data from TheWairuaHeritage via the CDP browser and update
  * the database progressively.
  *
  *   GET  sync.php?action=status   → current progress from data/sync_status.json
@@ -8,7 +8,7 @@
  *
  * Requires:
  *   - Opera (or Chrome) running with --remote-debugging-port=9222 and a logged
- *     in MyHeritage tab.
+ *     in TheWairuaHeritage tab.
  *   - node on PATH (or configurable below).
  */
 
@@ -124,3 +124,4 @@ switch ($action) {
     default:
         send_error("Unknown sync action: {$action}", 404);
 }
+

@@ -27,3 +27,4 @@ if (!is_array($data)) {
 }
 
 send_json(array_merge(['ok' => true], $data));
+

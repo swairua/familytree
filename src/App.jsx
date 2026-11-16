@@ -292,14 +292,23 @@ function App() {
   }
 
   if (!currentUser) {
+    const authFallback = (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', color: '#8b7355' }}>
+        <div><i className="fas fa-spinner fa-spin"></i> Loading…</div>
+      </div>
+    )
     if (currentView === 'forgot-password') {
       return (
-        <ForgotPasswordView onBackToLogin={() => setCurrentView('home')} />
+        <Suspense fallback={authFallback}>
+          <ForgotPasswordView onBackToLogin={() => setCurrentView('home')} />
+        </Suspense>
       )
     }
     if (currentView === 'signup') {
       return (
-        <SignUpView onBackToLogin={() => setCurrentView('home')} />
+        <Suspense fallback={authFallback}>
+          <SignUpView onBackToLogin={() => setCurrentView('home')} />
+        </Suspense>
       )
     }
     return (
@@ -476,3 +485,4 @@ function App() {
 }
 
 export default App
+

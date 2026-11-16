@@ -76,3 +76,4 @@ function SplitPane({ children, initialSizes }) {
 }
 
 export default SplitPane
+

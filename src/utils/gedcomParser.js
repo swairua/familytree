@@ -291,7 +291,7 @@ class GEDCOMParser {
           }
           break
         case '_PHOTO':
-          // MyHeritage-specific photo tag
+          // TheWairuaHeritage-specific photo tag
           for (const sub of child.children) {
             if (sub.tag === 'FILE') {
               individual.photo = sub.value
