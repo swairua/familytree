@@ -199,3 +199,36 @@ CREATE TABLE IF NOT EXISTS fs_tokens (
   expires_at   DATETIME NOT NULL,
   updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- DNA: per-member tested flag + family DNA kit/match registry
+-- ---------------------------------------------------------------------------
+-- users.dna_tested: self-reported "I have taken a DNA test"
+-- ALTER TABLE users ADD COLUMN dna_tested TINYINT(1) NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS dna_kits (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  provider VARCHAR(48) NOT NULL DEFAULT 'other',
+  result_date DATE NULL,
+  visible_to_members TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_user (user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS dna_matches (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  kit_id INT NOT NULL,
+  user_id INT NOT NULL,
+  match_name VARCHAR(255) NOT NULL,
+  provider VARCHAR(48) NOT NULL DEFAULT '',
+  predicted_relationship VARCHAR(120) NOT NULL DEFAULT '',
+  shared_surname VARCHAR(120) NOT NULL DEFAULT '',
+  shared_cm DECIMAL(6,1) NULL,
+  notes VARCHAR(500) NOT NULL DEFAULT '',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dnamatch_kit FOREIGN KEY (kit_id) REFERENCES dna_kits(id) ON DELETE CASCADE,
+  KEY idx_kit (kit_id),
+  KEY idx_user (user_id)
+) ENGINE=InnoDB;

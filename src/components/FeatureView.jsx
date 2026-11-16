@@ -1,6 +1,6 @@
-import React from 'react'
+﻿import React from 'react'
 import '../styles/feature.css'
-
+import '../styles/viewpages.css'
 const FEATURES = {
   colorize: {
     icon: 'fa-palette',
@@ -28,7 +28,7 @@ const FEATURES = {
   },
   nostalgia: {
     icon: 'fa-film',
-    title: 'Deep Nostalgia™',
+    title: 'Deep Nostalgiaâ„¢',
     subtitle: 'Bring faces to life with subtle animation',
     description: 'Turn static portraits into short, moving clips that gently bring ancestors to life in family memories.',
     bullets: [
@@ -40,9 +40,9 @@ const FEATURES = {
   },
   livememory: {
     icon: 'fa-video',
-    title: 'LiveMemory™',
+    title: 'LiveMemoryâ„¢',
     subtitle: 'Turn photos into short video memories',
-    description: 'Automatically create cinematic short videos from your photos—complete with music, captions and transitions.',
+    description: 'Automatically create cinematic short videos from your photosâ€”complete with music, captions and transitions.',
     bullets: [
       'Automatic scene detection and pacing',
       'Curated music and transitions',
@@ -66,7 +66,7 @@ const FEATURES = {
     icon: 'fa-dna',
     title: 'DNA Matching',
     subtitle: 'Find family connections across your DNA',
-    description: 'Order a MyHeritage DNA, AncestryDNA or 23andMe kit and discover relatives — then see how the Wairua branches connect, with your privacy protected.',
+    description: 'Order a MyHeritage DNA, AncestryDNA or 23andMe kit and discover relatives â€” then see how the Wairua branches connect, with your privacy protected.',
     bullets: [
       'Connect DNA relatives to your family tree',
       'Estimate shared ethnicity and origin regions',
@@ -75,10 +75,11 @@ const FEATURES = {
     cta: 'Learn about DNA testing',
     ctaTarget: 'dna-learn',
     headerCta: { icon: 'fa-book-open', label: 'Read the guide', view: 'dna-learn' },
+    extraAction: { icon: 'fa-people-arrows', label: 'Family matches', view: 'dna-matches' },
     howItWorks: [
       { icon: 'fa-truck', title: '1. Order', text: 'Pick a provider; the kit ships to your door' },
       { icon: 'fa-vial', title: '2. Swab', text: 'Cheek swab at home in a couple of minutes' },
-      { icon: 'fa-chart-pie', title: '3. Results', text: 'About 4–8 weeks: ethnicity + DNA matches' },
+      { icon: 'fa-chart-pie', title: '3. Results', text: 'About 4â€“8 weeks: ethnicity + DNA matches' },
     ],
   },
 }
@@ -119,9 +120,16 @@ export default function FeatureView({ featureKey, onSwitchView }) {
                   <li key={i}><i className="fas fa-check"></i> {b}</li>
                 ))}
               </ul>
-              <button className="btn btn-accent" onClick={() => onSwitchView(ctaTarget)}>
-                {content.cta}
-              </button>
+              <div className="feature-ctas">
+                <button className="btn btn-accent" onClick={() => onSwitchView(ctaTarget)}>
+                  {content.cta}
+                </button>
+                {content.extraAction && (
+                  <button className="btn btn-primary" onClick={() => onSwitchView(content.extraAction.view)}>
+                    <i className={`fas ${content.extraAction.icon}`} aria-hidden="true"></i> {content.extraAction.label}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

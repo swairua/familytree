@@ -192,6 +192,7 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                         <div>
                           <span>{u.display_name || 'Unnamed'}</span>
                           {self && <span className="sm-you-badge">you</span>}
+                          {Number(u.dna_tested) === 1 && <span className="sm-dna" title="Has taken a DNA test">DNA</span>}
                         </div>
                       </td>
                       <td>{isPlaceholderEmail(u.email)

@@ -865,3 +865,43 @@
   .album-detail-actions { width: 100%; }
   .album-detail-actions .btn { flex: 1; }
 }
+
+
+/* Photos page â€” mobile layout fix (was desktop-only; old .gallery-* rules targeted dead classes) */
+@media (max-width: 900px) {
+  .photos-layout { flex-direction: column; gap: 10px; padding: 10px 12px; overflow: visible; }
+  .photos-sidebar {
+    width: 100%;
+    flex-direction: row;
+    padding: 6px 8px;
+    align-items: center;
+    overflow-x: auto;
+    gap: 6px;
+  }
+  .photos-sidebar-nav {
+    flex-direction: row;
+    width: 100%;
+    gap: 6px;
+  }
+  .sidebar-item {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    gap: 7px;
+    white-space: nowrap;
+    border-radius: 8px;
+  }
+  .sidebar-badge { display: none; }
+  .photos-sidebar-footer { display: none; }
+  .photos-main { overflow: visible; gap: 10px; }
+  .photos-header { padding: 10px 12px; gap: 8px; }
+  .photos-header-right { width: 100%; }
+  .photos-search { flex: 1; min-width: 0; padding: 8px 10px; }
+}
+@media (max-width: 480px) {
+  .photos-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .photos-header-left h1 { font-size: 0.97rem; }
+  .sidebar-item { font-size: 0.74rem; padding: 7px 9px; }
+  .photos-header-right .photos-upload { padding-left: 10px; padding-right: 10px; }
+}

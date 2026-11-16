@@ -21,7 +21,7 @@ function GalleryView({ individuals, onSelectPerson }) {
         gender: p.gender || 'unknown',
       })
     }
-    arr.sort((a, b) => (b.birthYear || '').localeCompare(a.birthYear || '') || (a.name || '').localeCompare(b.name || ''))
+    arr.sort((a, b) => String(b.birthYear ?? '').localeCompare(String(a.birthYear ?? '')) || (a.name || '').localeCompare(b.name || ''))
     return arr
   }, [individuals])
 

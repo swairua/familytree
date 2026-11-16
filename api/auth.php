@@ -7,6 +7,7 @@
  *   POST auth.php?action=login           { email, password }  -> may return { mfaRequired: true, pendingToken }
  *   POST auth.php?action=logout          (empty)
  *   POST auth.php?action=signout-everywhere                    (session, bumps session_version)
+ *   POST auth.php?action=dna-tested        { dna_tested }             (session, self-reported)
  *   GET  auth.php?action=me
  *   POST auth.php?action=register        { name, email, password }   (public, creates pending member, throttled)
  *   POST auth.php?action=change-password { current_password, new_password }  (session)
@@ -59,7 +60,7 @@ function start_session_cookie(): void
 
 function session_user_row(PDO $pdo, int $uid): ?array
 {
-    $stmt = $pdo->prepare('SELECT id, email, display_name, individual_id, role, status, session_version, totp_enabled, totp_secret FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT id, email, display_name, individual_id, role, status, session_version, totp_enabled, totp_secret, dna_tested FROM users WHERE id = ?');
     $stmt->execute([$uid]);
     $u = $stmt->fetch();
     return $u ?: null;
@@ -561,7 +562,7 @@ switch ($action) {
     case 'users-list':
         admin_user_or_403($pdo);
         $stmt = $pdo->query(
-            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, u.deceased, u.email_notifications, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender, i.death_date AS individual_death_date
+            'SELECT u.id, u.email, u.display_name, u.role, u.status, u.individual_id, u.photo, u.deceased, u.email_notifications, u.dna_tested, i.name AS individual_name, i.photo AS individual_photo, i.gender AS individual_gender, i.death_date AS individual_death_date
 '
             . ' FROM users u LEFT JOIN individuals i ON i.id = u.individual_id
 '
@@ -692,6 +693,17 @@ switch ($action) {
     case 'logout':
         clear_session_user();
         send_json(['ok' => true]);
+        break;
+
+    case 'dna-tested':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $me = session_user_or_401($pdo);
+        $body = read_json_body();
+        $dnaTested = filter_var($body['dna_tested'] ?? false, FILTER_VALIDATE_BOOL) ? 1 : 0;
+        $pdo->prepare('UPDATE users SET dna_tested = ? WHERE id = ?')->execute([$dnaTested, $me['id']]);
+        send_json(['ok' => true, 'dna_tested' => $dnaTested, 'user' => current_user($pdo)]);
         break;
 
     case 'signout-everywhere':

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
+﻿import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { fetchInbox, fetchSent, fetchMessage, sendMessage, markMessageRead, markAllMessagesRead, fetchDirectory, searchMessages } from '../utils/api'
 import '../styles/messages.css'
-
+import '../styles/viewpages.css'
 const TABS = [
   { id: 'inbox', label: 'Inbox' },
   { id: 'sent', label: 'Sent' },

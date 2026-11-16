@@ -136,3 +136,8 @@
 .mfa-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; list-style: none; padding: 0; margin: 0 0 10px; }
 .mfa-codes code { font-family: Consolas, Menlo, monospace; background: #fff; border: 1px solid #eee3b0; border-radius: 6px; padding: 4px 8px; font-size: .88rem; }
 @media (max-width: 640px) { .mfa-codes { grid-template-columns: 1fr; } }
+
+/* DNA tested toggle + shared bits */
+.dna-tested-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; color: #2f2b27; padding: 6px 0; }
+.dna-tested-toggle input { width: 18px; height: 18px; accent-color: #e08c2e; }
+.feature-ctas { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }

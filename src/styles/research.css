@@ -257,3 +257,7 @@
 .fs-gender.f { background: #f9e8ec; color: #8a3a52; }
 .fs-gender.u { background: #eee; color: #777; }
 .fs-ark-link { font-size: 0.72rem; color: #a6520d; font-weight: 700; margin-top: 2px; }
+
+@media (max-width: 640px) {
+  .research-row.two { grid-template-columns: 1fr; }
+}

@@ -447,3 +447,43 @@ export async function fsSearch({ given, surname, birthYear, place, count }) {
   const res = await fetch(`${API_BASE}/familysearch.php?action=search&${params}`, { credentials: 'same-origin' })
   return res.json()
 }
+
+
+export async function fetchDnaList() {
+  const res = await fetch(`${API_BASE}/dna.php?action=list`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function dnaKitCreate(payload) {
+  return request('dna.php?action=kit-create', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export async function dnaKitUpdate(id, payload) {
+  return request('dna.php?action=kit-update', { method: 'POST', body: JSON.stringify({ id, ...payload }) })
+}
+
+export async function dnaKitToggle(id) {
+  return request('dna.php?action=kit-toggle', { method: 'POST', body: JSON.stringify({ id }) })
+}
+
+export async function dnaKitDelete(id) {
+  return request('dna.php?action=kit-delete', { method: 'POST', body: JSON.stringify({ id }) })
+}
+
+export async function dnaMatchAdd(payload) {
+  return request('dna.php?action=match-add', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export async function dnaMatchDelete(id) {
+  return request('dna.php?action=match-delete', { method: 'POST', body: JSON.stringify({ id }) })
+}
+
+export async function setDnaTested(dnaTested) {
+  const res = await fetch(`${API_BASE}/auth.php?action=dna-tested`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ dna_tested: dnaTested }),
+  })
+  return res.json()
+}

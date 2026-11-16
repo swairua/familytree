@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
-import { changeProfile, changePassword, mfaSetup, mfaConfirm, mfaDisable, signOutEverywhere } from '../utils/api'
+﻿import React, { useEffect, useState } from 'react'
+import { changeProfile, changePassword, mfaSetup, mfaConfirm, mfaDisable, signOutEverywhere, setDnaTested } from '../utils/api'
 import { cleanName } from '../utils/cleanName'
 import '../styles/account.css'
-
+import '../styles/viewpages.css'
 export default function AccountView({ currentUser, onProfileUpdated, onSwitchView, individuals }) {
   const [displayName, setDisplayName] = useState(currentUser?.display_name || '')
   const [email, setEmail] = useState(currentUser?.email || '')
@@ -29,12 +29,16 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
   const [disableCode, setDisableCode] = useState('')
   const [secretCopied, setSecretCopied] = useState(false)
   const [signoutMsg, setSignoutMsg] = useState('')
+  const [dnaTested, setDnaTested] = useState(() => Number(currentUser?.dna_tested) === 1)
+  const [dnaMsg, setDnaMsg] = useState('')
+  const [dnaSaving, setDnaSaving] = useState(false)
 
   useEffect(() => {
     setDisplayName(currentUser?.display_name || '')
     setEmail(currentUser?.email || '')
     setMfaEnabled(Number(currentUser?.totp_enabled) === 1)
-  }, [currentUser?.display_name, currentUser?.email, currentUser?.totp_enabled])
+    setDnaTested(Number(currentUser?.dna_tested) === 1)
+  }, [currentUser?.display_name, currentUser?.email, currentUser?.totp_enabled, currentUser?.dna_tested])
 
   const isAdmin = currentUser?.role === 'admin'
   const linkedPerson = currentUser?.individual_id ? individuals?.get?.(currentUser.individual_id) : null
@@ -134,7 +138,7 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
       setSecretCopied(true)
       window.setTimeout(() => setSecretCopied(false), 2000)
     } catch {
-      setMfaError('Copy not available — select the secret text instead.')
+      setMfaError('Copy not available â€” select the secret text instead.')
     }
   }
 
@@ -144,7 +148,7 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
       await navigator.clipboard.writeText(backupCodes.join('\n'))
       setMfaMsg('Backup codes copied.')
     } catch {
-      setMfaError('Copy not available — write them down now.')
+      setMfaError('Copy not available â€” write them down now.')
     }
   }
 
@@ -156,10 +160,32 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
       if (res.ok) {
         setSignoutMsg('All other sessions have been signed out. This device stays signed in.')
       } else {
-        setSignoutMsg('Could not reach the server — nothing changed.')
+        setSignoutMsg('Could not reach the server â€” nothing changed.')
       }
     } catch {
-      setSignoutMsg('Could not reach the server — nothing changed.')
+      setSignoutMsg('Could not reach the server â€” nothing changed.')
+    }
+  }
+
+  const handleDnaTested = async (e) => {
+    const checked = e.target.checked
+    setDnaTested(checked)
+    setDnaMsg('')
+    setDnaSaving(true)
+    try {
+      const res = await setDnaTested(checked)
+      if (res.ok) {
+        setDnaMsg(checked ? 'Marked as DNA tested.' : 'Marked as not tested.')
+        if (res.user && onProfileUpdated) onProfileUpdated(res.user)
+      } else {
+        setDnaTested(!checked)
+        setDnaMsg(res.error || 'Could not save.')
+      }
+    } catch (err) {
+      setDnaTested(!checked)
+      setDnaMsg(err.message || 'Could not save.')
+    } finally {
+      setDnaSaving(false)
     }
   }
 
@@ -393,6 +419,28 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
               </button>
             </div>
             {signoutMsg && <p className="account-success" role="status">{signoutMsg}</p>}
+          </section>
+
+          {/* Your DNA */}
+          <section className="view-card account-card">
+            <h2 className="account-card-title"><i className="fas fa-dna" aria-hidden="true"></i> Your DNA</h2>
+            <p className="account-note">Have you taken a DNA test? Flip this on and relatives browsing the site will know a kit exists â€” so they ask about shared matches before spending on a second one. It never shares your results.</p>
+            <label className="dna-tested-toggle" htmlFor="dna_tested_toggle">
+              <input
+                id="dna_tested_toggle"
+                type="checkbox"
+                checked={dnaTested}
+                onChange={handleDnaTested}
+                disabled={dnaSaving}
+              />
+              <span>Yes, I&rsquo;ve taken a DNA test</span>
+            </label>
+            {dnaMsg && <p className="account-success" role="status">{dnaMsg}</p>}
+            <div className="account-actions" style={{ marginTop: 10 }}>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => onSwitchView && onSwitchView('dna-matches')}>
+                <i className="fas fa-people-arrows" aria-hidden="true"></i> Family matches page
+              </button>
+            </div>
           </section>
 
           {/* Account details */}

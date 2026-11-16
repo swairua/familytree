@@ -92,3 +92,135 @@
   .dna-providers { grid-template-columns: 1fr; }
   .dna-hero { flex-direction: column; }
 }
+
+
+/* DnaMatchesView */
+.dna-privacy-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fffdf0;
+  border: 1px solid #ecd98a;
+  border-left: 4px solid #e08c2e;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.86rem;
+  color: #5c5510;
+}
+.dna-privacy-banner i { color: #a6520d; font-size: 1.1rem; }
+
+.dna-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.dna-card-head h2 { margin: 0; }
+.dna-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #eee7dc;
+  color: #6b6259;
+  font-size: 0.72rem;
+  font-family: Arial, sans-serif;
+  margin-left: 8px;
+  vertical-align: 1px;
+}
+.dna-inline-form { margin-bottom: 14px; max-width: none; }
+.dna-check {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  font-weight: 400 !important;
+}
+.dna-check input { width: auto; }
+.dna-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+.dna-kit-list { display: flex; flex-direction: column; gap: 10px; }
+.dna-kit {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #faf8f5;
+  border: 1px solid #e7e2da;
+  border-radius: 10px;
+}
+.dna-kit.mine { border-color: #e08c2e; background: #fffdf5; }
+.dna-kit-icon {
+  width: 44px; height: 44px; flex: 0 0 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #1f3628; color: #e08c2e; font-size: 1.1rem;
+}
+.dna-kit-main { flex: 1; min-width: 0; }
+.dna-kit-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dna-kit-top strong { color: #1f3628; font-size: 0.95rem; }
+.dna-provider { color: #8b7355; font-size: 0.8rem; font-weight: 700; }
+.dna-status { font-size: 0.76rem; font-family: Arial, sans-serif; }
+.dna-status.ok { color: #256b43; }
+.dna-status.pending { color: #a6520d; }
+.dna-kit-sub { font-size: 0.75rem; color: #a69e98; margin-top: 2px; }
+.dna-you { color: #a6520d; font-weight: 700; }
+.dna-kit-actions { display: flex; gap: 6px; }
+
+.dna-match-group { margin-top: 4px; }
+.dna-match-group + .dna-match-group { margin-top: 18px; }
+.dna-match-kit-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; font-weight: 800; color: #6b6259;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 2px solid #eee7dc; padding-bottom: 6px; margin-bottom: 8px;
+}
+.dna-match-list { display: flex; flex-direction: column; gap: 8px; }
+.dna-match {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid #e7e2da; border-radius: 10px; background: #fff;
+}
+.dna-match-main { flex: 1; min-width: 0; }
+.dna-match-main strong { color: #2f2b27; font-size: 0.92rem; }
+.dna-match-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.dna-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #eee7dc; color: #5c554e; border-radius: 999px;
+  padding: 3px 9px; font-size: 0.72rem; font-weight: 700; font-family: Arial, sans-serif;
+}
+.dna-tag.orange { background: #fdf0dc; color: #a6520d; }
+.dna-tag.green { background: #e9f4ec; color: #256b43; }
+.dna-match-notes { margin: 6px 0 0; font-size: 0.8rem; color: #6b6259; line-height: 1.45; }
+.dna-match-del { flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .dna-form-grid { grid-template-columns: 1fr; }
+  .dna-kit { align-items: flex-start; }
+  .dna-kit-actions { flex-direction: column; }
+}
+
+/* DNA mobile hardening */
+@media (max-width: 768px) {
+  .dna-card { padding: 14px 14px; }
+  .dna-card h2 { font-size: 0.95rem; }
+  .dna-privacy-banner { padding: 10px 12px; font-size: 0.8rem; }
+  .dna-kit { padding: 10px; gap: 10px; }
+  .dna-kit-icon { width: 38px; height: 38px; flex: 0 0 38px; font-size: 0.95rem; }
+  .dna-kit-top strong { font-size: 0.88rem; }
+  .dna-match { padding: 9px 10px; }
+}
+@media (max-width: 480px) {
+  .dna-hero { gap: 10px; }
+  .dna-hero-icon { padding: 10px 12px; font-size: 1.5rem; }
+  .dna-actions .btn { flex: 1 1 100%; }
+  .dna-card-head { flex-direction: column; align-items: stretch; }
+  .dna-card-head .btn { width: 100%; justify-content: center; }
+  .dna-match-kit-label { flex-wrap: wrap; }
+  .dna-kit-sub { font-size: 0.7rem; }
+}
