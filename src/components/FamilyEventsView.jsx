@@ -1,10 +1,36 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
+import { fetchCalendarStatus } from '../utils/api'
 import '../styles/familyevents.css'
 
 function FamilyEventsView({ individuals, families, onSelectPerson }) {
   const [query, setQuery] = useState('')
+  const [calFeed, setCalFeed] = useState(null)
+  const [calNotice, setCalNotice] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    fetchCalendarStatus()
+      .then((res) => { if (!cancelled && res.ok) setCalFeed(res) })
+      .catch(() => { if (!cancelled) setCalFeed(null) })
+    return () => { cancelled = true }
+  }, [])
+
+  const copyFeedUrl = async () => {
+    if (!calFeed?.url) return
+    try {
+      await navigator.clipboard.writeText(calFeed.url)
+      setCalNotice('Calendar link copied.')
+      window.setTimeout(() => setCalNotice(''), 2500)
+    } catch {
+      setCalNotice('Copy not available — select the link instead.')
+    }
+  }
+
+  const googleCalUrl = calFeed?.url
+    ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calFeed.url)}`
+    : null
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -74,6 +100,29 @@ function FamilyEventsView({ individuals, families, onSelectPerson }) {
           </div>
           <button className="btn btn-primary">Post an event</button>
         </div>
+        {calFeed && (
+          <div className="fe-subscribe" role="region" aria-label="Subscribe to family events">
+            <i className="fas fa-calendar-days" aria-hidden="true"></i>
+            <span className="fe-subscribe-text">
+              <strong>Subscribe in your calendar app</strong>
+              <span>Birthdays and wedding anniversaries, refreshed automatically. Works with Google Calendar, Apple Calendar and Outlook.</span>
+            </span>
+            <span className="fe-subscribe-actions">
+              {googleCalUrl && (
+                <a className="btn btn-primary btn-sm" href={googleCalUrl} target="_blank" rel="noreferrer">
+                  <i className="fab fa-google" aria-hidden="true"></i> Google Calendar
+                </a>
+              )}
+              <a className="btn btn-sm" href={calFeed.downloadUrl} download="wairuaheritage-family-events.ics">
+                <i className="fas fa-download" aria-hidden="true"></i> Download .ics
+              </a>
+              <button type="button" className="btn btn-sm" onClick={copyFeedUrl}>
+                <i className="fas fa-link" aria-hidden="true"></i> Copy link
+              </button>
+            </span>
+            {calNotice && <span className="fe-subscribe-notice" role="status">{calNotice}</span>}
+          </div>
+        )}
 
         <div className="fe-nav">
           <button className="fe-nav-btn active">Upcoming</button>

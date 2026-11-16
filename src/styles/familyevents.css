@@ -23,3 +23,28 @@
 .fe-missing { list-style: none; padding: 0; margin: 0; }
 .fe-missing li { padding: 6px 0; font-size: 0.82rem; color: #5a524d; display: flex; align-items: center; gap: 6px; }
 .fe-missing i { color: #f5a623; }
+
+/* Google Calendar / iCal subscribe bar */
+.fe-subscribe {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #e7e2da;
+  border-left: 4px solid #e08c2e;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 0 0 18px 0;
+}
+.fe-subscribe > i.fa-calendar-days { font-size: 1.5rem; color: #1f3628; }
+.fe-subscribe-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 320px; }
+.fe-subscribe-text strong { color: #1f3628; font-size: .95rem; }
+.fe-subscribe-text span { color: #6b6259; font-size: .82rem; line-height: 1.4; }
+.fe-subscribe-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.fe-subscribe-notice { width: 100%; font-size: .8rem; color: #256b43; font-family: Arial, sans-serif; }
+@media (max-width: 640px) {
+  .fe-subscribe { padding: 12px; }
+  .fe-subscribe-actions { width: 100%; }
+  .fe-subscribe-actions .btn { flex: 1; }
+}

@@ -361,3 +361,8 @@ export async function removePhotoFromAlbum(id, photo) {
 export async function setAlbumCover(id, photo) {
   return request('albums.php?action=set-cover', { method: 'POST', body: JSON.stringify({ id, photo }) })
 }
+
+export async function fetchCalendarStatus() {
+  const res = await fetch(`${API_BASE}/calendar.php?action=status`, { credentials: 'same-origin' })
+  return res.json()
+}
