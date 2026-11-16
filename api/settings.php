@@ -85,7 +85,7 @@ function handleSet(PDO $pdo): void
     if (array_key_exists('smtp_enabled', $body)) {
         $update['smtp_enabled'] = $body['smtp_enabled'] ? '1' : '0';
     }
-    foreach (['smtp_host', 'smtp_user', 'smtp_from_email', 'smtp_from_name', 'app_public_url'] as $k) {
+    foreach (['smtp_host', 'smtp_user', 'smtp_from_email', 'smtp_from_name', 'app_public_url', 'birthday_enabled', 'birthday_lead_days'] as $k) {
         if (array_key_exists($k, $body) && is_string($body[$k])) {
             $update[$k] = trim(mb_substr($body[$k], 0, 255));
         }
@@ -94,6 +94,12 @@ function handleSet(PDO $pdo): void
         $port = (int)$body['smtp_port'];
         if ($port < 1 || $port > 65535) send_error('Port must be between 1 and 65535', 400);
         $update['smtp_port'] = (string)$port;
+    }
+    if (array_key_exists('birthday_lead_days', $body)) {
+        $update['birthday_lead_days'] = (string) max(0, min(365, (int)$body['birthday_lead_days']));
+    }
+    if (array_key_exists('birthday_enabled', $body)) {
+        $update['birthday_enabled'] = $body['birthday_enabled'] ? '1' : '0';
     }
     if (array_key_exists('smtp_scheme', $body)) {
         $scheme = strtolower((string)$body['smtp_scheme']);

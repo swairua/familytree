@@ -238,6 +238,22 @@ export async function abortSync() {
   return request('sync.php?action=abort', { method: 'POST', body: '{}' })
 }
 
+export async function fetchUpcomingBirthdays(days = 30) {
+  const res = await fetch(`${API_BASE}/birthdays.php?action=list&days=${days}`, {
+    credentials: 'same-origin',
+  })
+  return res.json()
+}
+
+export async function sendBirthdayReminders(days = 30) {
+  const res = await fetch(`${API_BASE}/birthdays.php?action=send&days=${days}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
 export async function aiSearch(prompt) {
   const res = await fetch(`${API_BASE}/ai.php`, {
     method: 'POST',
