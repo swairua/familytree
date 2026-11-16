@@ -95,6 +95,17 @@ CREATE TABLE IF NOT EXISTS app_settings (
   `value`     TEXT NOT NULL,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS password_resets (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT NOT NULL,
+  token_hash    VARCHAR(64) NOT NULL,
+  expires_at    DATETIME NOT NULL,
+  used          TINYINT(1) NOT NULL DEFAULT 0,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_reset_token (token_hash),
+  KEY idx_reset_user (user_id),
+  CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS events (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   individual_id VARCHAR(64) NULL,

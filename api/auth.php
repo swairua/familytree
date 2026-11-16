@@ -10,6 +10,8 @@
  *   POST auth.php?action=register        { name, email, password }   (public, creates pending member)
  *   POST auth.php?action=change-password { current_password, new_password }  (session)
  *   POST auth.php?action=change-profile  { display_name, email }             (session)
+ *   POST auth.php?action=forgot-password { email }                           (public)
+ *   POST auth.php?action=reset-password  { token, password }                 (public)
  *   GET  auth.php?action=users-list                                          (admin)
  *   POST auth.php?action=user-approve    { id }                              (admin)
  *   POST auth.php?action=user-reject     { id }                              (admin)
@@ -23,6 +25,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/mail.php';
 
 $action = $_GET['action'] ?? (php_sapi_name() === 'cli' ? ($argv[1] ?? 'help') : 'me');
 $isCli  = php_sapi_name() === 'cli';
@@ -87,6 +90,21 @@ function clear_session_user(): void
         setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
     }
     session_destroy();
+}
+
+// Best-effort member notification: silently skip when the recipient has a
+// placeholder or invalid address (e.g. imported members without real email).
+function notify_user(PDO $pdo, int $userId, string $subject, string $preheader, string $title, string $bodyHtml): void
+{
+    try {
+        $stmt = $pdo->prepare('SELECT email, display_name FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        $u = $stmt->fetch();
+        if (!$u || !email_is_real((string)$u['email'])) return;
+        app_send_branded($pdo, (string)$u['email'], $subject, $preheader, $title, $bodyHtml);
+    } catch (Throwable $e) {
+        // Never break the caller's request on email failure
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -185,6 +203,32 @@ switch ($action) {
             }
             throw $e;
         }
+        // Welcome + notify admins (best effort — don't fail the request)
+        app_send_branded($pdo, $email,
+            'Welcome to TheWairuaHeritage — your account is pending',
+            'Welcome to the family',
+            'Account received',
+            '<p>Hi ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Thanks for requesting a TheWairuaHeritage account. We received your registration and it is <strong>pending administrator approval</strong>.</p>'
+            . '<p>You will receive another email as soon as it is approved, and you\'ll be able to sign in at <a href="' . htmlspecialchars(app_public_url($pdo), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(app_public_url($pdo), ENT_QUOTES, 'UTF-8') . '</a>.</p>'
+        );
+        // Notify all admins
+        try {
+            $admins = $pdo->query("SELECT email FROM users WHERE role = 'admin' AND status = 'active'")->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Throwable $e) {
+            $admins = [];
+        }
+        foreach ($admins as $adminEmail) {
+            app_send_branded($pdo, (string)$adminEmail,
+                'New member request · ' . $name,
+                'New member request from ' . $name,
+                'New member request',
+                '<p><strong>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</strong> has requested a TheWairuaHeritage account.</p>'
+                . '<p>Email: ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</p>'
+                . '<p>Approve them from the Site members page:</p>'
+                . app_button('Review members', app_public_url($pdo) . '/?view=members')
+            );
+        }
         send_json(['ok' => true, 'message' => 'Registration received. Your account is pending approval by the site administrator.']);
         break;
 
@@ -210,6 +254,14 @@ switch ($action) {
         }
         $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
         $upd->execute([password_hash($new, PASSWORD_DEFAULT), $me['id']]);
+        app_send_branded($pdo, (string)$me['email'],
+            'Your password was changed',
+            'Your password was changed',
+            'Password updated',
+            '<p>Hi ' . htmlspecialchars($me['display_name'], ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>This is a confirmation that the password for your TheWairuaHeritage account was changed at <strong>' . date('Y-m-d H:i:s') . '</strong>.</p>'
+            . '<p>If you did not make this change, reply to the site administrator immediately.</p>'
+        );
         send_json(['ok' => true]);
         break;
 
@@ -233,6 +285,86 @@ switch ($action) {
         $upd = $pdo->prepare('UPDATE users SET display_name = ?, email = ? WHERE id = ?');
         $upd->execute([mb_substr($name, 0, 255), mb_substr($email, 0, 255), $me['id']]);
         send_json(['ok' => true, 'user' => current_user($pdo)]);
+        break;
+
+    case 'forgot-password':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $body = read_json_body();
+        $email = trim((string)($body['email'] ?? ''));
+        if ($email === '') send_error('Email is required', 400);
+        // Generic response: never reveal whether an account exists
+        $generic = 'If an account exists for this email, a reset link has been sent.';
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $stmt = $pdo->prepare('SELECT id, display_name FROM users WHERE email = ? AND status = \'active\'');
+            $stmt->execute([$email]);
+            $u = $stmt->fetch();
+            if ($u && email_is_real($email)) {
+                $token = bin2hex(random_bytes(32));
+                $tokenHash = hash('sha256', $token);
+                $exp = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
+                $pdo->prepare('DELETE FROM password_resets WHERE user_id = ? AND used = 0')->execute([$u['id']]);
+                $ins = $pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, ?)');
+                $ins->execute([$u['id'], $tokenHash, $exp]);
+                $link = app_public_url($pdo) . '/?view=reset-password&token=' . $token;
+                app_send_branded($pdo, $email,
+                    'Reset your TheWairuaHeritage password',
+                    'Reset your password',
+                    'Reset your TheWairuaHeritage password',
+                    '<p>Hi ' . htmlspecialchars($u['display_name'], ENT_QUOTES, 'UTF-8') . ',</p>'
+                    . '<p>We received a request to reset the password for your account. Click the button below — it is valid for <strong>1 hour</strong> and can be used once.</p>'
+                    . app_button('Reset my password', $link)
+                    . '<p style="font-size:13px;color:#8b837d;">If you didn\'t request this, you can ignore this email.</p>'
+                );
+            }
+        }
+        send_json(['ok' => true, 'message' => $generic]);
+        break;
+
+    case 'reset-password':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $body = read_json_body();
+        $token = (string)($body['token'] ?? '');
+        $password = (string)($body['password'] ?? '');
+        if ($token === '' || $password === '') {
+            send_error('Token and password are required', 400);
+        }
+        if (mb_strlen($password) < 8) {
+            send_error('Password must be at least 8 characters', 400);
+        }
+        if (!preg_match('/^[a-f0-9]{64}$/i', $token)) {
+            send_error('This reset link is invalid or has expired', 400);
+        }
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare('SELECT id, user_id, expires_at FROM password_resets WHERE token_hash = ? AND used = 0');
+        $stmt->execute([$tokenHash]);
+        $reset = $stmt->fetch();
+        // Compare against PHP's clock so timezone differences between PHP and DB don't reject valid tokens
+        if (!$reset || strtotime((string)$reset['expires_at']) < time()) {
+            send_error('This reset link is invalid or has expired', 400);
+        }
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $upd->execute([$newHash, $reset['user_id']]);
+        $mark = $pdo->prepare('UPDATE password_resets SET used = 1 WHERE id = ?');
+        $mark->execute([$reset['id']]);
+        $stmt2 = $pdo->prepare('SELECT email, display_name FROM users WHERE id = ?');
+        $stmt2->execute([$reset['user_id']]);
+        $u = $stmt2->fetch();
+        if ($u) {
+            app_send_branded($pdo, (string)$u['email'],
+                'Your password was changed',
+                'Your password was changed',
+                'Password updated',
+                '<p>Hi ' . htmlspecialchars($u['display_name'], ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>This confirms your TheWairuaHeritage password was reset at <strong>' . date('Y-m-d H:i:s') . '</strong>.</p>'
+                . app_button('Sign in to TheWairuaHeritage', app_public_url($pdo))
+            );
+        }
+        send_json(['ok' => true]);
         break;
 
     case 'users-list':
@@ -268,6 +400,16 @@ switch ($action) {
         $upd = $pdo->prepare('UPDATE users SET email = ? WHERE id = ?');
         $upd->execute([mb_substr($email, 0, 255), $id]);
         if ($upd->rowCount() === 0) send_error('User not found', 404);
+        // Welcome the member at their new, real address
+        notify_user($pdo, $id,
+            'Welcome to TheWairuaHeritage',
+            'Welcome to TheWairuaHeritage',
+            'Welcome to the family',
+            '<p>Hi,</p>'
+            . '<p>The administrator has added your email to TheWairuaHeritage and you\'ll need it to sign in.</p>'
+            . '<p>Sign in with this address — if this is your first visit, use <strong>Forgot password</strong> to choose one.</p>'
+            . app_button('Sign in to TheWairuaHeritage', app_public_url($pdo) . '/')
+        );
         send_json(['ok' => true]);
         break;
 
@@ -285,6 +427,14 @@ switch ($action) {
         $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
         $upd->execute([$hash, $id]);
         if ($upd->rowCount() === 0) send_error('User not found', 404);
+        // Notify the member their password was changed by an administrator
+        notify_user($pdo, $id,
+            'Your password was changed',
+            'Your password was changed',
+            'Password updated',
+            '<p>Hi,</p><p>An administrator updated the password for your TheWairuaHeritage account.</p>'
+            . '<p>If you have any questions, contact the site administrator.</p>'
+        );
         send_json(['ok' => true]);
         break;
 
@@ -311,6 +461,25 @@ switch ($action) {
         $upd = $pdo->prepare('UPDATE users SET status = ? WHERE id = ?');
         $upd->execute([$newStatus, $id]);
         if ($upd->rowCount() === 0) send_error('User not found', 404);
+        if ($newStatus === 'active') {
+            notify_user($pdo, $id,
+                'Your TheWairuaHeritage account was approved',
+                'Your account was approved',
+                'Welcome — your account is approved',
+                '<p>Hi,</p>'
+                . '<p>Great news — your TheWairuaHeritage account has been approved. You can now sign in.</p>'
+                . app_button('Sign in to TheWairuaHeritage', app_public_url($pdo) . '/')
+                . '<p style="font-size:13px;color:#8b837d;">First time signing in? Use <strong>Forgot password</strong> on the sign-in page to choose one.</p>'
+            );
+        } else {
+            notify_user($pdo, $id,
+                'Your TheWairuaHeritage account request was declined',
+                'Your account request was declined',
+                'Account request declined',
+                '<p>Hi,</p><p>Your request for a TheWairuaHeritage account was not approved at this time.</p>'
+                . '<p>If you have questions, contact the site administrator.</p>'
+            );
+        }
         send_json(['ok' => true]);
         break;
 

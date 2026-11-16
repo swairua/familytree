@@ -18,6 +18,7 @@ export default function SettingsView({ currentUser, onSwitchView }) {
   const [passConfigured, setPassConfigured] = useState(false)
   const [fromEmail, setFromEmail] = useState('')
   const [fromName, setFromName] = useState('TheWairuaHeritage')
+  const [publicUrl, setPublicUrl] = useState('http://localhost:3000')
   const [saveMsg, setSaveMsg] = useState('')
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -42,6 +43,7 @@ export default function SettingsView({ currentUser, onSwitchView }) {
         setPassConfigured(s.smtp_pass === 'SET')
         setFromEmail(s.smtp_from_email || '')
         setFromName(s.smtp_from_name || 'TheWairuaHeritage')
+        setPublicUrl(s.app_public_url || 'http://localhost:3000')
         if (res.adminEmail) setTestTo(prev => prev || res.adminEmail)
       } else {
         setLoadError(res.error || 'Could not load settings')
@@ -68,6 +70,7 @@ export default function SettingsView({ currentUser, onSwitchView }) {
       smtp_user: user.trim(),
       smtp_from_email: fromEmail.trim(),
       smtp_from_name: fromName.trim(),
+      app_public_url: publicUrl.trim(),
     }
     if (clearPass) patch.smtp_pass = ''
     else if (pass !== '') patch.smtp_pass = pass
@@ -230,6 +233,19 @@ export default function SettingsView({ currentUser, onSwitchView }) {
                 placeholder="TheWairuaHeritage"
                 autoComplete="off"
               />
+
+              <label className="account-label" htmlFor="app_public_url">Public URL (used in email links)</label>
+              <input
+                id="app_public_url"
+                type="url"
+                value={publicUrl}
+                onChange={(e) => setPublicUrl(e.target.value)}
+                placeholder="https://thewairuaheritage.example.com"
+                autoComplete="off"
+              />
+              <p className="settings-hint">
+                Reset-password and invite links point at this URL. Set it to the real site address before going live.
+              </p>
 
               {saveError && <p className="account-error" role="alert">{saveError}</p>}
               {saveMsg && <p className="account-success" role="status">{saveMsg}</p>}

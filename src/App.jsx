@@ -26,6 +26,7 @@ const FeatureView = lazy(() => import('./components/FeatureView'))
 const AccountView = lazy(() => import('./components/AccountView'))
 const SettingsView = lazy(() => import('./components/SettingsView'))
 const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
+const ResetPasswordView = lazy(() => import('./components/ResetPasswordView'))
 const SignUpView = lazy(() => import('./components/SignUpView'))
 
 function App() {
@@ -38,9 +39,22 @@ function App() {
   const [importStatus, setImportStatus] = useState(null)
   const [serverStatus, setServerStatus] = useState({ type: 'loading', message: 'Connecting to server...' })
   const [currentUser, setCurrentUser] = useState(null)
+  const [resetToken, setResetToken] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
   const [recentActivity, setRecentActivity] = useState({ entries: [], syncedAt: null })
+
+  // Deep link: /?view=reset-password&token=... opens the reset flow directly
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('view') === 'reset-password' && p.get('token')) {
+        setResetToken(p.get('token'))
+        setCurrentView('reset-password')
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -303,6 +317,13 @@ function App() {
       return (
         <Suspense fallback={authFallback}>
           <ForgotPasswordView onBackToLogin={() => setCurrentView('home')} />
+        </Suspense>
+      )
+    }
+    if (currentView === 'reset-password') {
+      return (
+        <Suspense fallback={authFallback}>
+          <ResetPasswordView token={resetToken} onBackToLogin={() => setCurrentView('home')} />
         </Suspense>
       )
     }
