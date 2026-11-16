@@ -156,3 +156,35 @@ CREATE TABLE IF NOT EXISTS album_photos (
   CONSTRAINT fk_album_photos_album FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE,
   KEY idx_photo (photo)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- Security: session revocation, login throttling, TOTP 2FA
+-- ---------------------------------------------------------------------------
+-- users.session_version is bumped on password change / "sign out everywhere";
+-- sessions carrying an older version are rejected.
+-- ALTER TABLE users ADD COLUMN session_version INT NOT NULL DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64) NULL;
+-- ALTER TABLE users ADD COLUMN totp_enabled TINYINT(1) NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+  email         VARCHAR(255) NOT NULL,
+  ip            VARCHAR(64) NOT NULL DEFAULT '',
+  attempted_at  DATETIME NOT NULL,
+  INDEX idx_email_time (email, attempted_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS mfa_pending (
+  token      VARCHAR(64) PRIMARY KEY,
+  user_id    INT NOT NULL,
+  ip         VARCHAR(64) NOT NULL DEFAULT '',
+  expires_at DATETIME NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS mfa_backup_codes (
+  id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  code_hash  VARCHAR(255) NOT NULL,
+  used_at    DATETIME NULL,
+  INDEX idx_user (user_id)
+) ENGINE=InnoDB;

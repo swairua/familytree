@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth_lib.php';
 
 if (!is_cli()) {
     send_cors_headers();
@@ -14,6 +15,10 @@ if (!is_cli()) {
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+if (!is_cli()) {
+    // The Groq key is server-side — don't be an anonymous open proxy
+    require_active_session_user(db());
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     send_error('Use POST', 405);
@@ -23,6 +28,9 @@ $body = read_json_body();
 $prompt = trim((string) ($body['prompt'] ?? ''));
 if ($prompt === '') {
     send_error('Missing prompt', 400);
+}
+if (mb_strlen($prompt) > 4000) {
+    send_error('Prompt is too long (max 4000 characters)', 400);
 }
 
 $cfg = $GLOBALS['APP_CONFIG'] ?? [];

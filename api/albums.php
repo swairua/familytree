@@ -31,14 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $pdo = db();
 
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('FAMILYTREE_SESSION');
-        session_start();
-    }
-    $uid = $_SESSION['user_id'] ?? null;
-    if (!$uid) send_error('You must be signed in', 401);
-    $me = current_account($pdo, (int)$uid);
-    if (!$me) send_error('Account not found', 401);
+    require_once __DIR__ . '/auth_lib.php';
+    $me = require_active_session_user($pdo);
 
     $action = $_GET['action'] ?? 'list';
     switch ($action) {
@@ -74,14 +68,6 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-
-function current_account(PDO $pdo, int $uid): ?array
-{
-    $s = $pdo->prepare('SELECT id, display_name, role FROM users WHERE id = ?');
-    $s->execute([$uid]);
-    $u = $s->fetch();
-    return $u ?: null;
-}
 
 function photo_ok(string $photo): bool
 {

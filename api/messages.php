@@ -15,6 +15,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth_lib.php';
 
 send_cors_headers();
 
@@ -27,15 +28,8 @@ try {
     $pdo = db();
 
     // Auth gate: any logged-in user can read their own messages
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('FAMILYTREE_SESSION');
-        session_start();
-    }
-    $uid = $_SESSION['user_id'] ?? null;
-    if (!$uid) send_error('You must be signed in', 401);
-    $me = [
-        'id' => (int)$uid,
-    ];
+    $me = require_active_session_user($pdo);
+    $me = ['id' => (int)$me['id']];
 
     $action = $_GET['action'] ?? 'inbox';
     switch ($action) {

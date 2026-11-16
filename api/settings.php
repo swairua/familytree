@@ -21,20 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $pdo = db();
     $action = $_GET['action'] ?? 'get';
-    // Inline admin gate (settings.php does not load auth.php to avoid running its routes)
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('FAMILYTREE_SESSION');
-        session_start();
-    }
-    $uid = $_SESSION['user_id'] ?? null;
-    $admin = null;
-    if ($uid) {
-        $stmt = $pdo->prepare('SELECT id, email, role FROM users WHERE id = ?');
-        $stmt->execute([$uid]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && ($row['role'] ?? '') === 'admin') $admin = $row;
-    }
-    if (!$admin) send_error('Administrator access required', 403);
+    // Admin gate (settings.php does not load auth.php to avoid running its routes)
+    require_once __DIR__ . '/auth_lib.php';
+    $admin = require_active_session_user($pdo);
+    if (($admin['role'] ?? '') !== 'admin') send_error('Administrator access required', 403);
 
     switch ($action) {
         case 'get':

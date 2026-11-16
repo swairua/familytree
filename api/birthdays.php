@@ -25,14 +25,8 @@ if (!$isCli) {
         http_response_code(204);
         exit;
     }
-    session_name('FAMILYTREE_SESSION');
-    session_start();
-    $uid = $_SESSION['user_id'] ?? null;
-    if (!$uid) send_error('You must be signed in', 401);
-    $stmt = db()->prepare('SELECT id, role FROM users WHERE id = ?');
-    $stmt->execute([$uid]);
-    $me = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$me) send_error('Invalid session', 401);
+    require_once __DIR__ . '/auth_lib.php';
+    $me = require_active_session_user(db());
 }
 
 const MONTHS = [

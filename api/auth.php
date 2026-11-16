@@ -4,14 +4,19 @@
  * change-profile / admin user management (list, approve, reject, delete).
  *
  * Web:
- *   POST auth.php?action=login           { email, password }
+ *   POST auth.php?action=login           { email, password }  -> may return { mfaRequired: true, pendingToken }
  *   POST auth.php?action=logout          (empty)
+ *   POST auth.php?action=signout-everywhere                    (session, bumps session_version)
  *   GET  auth.php?action=me
- *   POST auth.php?action=register        { name, email, password }   (public, creates pending member)
+ *   POST auth.php?action=register        { name, email, password }   (public, creates pending member, throttled)
  *   POST auth.php?action=change-password { current_password, new_password }  (session)
  *   POST auth.php?action=change-profile  { display_name, email }             (session)
  *   POST auth.php?action=forgot-password { email }                           (public)
  *   POST auth.php?action=reset-password  { token, password }                 (public)
+ *   POST auth.php?action=mfa-setup                                             (session, returns secret + otpauth)
+ *   POST auth.php?action=mfa-confirm   { code }                                (session, enables TOTP, returns backup codes)
+ *   POST auth.php?action=mfa-disable   { password, code }                      (session)
+ *   POST auth.php?action=mfa-verify    { pendingToken, code }                  (public, completes an MFA login)
  *   GET  auth.php?action=users-list                                          (admin)
  *   POST auth.php?action=user-approve    { id }                              (admin)
  *   POST auth.php?action=user-reject     { id }                              (admin)
@@ -27,6 +32,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/mail.php';
+require_once __DIR__ . '/auth_lib.php';
 
 $action = $_GET['action'] ?? (php_sapi_name() === 'cli' ? ($argv[1] ?? 'help') : 'me');
 $isCli  = php_sapi_name() === 'cli';
@@ -51,15 +57,34 @@ function start_session_cookie(): void
     }
 }
 
+function session_user_row(PDO $pdo, int $uid): ?array
+{
+    $stmt = $pdo->prepare('SELECT id, email, display_name, individual_id, role, status, session_version, totp_enabled, totp_secret FROM users WHERE id = ?');
+    $stmt->execute([$uid]);
+    $u = $stmt->fetch();
+    return $u ?: null;
+}
+
 function current_user(PDO $pdo): ?array
 {
     start_session_cookie();
     $uid = $_SESSION['user_id'] ?? null;
     if (!$uid) return null;
-    $stmt = $pdo->prepare('SELECT id, email, display_name, individual_id, role, status FROM users WHERE id = ?');
-    $stmt->execute([$uid]);
-    $u = $stmt->fetch();
-    return $u ?: null;
+    $u = session_user_row($pdo, (int)$uid);
+    if (!$u) {
+        clear_session_user();
+        return null;
+    }
+    if ((int)($_SESSION['session_version'] ?? 0) !== (int)$u['session_version']) {
+        clear_session_user();
+        return null;
+    }
+    if (($u['status'] ?? 'active') !== 'active') {
+        clear_session_user();
+        return null;
+    }
+    unset($u['session_version'], $u['totp_secret']);
+    return $u;
 }
 
 function session_user_or_401(PDO $pdo): array
@@ -79,7 +104,141 @@ function admin_user_or_403(PDO $pdo): array
 function set_session_user(int $userId): void
 {
     start_session_cookie();
+    session_regenerate_id(true);
     $_SESSION['user_id'] = $userId;
+    try {
+        $u = session_user_row(db(), $userId);
+        $_SESSION['session_version'] = (int)($u['session_version'] ?? 0);
+    } catch (Throwable $e) {
+        $_SESSION['session_version'] = 0;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Login throttling (per email + IP, 15-minute sliding window)
+// ---------------------------------------------------------------------------
+
+const LOGIN_ATTEMPT_LIMIT = 10;
+const LOGIN_WINDOW_MINUTES = 15;
+
+function login_client_ip(): string
+{
+    return (string)($_SERVER['REMOTE_ADDR'] ?? '');
+}
+
+function login_recent_failures(PDO $pdo, string $email, string $ip): int
+{
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE email = ? AND ip = ? AND attempted_at >= (NOW() - INTERVAL ? MINUTE)');
+    $stmt->execute([strtolower($email), $ip, LOGIN_WINDOW_MINUTES]);
+    return (int)$stmt->fetchColumn();
+}
+
+function login_record_failure(PDO $pdo, string $email, string $ip): void
+{
+    $pdo->prepare('INSERT INTO login_attempts (email, ip, attempted_at) VALUES (?, ?, NOW())')->execute([strtolower($email), $ip]);
+    // Opportunistic cleanup so the table never grows unbounded
+    $pdo->exec('DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL 1 DAY');
+}
+
+function login_clear_failures(PDO $pdo, string $email, string $ip): void
+{
+    $pdo->prepare('DELETE FROM login_attempts WHERE email = ? AND ip = ?')->execute([strtolower($email), $ip]);
+}
+
+// ---------------------------------------------------------------------------
+// TOTP (RFC 6238, SHA-1, 30s step, 6 digits) + backup codes
+// ---------------------------------------------------------------------------
+
+function base32_encode(string $data): string
+{
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $bits = '';
+    foreach (str_split($data) as $char) {
+        $bits .= str_pad(base_convert((string)ord($char), 10, 2), 8, '0', STR_PAD_LEFT);
+    }
+    $out = '';
+    for ($i = 0, $len = strlen($bits); $i < $len; $i += 5) {
+        $out .= $alphabet[bindec(substr($bits, $i, 5))];
+    }
+    return $out;
+}
+
+function base32_decode(string $data): string
+{
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $clean = strtoupper(preg_replace('/[^A-Z2-7]/i', '', $data));
+    $bits = '';
+    for ($i = 0, $len = strlen($clean); $i < $len; $i++) {
+        $v = strpos($alphabet, $clean[$i]);
+        if ($v === false) continue;
+        $bits .= str_pad(base_convert((string)$v, 10, 2), 5, '0', STR_PAD_LEFT);
+    }
+    $out = '';
+    for ($i = 0, $len = strlen($bits); $i + 8 <= $len; $i += 8) {
+        $out .= chr(bindec(substr($bits, $i, 8)));
+    }
+    return $out;
+}
+
+function totp_generate_secret(): string
+{
+    return base32_encode(random_bytes(20)); // 160 bits, RFC 4226 recommendation
+}
+
+function totp_code_at(string $secretBase32, int $timeStep): string
+{
+    $key = base32_decode($secretBase32);
+    $counter = pack('N*', 0) . pack('N*', $timeStep);
+    $hash = hash_hmac('sha1', $counter, $key, true);
+    $offset = ord($hash[19]) & 0x0F;
+    $code = (unpack('N', substr($hash, $offset, 4))[1] & 0x7FFFFFFF) % 1000000;
+    return str_pad((string)$code, 6, '0', STR_PAD_LEFT);
+}
+
+function totp_verify(string $secretBase32, string $code, int $window = 1): bool
+{
+    if (!preg_match('/^\d{6}$/', $code)) return false;
+    $step = (int)floor(time() / 30);
+    for ($i = -$window; $i <= $window; $i++) {
+        if (hash_equals(totp_code_at($secretBase32, $step + $i), $code)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function totp_otpauth_url(string $email, string $secretBase32): string
+{
+    return 'otpauth://totp/'
+        . rawurlencode('TheWairuaHeritage:' . $email)
+        . '?secret=' . $secretBase32
+        . '&issuer=' . rawurlencode('TheWairuaHeritage')
+        . '&algorithm=SHA1&digits=6&period=30';
+}
+
+function mfa_backup_code_generate(): string
+{
+    // XXXX-XXXX, human readable
+    $alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+    $part = static function () use ($alphabet): string {
+        $out = '';
+        for ($i = 0; $i < 4; $i++) $out .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        return $out;
+    };
+    return $part() . '-' . $part();
+}
+
+function mfa_verify_backup_code(PDO $pdo, int $userId, string $code): bool
+{
+    $stmt = $pdo->prepare('SELECT id, code_hash FROM mfa_backup_codes WHERE user_id = ? AND used_at IS NULL');
+    $stmt->execute([$userId]);
+    foreach ($stmt->fetchAll() as $row) {
+        if (password_verify($code, (string)$row['code_hash'])) {
+            $pdo->prepare('UPDATE mfa_backup_codes SET used_at = NOW() WHERE id = ?')->execute([$row['id']]);
+            return true;
+        }
+    }
+    return false;
 }
 
 function clear_session_user(): void
@@ -161,18 +320,33 @@ switch ($action) {
         if ($email === '' || $pass === '') {
             send_error('Email and password are required', 400);
         }
-        $stmt = $pdo->prepare('SELECT id, password_hash, status FROM users WHERE email = ?');
+        $ip = login_client_ip();
+        if (login_recent_failures($pdo, $email, $ip) >= LOGIN_ATTEMPT_LIMIT) {
+            send_error('Too many failed sign-in attempts. Please try again in ' . LOGIN_WINDOW_MINUTES . ' minutes.', 429);
+        }
+        $stmt = $pdo->prepare('SELECT id, password_hash, status, totp_enabled FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $u = $stmt->fetch();
         if (!$u || !password_verify($pass, $u['password_hash'])) {
+            login_record_failure($pdo, $email, $ip);
             send_error('Invalid email or password', 401);
         }
         if (($u['status'] ?? 'active') !== 'active') {
+            // Do not count status rejections as brute-force failures
             if ($u['status'] === 'pending') {
                 send_error('Your account is pending approval by the site administrator', 403);
             }
             send_error('Your account has been disabled. Please contact the site administrator.', 403);
         }
+        if ((int)($u['totp_enabled'] ?? 0) === 1) {
+            // Password is correct — hold the login until the authenticator code arrives
+            $token = bin2hex(random_bytes(24));
+            $pdo->prepare('INSERT INTO mfa_pending (token, user_id, ip, expires_at) VALUES (?, ?, ?, NOW() + INTERVAL 10 MINUTE)')
+                ->execute([$token, (int)$u['id'], $ip]);
+            login_clear_failures($pdo, $email, $ip);
+            send_json(['ok' => true, 'mfaRequired' => true, 'pendingToken' => $token]);
+        }
+        login_clear_failures($pdo, $email, $ip);
         set_session_user((int)$u['id']);
         send_json(['ok' => true, 'user' => current_user($pdo)]);
         break;
@@ -180,6 +354,19 @@ switch ($action) {
     case 'register':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             send_error('Use POST', 405);
+        }
+        // Public endpoint: cap registrations per IP (5 per hour) so the
+        // signup notification mail cannot be abused for spam
+        try {
+            $ip = login_client_ip();
+            $rate = $pdo->prepare("SELECT COUNT(*) FROM login_attempts WHERE email = 'register' AND ip = ? AND attempted_at >= NOW() - INTERVAL 1 HOUR");
+            $rate->execute([$ip]);
+            if ((int)$rate->fetchColumn() >= 5) {
+                send_error('Too many registrations from this network. Please try again later.', 429);
+            }
+            $pdo->prepare("INSERT INTO login_attempts (email, ip, attempted_at) VALUES ('register', ?, NOW())")->execute([$ip]);
+        } catch (Throwable $e) {
+            // Fail open: never block a legitimate signup because the throttle broke
         }
         $body = read_json_body();
         $name = trim((string)($body['name'] ?? ''));
@@ -253,8 +440,11 @@ switch ($action) {
         if (!$row || !password_verify($current, $row['password_hash'])) {
             send_error('Current password is incorrect', 401);
         }
-        $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $upd = $pdo->prepare('UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?');
         $upd->execute([password_hash($new, PASSWORD_DEFAULT), $me['id']]);
+        // The member's other sessions are revoked; keep this one alive
+        $u = session_user_row($pdo, (int)$me['id']);
+        $_SESSION['session_version'] = (int)($u['session_version'] ?? 0);
         app_send_branded($pdo, (string)$me['email'],
             'Your password was changed',
             'Your password was changed',
@@ -348,7 +538,7 @@ switch ($action) {
             send_error('This reset link is invalid or has expired', 400);
         }
         $newHash = password_hash($password, PASSWORD_DEFAULT);
-        $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $upd = $pdo->prepare('UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?');
         $upd->execute([$newHash, $reset['user_id']]);
         $mark = $pdo->prepare('UPDATE password_resets SET used = 1 WHERE id = ?');
         $mark->execute([$reset['id']]);
@@ -425,7 +615,7 @@ switch ($action) {
         if ($id <= 0) send_error('Missing user id', 400);
         if (mb_strlen($newPassword) < 8) send_error('Password must be at least 8 characters', 400);
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $upd = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $upd = $pdo->prepare('UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?');
         $upd->execute([$hash, $id]);
         if ($upd->rowCount() === 0) send_error('User not found', 404);
         // Notify the member their password was changed by an administrator
@@ -502,6 +692,132 @@ switch ($action) {
     case 'logout':
         clear_session_user();
         send_json(['ok' => true]);
+        break;
+
+    case 'signout-everywhere':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $me = session_user_or_401($pdo);
+        $pdo->prepare('UPDATE users SET session_version = session_version + 1 WHERE id = ?')->execute([$me['id']]);
+        // Keep this device signed in on the new version
+        $u = session_user_row($pdo, (int)$me['id']);
+        $_SESSION['session_version'] = (int)($u['session_version'] ?? 0);
+        send_json(['ok' => true]);
+        break;
+
+    case 'mfa-setup':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $me = session_user_or_401($pdo);
+        $u = session_user_row($pdo, (int)$me['id']);
+        if ((int)($u['totp_enabled'] ?? 0) === 1) {
+            send_json(['ok' => true, 'enabled' => true]);
+        }
+        // Reveal or create the pending secret (not enabled until confirmed)
+        $secret = (string)($u['totp_secret'] ?? '');
+        if ($secret === '') {
+            $secret = totp_generate_secret();
+            $pdo->prepare('UPDATE users SET totp_secret = ? WHERE id = ?')->execute([$secret, $me['id']]);
+        }
+        send_json([
+            'ok' => true,
+            'enabled' => false,
+            'secret' => $secret,
+            'otpauth' => totp_otpauth_url((string)$u['email'], $secret),
+        ]);
+        break;
+
+    case 'mfa-confirm':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $me = session_user_or_401($pdo);
+        $body = read_json_body();
+        $code = trim((string)($body['code'] ?? ''));
+        $u = session_user_row($pdo, (int)$me['id']);
+        $secret = (string)($u['totp_secret'] ?? '');
+        if ($secret === '') send_error('Run 2FA setup first', 400);
+        if (!totp_verify($secret, $code)) {
+            send_error('That code did not match. Check your authenticator app and try again.', 400);
+        }
+        $pdo->prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?')->execute([$me['id']]);
+        // Fresh batch of backup codes (invalidates all previous ones)
+        $pdo->prepare('DELETE FROM mfa_backup_codes WHERE user_id = ?')->execute([$me['id']]);
+        $backupCodes = [];
+        $ins = $pdo->prepare('INSERT INTO mfa_backup_codes (user_id, code_hash) VALUES (?, ?)');
+        for ($i = 0; $i < 8; $i++) {
+            $c = mfa_backup_code_generate();
+            $ins->execute([$me['id'], password_hash($c, PASSWORD_DEFAULT)]);
+            $backupCodes[] = $c;
+        }
+        send_json(['ok' => true, 'backupCodes' => $backupCodes]);
+        break;
+
+    case 'mfa-disable':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $me = session_user_or_401($pdo);
+        $body = read_json_body();
+        $password = (string)($body['password'] ?? '');
+        $code = trim((string)($body['code'] ?? ''));
+        $stmt = $pdo->prepare('SELECT password_hash, totp_secret FROM users WHERE id = ?');
+        $stmt->execute([$me['id']]);
+        $row = $stmt->fetch();
+        if (!$row || !password_verify($password, (string)$row['password_hash'])) {
+            send_error('Current password is incorrect', 401);
+        }
+        $secret = (string)($row['totp_secret'] ?? '');
+        if ($secret === '') send_error('Two-factor authentication is not enabled', 400);
+        if (!totp_verify($secret, $code) && !mfa_verify_backup_code($pdo, (int)$me['id'], $code)) {
+            send_error('That code did not match.', 400);
+        }
+        $pdo->prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?')->execute([$me['id']]);
+        $pdo->prepare('DELETE FROM mfa_backup_codes WHERE user_id = ?')->execute([$me['id']]);
+        send_json(['ok' => true]);
+        break;
+
+    case 'mfa-verify':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            send_error('Use POST', 405);
+        }
+        $body = read_json_body();
+        $token = (string)($body['pendingToken'] ?? '');
+        $code = trim((string)($body['code'] ?? ''));
+        if ($token === '' || $code === '') {
+            send_error('A sign-in token and an authenticator code are required', 400);
+        }
+        $stmt = $pdo->prepare('SELECT token, user_id FROM mfa_pending WHERE token = ? AND expires_at > NOW()');
+        $stmt->execute([$token]);
+        $pending = $stmt->fetch();
+        if (!$pending) {
+            send_error('This sign-in attempt expired. Please enter your password again.', 401);
+        }
+        $userId = (int)$pending['user_id'];
+        $stmt2 = $pdo->prepare('SELECT email, totp_secret FROM users WHERE id = ?');
+        $stmt2->execute([$userId]);
+        $u = $stmt2->fetch();
+        $secret = (string)($u['totp_secret'] ?? '');
+        $ip = login_client_ip();
+        $userEmail = strtolower((string)($u['email'] ?? ''));
+        if (login_recent_failures($pdo, $userEmail, $ip) >= LOGIN_ATTEMPT_LIMIT) {
+            send_error('Too many failed attempts. Please try again in ' . LOGIN_WINDOW_MINUTES . ' minutes.', 429);
+        }
+        $codeOk = $secret !== '' && totp_verify($secret, $code);
+        $backupOk = false;
+        if (!$codeOk) {
+            $backupOk = mfa_verify_backup_code($pdo, $userId, $code);
+        }
+        if (!$codeOk && !$backupOk) {
+            login_record_failure($pdo, $userEmail, $ip);
+            send_error('That code did not match. Try your authenticator app or a backup code.', 401);
+        }
+        $pdo->prepare('DELETE FROM mfa_pending WHERE token = ?')->execute([$token]);
+        login_clear_failures($pdo, $userEmail, $ip);
+        set_session_user($userId);
+        send_json(['ok' => true, 'user' => current_user($pdo)]);
         break;
 
     case 'me':

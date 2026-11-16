@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { changeProfile, changePassword } from '../utils/api'
+import { changeProfile, changePassword, mfaSetup, mfaConfirm, mfaDisable, signOutEverywhere } from '../utils/api'
 import { cleanName } from '../utils/cleanName'
 import '../styles/account.css'
 
@@ -17,10 +17,24 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
   const [passwordError, setPasswordError] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
 
+  const [mfaEnabled, setMfaEnabled] = useState(() => Number(currentUser?.totp_enabled) === 1)
+  const [mfaSetupData, setMfaSetupData] = useState(null)
+  const [mfaCode, setMfaCode] = useState('')
+  const [mfaMsg, setMfaMsg] = useState('')
+  const [mfaError, setMfaError] = useState('')
+  const [mfaBusy, setMfaBusy] = useState(false)
+  const [backupCodes, setBackupCodes] = useState(null)
+  const [disableOpen, setDisableOpen] = useState(false)
+  const [disablePassword, setDisablePassword] = useState('')
+  const [disableCode, setDisableCode] = useState('')
+  const [secretCopied, setSecretCopied] = useState(false)
+  const [signoutMsg, setSignoutMsg] = useState('')
+
   useEffect(() => {
     setDisplayName(currentUser?.display_name || '')
     setEmail(currentUser?.email || '')
-  }, [currentUser?.display_name, currentUser?.email])
+    setMfaEnabled(Number(currentUser?.totp_enabled) === 1)
+  }, [currentUser?.display_name, currentUser?.email, currentUser?.totp_enabled])
 
   const isAdmin = currentUser?.role === 'admin'
   const linkedPerson = currentUser?.individual_id ? individuals?.get?.(currentUser.individual_id) : null
@@ -43,6 +57,109 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
       setProfileError(err.message || 'Update failed')
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  const handleMfaSetup = async () => {
+    setMfaError('')
+    setMfaMsg('')
+    setMfaBusy(true)
+    try {
+      const res = await mfaSetup()
+      if (res.enabled) {
+        setMfaEnabled(true)
+      } else if (res.secret) {
+        setMfaSetupData({ secret: res.secret, otpauth: res.otpauth })
+      } else {
+        setMfaError(res.error || 'Could not start 2FA setup')
+      }
+    } catch (err) {
+      setMfaError(err.message || 'Could not start 2FA setup')
+    } finally {
+      setMfaBusy(false)
+    }
+  }
+
+  const handleMfaConfirm = async (e) => {
+    e.preventDefault()
+    setMfaError('')
+    setMfaMsg('')
+    setMfaBusy(true)
+    try {
+      const res = await mfaConfirm(mfaCode.trim())
+      if (res.ok && res.backupCodes) {
+        setBackupCodes(res.backupCodes)
+        setMfaEnabled(true)
+        setMfaSetupData(null)
+        setMfaCode('')
+        setMfaMsg('Two-factor authentication is now enabled.')
+      } else {
+        setMfaError(res.error || 'That code did not match')
+      }
+    } catch (err) {
+      setMfaError(err.message || 'That code did not match')
+    } finally {
+      setMfaBusy(false)
+    }
+  }
+
+  const handleMfaDisable = async (e) => {
+    e.preventDefault()
+    setMfaError('')
+    setMfaMsg('')
+    setMfaBusy(true)
+    try {
+      const res = await mfaDisable(disablePassword, disableCode.trim())
+      if (res.ok) {
+        setMfaEnabled(false)
+        setDisableOpen(false)
+        setDisablePassword('')
+        setDisableCode('')
+        setBackupCodes(null)
+        setMfaMsg('Two-factor authentication has been disabled.')
+      } else {
+        setMfaError(res.error || 'Could not disable 2FA')
+      }
+    } catch (err) {
+      setMfaError(err.message || 'Could not disable 2FA')
+    } finally {
+      setMfaBusy(false)
+    }
+  }
+
+  const copySecret = async () => {
+    if (!mfaSetupData?.secret) return
+    try {
+      await navigator.clipboard.writeText(mfaSetupData.secret)
+      setSecretCopied(true)
+      window.setTimeout(() => setSecretCopied(false), 2000)
+    } catch {
+      setMfaError('Copy not available — select the secret text instead.')
+    }
+  }
+
+  const copyBackupCodes = async () => {
+    if (!backupCodes) return
+    try {
+      await navigator.clipboard.writeText(backupCodes.join('\n'))
+      setMfaMsg('Backup codes copied.')
+    } catch {
+      setMfaError('Copy not available — write them down now.')
+    }
+  }
+
+  const handleSignOutEverywhere = async () => {
+    if (!window.confirm('Sign out everywhere except this device?')) return
+    setSignoutMsg('')
+    try {
+      const res = await signOutEverywhere()
+      if (res.ok) {
+        setSignoutMsg('All other sessions have been signed out. This device stays signed in.')
+      } else {
+        setSignoutMsg('Could not reach the server — nothing changed.')
+      }
+    } catch {
+      setSignoutMsg('Could not reach the server — nothing changed.')
     }
   }
 
@@ -170,6 +287,112 @@ export default function AccountView({ currentUser, onProfileUpdated, onSwitchVie
                 </button>
               </div>
             </form>
+          </section>
+
+          {/* Two-factor authentication */}
+          <section className="view-card account-card">
+            <h2 className="account-card-title"><i className="fas fa-shield-halved" aria-hidden="true"></i> Two-factor authentication</h2>
+
+            {mfaEnabled ? (
+              <>
+                <p className="account-success" role="status"><i className="fas fa-circle-check" aria-hidden="true"></i> Two-factor authentication is enabled. You will be asked for a code from your authenticator app each time you sign in.</p>
+                {!disableOpen ? (
+                  <div className="account-actions">
+                    <button type="button" className="btn btn-outline" onClick={() => setDisableOpen(true)}>
+                      <i className="fas fa-shield" aria-hidden="true"></i> Disable 2FA
+                    </button>
+                  </div>
+                ) : (
+                  <form className="account-form mfa-disable-form" onSubmit={handleMfaDisable}>
+                    <p className="account-note">Disabling 2FA makes your account less secure. Enter your password and a current authenticator (or backup) code.</p>
+                    <label className="account-label" htmlFor="disable_password">Current password</label>
+                    <input id="disable_password" type="password" value={disablePassword} onChange={(e) => setDisablePassword(e.target.value)} autoComplete="current-password" required />
+                    <label className="account-label" htmlFor="disable_code">Authenticator code</label>
+                    <input id="disable_code" type="text" inputMode="numeric" autoComplete="one-time-code" value={disableCode} onChange={(e) => setDisableCode(e.target.value)} placeholder="123456 or backup code" required />
+                    <div className="account-actions">
+                      <button type="submit" className="btn btn-reject" disabled={mfaBusy}>{mfaBusy ? 'Disabling...' : 'Disable 2FA'}</button>
+                      <button type="button" className="btn btn-sm" onClick={() => setDisableOpen(false)}>Cancel</button>
+                    </div>
+                  </form>
+                )}
+              </>
+            ) : !mfaSetupData ? (
+              <>
+                <p className="account-note">Add a one-time code from an authenticator app (Google Authenticator, Authy, Microsoft Authenticator, 1Password) on top of your password.</p>
+                {mfaMsg && <p className="account-success" role="status">{mfaMsg}</p>}
+                {mfaError && <p className="account-error" role="alert">{mfaError}</p>}
+                <div className="account-actions">
+                  <button type="button" className="btn btn-primary" onClick={handleMfaSetup} disabled={mfaBusy}>
+                    <i className="fas fa-shield-halved" aria-hidden="true"></i> {mfaBusy ? 'Starting...' : 'Set up 2FA'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mfa-setup">
+                <ol className="mfa-steps">
+                  <li>Open your authenticator app and choose <strong>Add account</strong> (or <strong>Enter a setup key</strong>).</li>
+                  <li>Choose account type <strong>Time-based</strong>.</li>
+                  <li>Paste or type the setup key below:</li>
+                </ol>
+                <div className="mfa-secret">
+                  <code>{mfaSetupData.secret}</code>
+                  <button type="button" className="btn btn-sm" onClick={copySecret}>
+                    <i className={`fas ${secretCopied ? 'fa-check' : 'fa-copy'}`} aria-hidden="true"></i> {secretCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <form className="account-form" onSubmit={handleMfaConfirm}>
+                  <label className="account-label" htmlFor="mfa_confirm_code">Enter the 6-digit code your app shows</label>
+                  <input
+                    id="mfa_confirm_code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="123456"
+                    required
+                  />
+                  {mfaError && <p className="account-error" role="alert">{mfaError}</p>}
+                  <div className="account-actions">
+                    <button type="submit" className="btn btn-primary" disabled={mfaBusy || mfaCode.trim().length !== 6}>
+                      {mfaBusy ? 'Enabling...' : 'Enable 2FA'}
+                    </button>
+                    <button type="button" className="btn btn-sm" onClick={() => { setMfaSetupData(null); setMfaError('') }}>Cancel</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {mfaEnabled && mfaError && <p className="account-error" role="alert">{mfaError}</p>}
+            {mfaEnabled && mfaMsg && <p className="account-success" role="status">{mfaMsg}</p>}
+
+            {backupCodes && (
+              <div className="mfa-backup">
+                <strong><i className="fas fa-key" aria-hidden="true"></i> Save your 8 backup codes</strong>
+                <p>Each code works once, in case you lose your authenticator. They will not be shown again.</p>
+                <ul className="mfa-codes">
+                  {backupCodes.map((c) => <li key={c}><code>{c}</code></li>)}
+                </ul>
+                <div className="account-actions">
+                  <button type="button" className="btn btn-sm" onClick={copyBackupCodes}><i className="fas fa-copy" aria-hidden="true"></i> Copy all</button>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setBackupCodes(null)}>I saved them</button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Sessions */}
+          <section className="view-card account-card">
+            <h2 className="account-card-title">Sessions</h2>
+            <p className="account-note">If you signed in on a shared or lost device, you can sign your account out everywhere else. This device stays signed in.</p>
+            <div className="account-actions">
+              <button type="button" className="btn btn-outline" onClick={handleSignOutEverywhere}>
+                <i className="fas fa-right-from-bracket" aria-hidden="true"></i> Sign out everywhere else
+              </button>
+            </div>
+            {signoutMsg && <p className="account-success" role="status">{signoutMsg}</p>}
           </section>
 
           {/* Account details */}

@@ -47,6 +47,56 @@ export async function login(email, password) {
   return res.json()
 }
 
+export async function verifyMfa(pendingToken, code) {
+  const res = await fetch(`${API_BASE}/auth.php?action=mfa-verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ pendingToken, code }),
+  })
+  return res.json()
+}
+
+export async function mfaSetup() {
+  const res = await fetch(`${API_BASE}/auth.php?action=mfa-setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
+export async function mfaConfirm(code) {
+  const res = await fetch(`${API_BASE}/auth.php?action=mfa-confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ code }),
+  })
+  return res.json()
+}
+
+export async function mfaDisable(password, code) {
+  const res = await fetch(`${API_BASE}/auth.php?action=mfa-disable`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ password, code }),
+  })
+  return res.json()
+}
+
+export async function signOutEverywhere() {
+  const res = await fetch(`${API_BASE}/auth.php?action=signout-everywhere`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
 export async function logout() {
   const res = await fetch(`${API_BASE}/auth.php?action=logout`, {
     method: 'POST',

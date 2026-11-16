@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/mail.php'; // app_public_url()
+require_once __DIR__ . '/auth_lib.php';
 
 send_cors_headers();
 
@@ -22,12 +23,7 @@ $pdo = db();
 $action = $_GET['action'] ?? null;
 
 if ($action === 'status') {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('FAMILYTREE_SESSION');
-        session_start();
-    }
-    if (empty($_SESSION['user_id'])) send_error('You must be signed in', 401);
-
+    require_active_session_user($pdo);
     $token = ensure_calendar_token($pdo);
     $url = app_public_url($pdo) . '/api/calendar.php?token=' . $token;
     send_json(['ok' => true, 'url' => $url, 'downloadUrl' => $url . '&download=1']);

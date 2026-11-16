@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { login } from '../utils/api'
+import { login, verifyMfa } from '../utils/api'
 import '../styles/login.css'
 
 export default function LoginView({ onLoggedIn, onSwitchView }) {
@@ -10,12 +10,20 @@ export default function LoginView({ onLoggedIn, onSwitchView }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Two-factor step, shown after a correct password when 2FA is enabled
+  const [mfaToken, setMfaToken] = useState(null)
+  const [mfaCode, setMfaCode] = useState('')
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
       const res = await login(email, password)
+      if (res.ok && res.mfaRequired) {
+        setMfaToken(res.pendingToken)
+        return
+      }
       if (res.ok && res.user) {
         onLoggedIn(res.user)
       } else {
@@ -23,6 +31,24 @@ export default function LoginView({ onLoggedIn, onSwitchView }) {
       }
     } catch (err) {
       setError(err.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMfaSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const res = await verifyMfa(mfaToken, mfaCode.trim())
+      if (res.ok && res.user) {
+        onLoggedIn(res.user)
+      } else {
+        setError(res.error || 'That code did not work')
+      }
+    } catch (err) {
+      setError(err.message || 'That code did not work')
     } finally {
       setLoading(false)
     }
@@ -36,8 +62,36 @@ export default function LoginView({ onLoggedIn, onSwitchView }) {
           <span className="login-wordmark">TheWairuaHeritage</span>
         </div>
 
-        <h1 className="login-title">Welcome back</h1>
-        <p className="login-sub">Sign in to view your family tree</p>
+        <h1 className="login-title">{mfaToken ? 'Two-factor authentication' : 'Welcome back'}</h1>
+        <p className="login-sub">{mfaToken ? 'Enter the 6-digit code from your authenticator app' : 'Sign in to view your family tree'}</p>
+
+        {mfaToken ? (
+          <form className="login-form" onSubmit={handleMfaSubmit}>
+            <label className="login-label" htmlFor="mfa_code">Authenticator code</label>
+            <input
+              id="mfa_code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9-]{6,12}"
+              maxLength={12}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
+              autoFocus
+              required
+              placeholder="123456 (or a backup code)"
+            />
+
+            {error && <p className="login-error" role="alert">{error}</p>}
+
+            <button type="submit" className="login-submit" disabled={loading} aria-busy={loading}>
+              {loading ? 'Verifying...' : 'Verify and sign in'}
+            </button>
+            <button type="button" className="link-button" onClick={() => { setMfaToken(null); setMfaCode(''); setError('') }}>
+              Back to password
+            </button>
+          </form>
+        ) : (
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label className="login-label" htmlFor="email">Email</label>
@@ -102,6 +156,7 @@ export default function LoginView({ onLoggedIn, onSwitchView }) {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
+        )}
 
         <p className="login-help">
           Don’t have an account?{' '}
