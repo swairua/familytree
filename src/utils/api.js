@@ -416,3 +416,34 @@ export async function fetchCalendarStatus() {
   const res = await fetch(`${API_BASE}/calendar.php?action=status`, { credentials: 'same-origin' })
   return res.json()
 }
+
+
+export async function fetchFsStatus() {
+  const res = await fetch(`${API_BASE}/familysearch.php?action=status`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export function fsConnectUrl() {
+  // Full-page navigation â€” OAuth round trip, not fetch
+  return `${API_BASE}/familysearch.php?action=connect`
+}
+
+export async function fsDisconnect() {
+  const res = await fetch(`${API_BASE}/familysearch.php?action=disconnect`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: '{}',
+  })
+  return res.json()
+}
+
+export async function fsSearch({ given, surname, birthYear, place, count }) {
+  const params = new URLSearchParams()
+  if (given) params.set('given', given)
+  if (surname) params.set('surname', surname)
+  if (birthYear) params.set('birthYear', birthYear)
+  if (place) params.set('place', place)
+  params.set('count', String(count || 20))
+  const res = await fetch(`${API_BASE}/familysearch.php?action=search&${params}`, { credentials: 'same-origin' })
+  return res.json()
+}

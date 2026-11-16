@@ -194,3 +194,66 @@
 .research-ai-error { color: #c0392b; font-size: 0.8rem; margin: 6px 0 0; }
 .research-ai-text { color: #3e322a; font-size: 0.82rem; margin: 6px 0 0; white-space: pre-wrap; }
 .research-ai-hint { font-size: 0.72rem; color: #a69e98; margin: 6px 0 0; }
+
+
+/* Search source toggle (My tree / FamilySearch) */
+.research-mode-row { display: flex; gap: 8px; margin: 14px 0 4px; }
+.research-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e2ddd7;
+  border-radius: 8px;
+  background: #faf8f5;
+  color: #5c554e;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.research-mode-btn:hover:not(:disabled) { border-color: #e08c2e; }
+.research-mode-btn.active { background: #1f3628; border-color: #1f3628; color: #fff; }
+.research-mode-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* FamilySearch panel */
+.research-fs {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee9e5;
+}
+.research-fs h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #3e322a;
+  margin: 0 0 8px;
+}
+.research-fs-notice { font-size: 0.8rem; color: #256b43; margin: 6px 0 0; }
+.fs-connected { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #e9f4ec;
+  border: 1px solid #bfe0cd;
+  color: #256b43;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+/* FamilySearch result rows */
+.fs-result { text-decoration: none; border: 1px solid #eee7dc; border-radius: 10px; transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
+.fs-result:hover { background: #fdf9ec; border-color: #e08c2e; transform: translateY(-1px); }
+.fs-gender {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.fs-gender.m { background: #e8eef6; color: #355a86; }
+.fs-gender.f { background: #f9e8ec; color: #8a3a52; }
+.fs-gender.u { background: #eee; color: #777; }
+.fs-ark-link { font-size: 0.72rem; color: #a6520d; font-weight: 700; margin-top: 2px; }

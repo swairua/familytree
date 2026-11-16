@@ -41,7 +41,7 @@ function Header({ currentView, onSwitchView, onImportClick, hasData, onSyncClick
         { id: 'livememory', label: 'LiveMemory™' },
         { id: 'scribeai', label: 'Scribe AI' },
     ]},
-    { id: 'research', label: 'DNA', icon: 'fa-dna' },
+    { id: 'dna', label: 'DNA', icon: 'fa-dna' },
     { id: 'research', label: 'Research', icon: 'fa-book' },
   ], [isAdmin])
 

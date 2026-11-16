@@ -188,3 +188,14 @@ CREATE TABLE IF NOT EXISTS mfa_backup_codes (
   used_at    DATETIME NULL,
   INDEX idx_user (user_id)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- FamilySearch OAuth tokens (one per member, stored server-side)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fs_tokens (
+  user_id      INT PRIMARY KEY,
+  access_token TEXT NOT NULL,
+  token_type   VARCHAR(32) NOT NULL DEFAULT 'family_search',
+  expires_at   DATETIME NOT NULL,
+  updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

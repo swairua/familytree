@@ -62,6 +62,18 @@ const FEATURES = {
     ],
     cta: 'Generate descriptions',
   },
+  dna: {
+    icon: 'fa-dna',
+    title: 'DNA Matching',
+    subtitle: 'Find family connections across your DNA',
+    description: 'Order a FamilyTreeDNA or 23andMe kit, or upload your raw DNA to match relatives across the Wairua family and beyond.',
+    bullets: [
+      'Connect DNA relatives to your family tree',
+      'Estimate shared ethnicity and origin regions',
+      'Confirm uncertain branches with matches',
+    ],
+    cta: 'Learn about DNA testing',
+  },
 }
 
 export default function FeatureView({ featureKey, onSwitchView }) {

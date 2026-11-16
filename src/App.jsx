@@ -89,6 +89,9 @@ function App() {
         setInitialThreadId(Number(p.get('thread')))
         setCurrentView('messages')
       }
+      if (p.get('view') === 'research') {
+        setCurrentView('research')
+      }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -484,7 +487,7 @@ function App() {
         />
       )}
 
-      {['colorize', 'enhance', 'nostalgia', 'livememory', 'scribeai'].includes(currentView) && (
+      {['colorize', 'enhance', 'nostalgia', 'livememory', 'scribeai', 'dna'].includes(currentView) && (
         <FeatureView
           featureKey={currentView}
           onSwitchView={handleSwitchView}

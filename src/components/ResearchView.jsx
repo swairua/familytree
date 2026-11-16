@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import PersonAvatar from './PersonAvatar'
 import { cleanName } from '../utils/cleanName'
-import { aiSearch } from '../utils/api'
+import { aiSearch, fetchFsStatus, fsConnectUrl, fsDisconnect, fsSearch } from '../utils/api'
 import '../styles/research.css'
 
 function ResearchView({ individuals, onSelectPerson }) {
@@ -16,6 +16,81 @@ function ResearchView({ individuals, onSelectPerson }) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiText, setAiText] = useState('')
+
+  // FamilySearch link (per member OAuth) + search mode toggle
+  const [fsStatus, setFsStatus] = useState(null)
+  const [fsLoaded, setFsLoaded] = useState(false)
+  const [fsMode, setFsMode] = useState(false)
+  const [fsResults, setFsResults] = useState([])
+  const [fsLoading, setFsLoading] = useState(false)
+  const [fsError, setFsError] = useState('')
+  const [fsNotice, setFsNotice] = useState('')
+
+  const loadFsStatus = useCallback(async () => {
+    try {
+      const res = await fetchFsStatus()
+      setFsStatus(res && res.ok ? res : null)
+    } catch {
+      setFsStatus(null)
+    } finally {
+      setFsLoaded(true)
+    }
+  }, [])
+
+  useEffect(() => { loadFsStatus() }, [loadFsStatus])
+
+  // Handle OAuth return: /?view=research&fs=connected and ?fs=error&msg=...
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('fs') === 'connected') setFsNotice('FamilySearch account linked.')
+      if (p.get('fs') === 'error') setFsError(p.get('msg') || 'FamilySearch sign-in failed.')
+    } catch { /* ignore */ }
+  }, [])
+
+  const handleFsDisconnect = async () => {
+    setFsError('')
+    setFsNotice('')
+    try {
+      await fsDisconnect()
+      setFsNotice('FamilySearch account unlinked.')
+      setFsMode(false)
+      setFsResults([])
+      loadFsStatus()
+    } catch {
+      setFsError('Could not unlink — try again.')
+    }
+  }
+
+  const runFsSearch = useCallback(async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    setFsLoading(true)
+    setFsError('')
+    setFsNotice('')
+    setFsResults([])
+    try {
+      const res = await fsSearch({
+        given: firstName.trim(),
+        surname: lastName.trim(),
+        birthYear: birthYear.trim(),
+        place: place.trim(),
+        count: 20,
+      })
+      if (res.ok) {
+        setFsResults(res.results || [])
+        setSubmitted(true)
+      } else if (res.error === 'expired' || res.error === 'not_connected') {
+        setFsError(res.message || 'Connect your FamilySearch account to search.')
+        loadFsStatus()
+      } else {
+        setFsError(res.message || res.error || 'FamilySearch search failed.')
+      }
+    } catch (err) {
+      setFsError(err.message || 'FamilySearch search failed.')
+    } finally {
+      setFsLoading(false)
+    }
+  }, [firstName, lastName, birthYear, place, loadFsStatus])
 
   const results = useMemo(() => {
     if (!submitted) return []
@@ -36,19 +111,19 @@ function ResearchView({ individuals, onSelectPerson }) {
       const name = (p.name || '').toLowerCase()
       const given = (p.givenName || '').toLowerCase()
       const surname = (p.surname || '').toLowerCase()
-      if (fn && !(exact ? given === fn : given.includes(fn) || name.includes(fn))) return
-      if (ln && !(exact ? surname === ln : surname.includes(ln) || name.includes(ln))) return
+      if (fn && !(exact ? given === fn : given.includes(fn) || name.includes(fn))) continue
+      if (ln && !(exact ? surname === ln : surname.includes(ln) || name.includes(ln))) continue
       if (by) {
-        const y = (p.birthYear || '').toString()
-        if (!y.includes(by)) return
+        const y = String(p.birthYear ?? ((p.birthDate || '').match(/\d{4}/) || [''])[0] ?? '')
+        if (!y.includes(by)) continue
       }
       if (pl) {
         const bp = (p.birthPlace || '').toLowerCase()
-        if (!(exact ? bp === pl : bp.includes(pl))) return
+        if (!(exact ? bp === pl : bp.includes(pl))) continue
       }
       if (kw) {
         const hay = `${p.name} ${p.birthPlace} ${p.occupation} ${p.notes || ''}`.toLowerCase()
-        if (!(exact ? hay.includes(kw) : hay.includes(kw))) return
+        if (!(exact ? hay.includes(kw) : hay.includes(kw))) continue
       }
       out.push(p)
     }
@@ -70,11 +145,11 @@ function ResearchView({ individuals, onSelectPerson }) {
         parsed = m ? JSON.parse(m[0]) : null
       } catch {}
       if (parsed) {
-        setFirstName(parsed.firstName || '')
-        setLastName(parsed.lastName || '')
-        setBirthYear(parsed.birthYear || '')
-        setPlace(parsed.place || '')
-        setKeywords(parsed.keywords || '')
+        setFirstName(String(parsed.firstName || ''))
+        setLastName(String(parsed.lastName || ''))
+        setBirthYear(parsed.birthYear != null ? String(parsed.birthYear) : '')
+        setPlace(String(parsed.place || ''))
+        setKeywords(Array.isArray(parsed.keywords) ? parsed.keywords.filter(Boolean).join(' ') : String(parsed.keywords || ''))
         setSubmitted(true)
       } else {
         setAiText(res.text || 'No filters extracted.')
@@ -88,6 +163,10 @@ function ResearchView({ individuals, onSelectPerson }) {
 
   const handleSearch = (e) => {
     e.preventDefault()
+    if (fsMode) {
+      runFsSearch()
+      return
+    }
     setSubmitted(true)
   }
 
@@ -129,8 +208,32 @@ function ResearchView({ individuals, onSelectPerson }) {
                 <input type="checkbox" checked={exact} onChange={e => setExact(e.target.checked)} />
                 Match all terms exactly
               </label>
+              <div className="research-mode-row" role="tablist" aria-label="Search source">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={!fsMode}
+                  className={`research-mode-btn ${!fsMode ? 'active' : ''}`}
+                  onClick={() => setFsMode(false)}
+                >
+                  <i className="fas fa-sitemap" aria-hidden="true"></i> My tree
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={fsMode}
+                  className={`research-mode-btn ${fsMode ? 'active' : ''}`}
+                  onClick={() => setFsMode(true)}
+                  disabled={!fsStatus?.connected}
+                  title={fsStatus?.connected ? 'Search the FamilySearch tree' : (fsStatus?.configured ? 'Link your FamilySearch account first (see the FamilySearch panel below)' : 'FamilySearch is not enabled on this site yet')}
+                >
+                  <i className="fas fa-globe" aria-hidden="true"></i> FamilySearch
+                </button>
+              </div>
               <div className="research-actions">
-                <button type="submit" className="btn btn-primary">Search</button>
+                <button type="submit" className="btn btn-primary" disabled={fsMode && fsLoading}>
+                  {fsMode ? (fsLoading ? 'Searching...' : 'Search FamilySearch') : 'Search'}
+                </button>
                 <button type="button" className="btn" onClick={handleClear}>Clear form</button>
               </div>
             </form>
@@ -153,6 +256,32 @@ function ResearchView({ individuals, onSelectPerson }) {
                 AI fills the search form for you. Set your Groq key in api/config.local.php.
               </p>
             </div>
+
+            <div className="research-fs">
+              <h3>FamilySearch records</h3>
+              {!fsLoaded && <p className="research-ai-hint">Checking FamilySearch...</p>}
+              {fsLoaded && !fsStatus?.configured && (
+                <p className="research-ai-hint">Not enabled on this site yet. The administrator can request a free FamilySearch app key and register the callback URL — see <code>docs/familysearch.md</code>.</p>
+              )}
+              {fsLoaded && fsStatus?.configured && !fsStatus?.connected && (
+                <>
+                  <p className="research-ai-hint">Link your FamilySearch account — read-only search of the shared family tree using your own consent and your own account.</p>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => { window.location.href = fsConnectUrl() }}>
+                    <i className="fas fa-link" aria-hidden="true"></i> Connect FamilySearch
+                  </button>
+                </>
+              )}
+              {fsLoaded && fsStatus?.connected && (
+                <div className="fs-connected">
+                  <span className="fs-badge"><i className="fas fa-circle-check" aria-hidden="true"></i> Linked{fsStatus.env === 'beta' ? ' (beta)' : ''}</span>
+                  <button type="button" className="btn btn-sm btn-outline" onClick={handleFsDisconnect}>
+                    <i className="fas fa-link-slash" aria-hidden="true"></i> Unlink
+                  </button>
+                </div>
+              )}
+              {fsNotice && <p className="research-fs-notice" role="status">{fsNotice}</p>}
+              {fsError && <p className="research-ai-error" role="alert">{fsError}</p>}
+            </div>
           </section>
 
           <section className="research-card research-info-card">
@@ -172,7 +301,47 @@ function ResearchView({ individuals, onSelectPerson }) {
           </section>
         </div>
 
-        {submitted && (
+        {submitted && fsMode && (
+          <section className="research-results">
+            <h3>FamilySearch results ({fsResults.length})</h3>
+            {fsLoading ? (
+              <div className="sm-empty"><i className="fas fa-spinner fa-spin"></i> Searching FamilySearch...</div>
+            ) : fsResults.length === 0 ? (
+              <p className="research-empty">No matches in the FamilySearch tree — try broader terms or fewer filters.</p>
+            ) : (
+              <div className="research-result-list">
+                {fsResults.map(p => {
+                  const male = /male/i.test(p.gender) && !/female/i.test(p.gender)
+                  const female = /female/i.test(p.gender)
+                  return (
+                    <a
+                      key={p.id || p.name}
+                      className="research-result fs-result"
+                      href={p.ark ? `${p.ark}?context=details` : '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className={`fs-gender ${male ? 'm' : female ? 'f' : 'u'}`} aria-hidden="true">
+                        <i className={`fas ${male ? 'fa-mars' : female ? 'fa-venus' : 'fa-user'}`}></i>
+                      </span>
+                      <div className="research-result-info">
+                        <strong>{p.name}</strong>
+                        <span>
+                          {p.birthDate ? `Born ${p.birthDate}` : (p.birthYear ? `Born ${p.birthYear}` : 'Birth unknown')}
+                          {p.birthPlace ? ` in ${p.birthPlace}` : ''}
+                          {p.deathYear ? ` · died ${p.deathYear}` : ''}
+                        </span>
+                        {p.ark && <span className="fs-ark-link">View in FamilySearch <i className="fas fa-arrow-up-right-from-square"></i></span>}
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {submitted && !fsMode && (
           <section className="research-results">
             <h3>Results ({results.length})</h3>
             {results.length === 0 ? (
