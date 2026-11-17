@@ -487,3 +487,10 @@ export async function setDnaTested(dnaTested) {
   })
   return res.json()
 }
+
+export async function adminSendMemberEmail({ recipients, userIds, subject, body }) {
+  return request('admin_email.php?action=send', {
+    method: 'POST',
+    body: JSON.stringify({ recipients, user_ids: userIds, subject, body }),
+  })
+}

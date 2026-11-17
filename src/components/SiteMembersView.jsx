@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
-import { fetchUsers, userAction, userSetPassword, userSetEmail } from '../utils/api'
+import { fetchUsers, userAction, userSetPassword, userSetEmail, adminSendMemberEmail } from '../utils/api'
 import '../styles/sitemembers.css'
 
 const PAGE_SIZE = 10
@@ -14,6 +14,12 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
   const [sort, setSort] = useState('status')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [compose, setCompose] = useState(null) // { mode: 'all' } | { mode: 'one', user }
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [emailResult, setEmailResult] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -120,6 +126,53 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
 
   const pendingCount = users.filter(u => u.status === 'pending').length
   const myId = currentUser?.id
+  const deliverable = users.filter(u => !isPlaceholderEmail(u.email) && u.status !== 'rejected')
+
+  const openComposeAll = () => {
+    setCompose({ mode: 'all' })
+    setEmailSubject('')
+    setEmailBody('')
+    setEmailError('')
+    setEmailResult(null)
+  }
+  const openComposeOne = (u) => {
+    setCompose({ mode: 'one', user: u })
+    setEmailSubject('')
+    setEmailBody('')
+    setEmailError('')
+    setEmailResult(null)
+  }
+  const closeCompose = () => {
+    if (sendingEmail) return
+    setCompose(null)
+  }
+  const sendCustomEmail = async (e) => {
+    e?.preventDefault()
+    setEmailError('')
+    const subject = emailSubject.trim()
+    const body = emailBody.trim()
+    if (!subject || !body) {
+      setEmailError('Subject and message are required.')
+      return
+    }
+    setSendingEmail(true)
+    setEmailResult(null)
+    try {
+      const payload = compose?.mode === 'one'
+        ? { recipients: 'selected', userIds: [compose.user.id], subject, body }
+        : { recipients: 'all', subject, body }
+      const res = await adminSendMemberEmail(payload)
+      if (!res.ok) {
+        setEmailError(res.error || 'Send failed.')
+        return
+      }
+      setEmailResult(res)
+    } catch (err) {
+      setEmailError(err.message || 'Send failed.')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
 
   return (
     <div className="sm-view">
@@ -130,6 +183,9 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
             {users.length} member{users.length === 1 ? '' : 's'}
             {pendingCount > 0 ? ` · ${pendingCount} pending approval` : ''}
           </span>
+          <button className="btn btn-primary btn-sm sm-email-all" onClick={openComposeAll}>
+            <i className="fas fa-envelope" aria-hidden="true"></i> Email members
+          </button>
         </div>
 
         <div className="sm-controls">
@@ -235,6 +291,14 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                             </button>
                           )}
                           <button
+                            className="btn btn-sm btn-mail"
+                            disabled={isPlaceholderEmail(u.email) || u.status === 'rejected'}
+                            onClick={() => openComposeOne(u)}
+                            title={isPlaceholderEmail(u.email) ? 'No real address on file' : `Email ${u.display_name || u.email}`}
+                          >
+                            <i className="fas fa-envelope-open-text"></i>
+                          </button>
+                          <button
                             className="btn btn-sm btn-setemail"
                             disabled={busyId === u.id}
                             onClick={() => setEmail(u)}
@@ -307,6 +371,69 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
           </div>
         )}
       </div>
+
+      {compose && (
+        <div className="modal-overlay" onClick={closeCompose} role="dialog" aria-modal="true" aria-labelledby="sm-compose-title">
+          <div className="modal sm-compose-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 id="sm-compose-title" className="sm-compose-title">
+              <i className="fas fa-envelope-open-text" aria-hidden="true"></i>
+              {compose.mode === 'one' ? `Email ${compose.user.display_name || compose.user.email}` : 'Email all members'}
+            </h2>
+            <p className="sm-compose-sub">
+              {compose.mode === 'one'
+                ? <>The message will go to <strong>{compose.user.email}</strong>.</>
+                : <>The message goes to <strong>{deliverable.length}</strong> member{deliverable.length === 1 ? '' : 's'} with a real email address. Members who unsubscribed from notifications are skipped automatically.</>}
+            </p>
+            {emailResult ? (
+              <div className="sm-compose-result" role="status">
+                <p className="sm-compose-ok"><i className="fas fa-circle-check" aria-hidden="true"></i> Sent: {emailResult.sent} · skipped (no address): {emailResult.skippedPlaceholder ?? 0} · unsubscribed: {emailResult.skippedUnsubscribed ?? 0}</p>
+                {emailResult.failures && Object.keys(emailResult.failures).length > 0 && (
+                  <ul className="sm-compose-failures">
+                    {Object.entries(emailResult.failures).map(([addr, err]) => <li key={addr}><strong>{addr}</strong>: {err}</li>)}
+                  </ul>
+                )}
+                <div className="edit-actions">
+                  <button type="button" className="btn btn-primary" onClick={closeCompose}>Done</button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={sendCustomEmail} className="sm-compose-form">
+                <label className="edit-field">
+                  <span>Subject</span>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    maxLength={150}
+                    placeholder="e.g. Family gathering — Saturday 5 Dec"
+                    autoFocus
+                    required
+                  />
+                </label>
+                <label className="edit-field">
+                  <span>Message</span>
+                  <textarea
+                    rows={8}
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    maxLength={5000}
+                    placeholder="Write the announcement..."
+                    required
+                  />
+                </label>
+                {emailError && <div className="edit-error" role="alert">{emailError}</div>}
+                <p className="sm-compose-hint"><i className="fas fa-lock" aria-hidden="true"></i> Line breaks are kept. A sign-in button is added to the bottom. Notification opt-outs are respected.</p>
+                <div className="edit-actions">
+                  <button type="button" className="btn" onClick={closeCompose} disabled={sendingEmail}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}>
+                    {sendingEmail ? 'Sending...' : (compose.mode === 'one' ? 'Send email' : `Send to ${deliverable.length} member${deliverable.length === 1 ? '' : 's'}`)}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

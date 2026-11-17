@@ -152,3 +152,22 @@
 }
 
 .sm-dna { display: inline-block; background: #1f3628; color: #e08c2e; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+
+/* Email-all action + compose modal */
+.sm-email-all { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.sm-mail { background: #1f3628; color: #fff; }
+.sm-mail:hover { background: #16241b; }
+.sm-compose-modal { max-width: 620px; padding: 22px 24px; }
+.sm-compose-title { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 1.05rem; color: #1f3628; }
+.sm-compose-sub { margin: 0 0 14px; color: #6b6259; font-size: 0.86rem; }
+.sm-compose-form { display: flex; flex-direction: column; gap: 12px; }
+.sm-compose-form .edit-field span { font-size: 0.8rem; font-weight: 700; color: #5c554e; }
+.sm-compose-form input, .sm-compose-form textarea {
+  border: 1px solid #e2ddd7; border-radius: 8px; padding: 9px 11px; font-size: 0.9rem;
+  font-family: inherit; color: #2f2b27; background: #faf8f5; outline: none; resize: vertical;
+}
+.sm-compose-form input:focus, .sm-compose-form textarea:focus { border-color: #e08c2e; box-shadow: 0 0 0 3px rgba(224,140,46,0.18); }
+.sm-compose-hint { margin: 0; font-size: 0.75rem; color: #a69e98; display: flex; align-items: center; gap: 6px; }
+.sm-compose-ok { margin: 0 0 8px; color: #256b43; font-weight: 700; }
+.sm-compose-failures { margin: 0 0 10px; padding-left: 18px; color: #8a3a3a; font-size: 0.82rem; }
+.sm-compose-result { border: 1px solid #bfe0cd; background: #e9f4ec; border-radius: 10px; padding: 12px 14px; }
