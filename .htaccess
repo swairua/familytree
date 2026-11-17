@@ -13,6 +13,9 @@ Options -Indexes +FollowSymLinks
   # Dotfiles/directories anywhere (.env, .git/, .htaccess, ...)
   RewriteRule (^|/)\. - [F,L]
 
+  # The production build (dist/) is public by design — serve it fully
+  RewriteRule ^dist/ - [L]
+
   # Subtrees that must never be public
   RewriteRule ^node_modules/ - [F,L]
   RewriteRule ^src/ - [F,L]

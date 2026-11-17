@@ -1,5 +1,16 @@
 # Deploying TheWairuaHeritage to production (with a CDN)
 
+> **Status 2026-11-17: deployed at http://localhost:8086/**
+> Apache vhost already added in `apache/conf/extra/httpd-vhosts.conf` (port 8086):
+> `dist/` is the document root, `/api` and `/data` are aliased to the repo, and the
+> app is wired to the production DB `wayrusc1_familytree` (user `wayrusc1_familytree`,
+> host localhost:3308 — the MariaDB on this machine).
+> `app_public_url` is set to `http://localhost:8086` so email links, unsubscribe
+> links and the .ics calendar feed point at the deployed app. Change it in
+> **Settings -> SMTP -> Public URL** when you move to a real domain/SSL.
+> **Note:** dev on :3000 and the deployment on :8086 now share this one database.
+> The pre-deployment database `familytree` is untouched and kept as a fallback.
+
 The app is a Vite/React SPA + PHP API. In XAMPP the same pattern as the
 `consult/dist` vhost works well: Apache serves `dist/` directly and proxies
 `/api` + `/data` to the repo. A free-tier CDN (Cloudflare) can sit in front
@@ -32,7 +43,7 @@ Add to `apache/conf/extra/httpd-vhosts.conf` (after the existing examples):
 ```apache
 Listen 8086
 <VirtualHost *:8086>
-    ServerName wairua.local            # or your real domain
+    ServerName localhost            # set your real domain here later
     DocumentRoot "C:/xampp/htdocs/familytree/dist"
 
     <Directory "C:/xampp/htdocs/familytree/dist">
