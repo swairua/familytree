@@ -13,13 +13,15 @@ if (is_file($localConfig)) {
     $CONFIG = require $localConfig;
 }
 
-const APP_DSN_DEFAULTS = [
-    'host' => 'localhost',
-    'port' => '3306',
-    'name' => 'wayrusc1_familytree',
-    'user' => 'wayrusc1_familytree',
-    'pass' => 'Familytree@26',
-];
+// Pick DB defaults based on Host header: production on the wayrus.co.ke host,
+// local XAMPP anywhere else. config.local.php (git-ignored) always wins when present.
+$__hostHeader = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+const APP_DSN_HOST  = 'localhost';
+const APP_DSN_NAME  = 'wayrusc1_familytree';
+const APP_DSN_PASS  = 'Familytree@26';
+define('APP_DSN_DEFAULTS', (strpos($__hostHeader, 'wayrus.co.ke') !== false)
+    ? ['host' => APP_DSN_HOST, 'port' => '3306', 'name' => APP_DSN_NAME, 'user' => 'wayrusc1_theheritage', 'pass' => APP_DSN_PASS]
+    : ['host' => APP_DSN_HOST, 'port' => '3308', 'name' => APP_DSN_NAME, 'user' => 'wayrusc1_familytree', 'pass' => APP_DSN_PASS]);
 
 $GLOBALS['APP_CONFIG'] = [
     'db_host' => $CONFIG['db_host'] ?? APP_DSN_DEFAULTS['host'],
