@@ -11,15 +11,14 @@
  * Safety rules applied by this script:
  *   - refuses to overwrite dist/ if git status shows unexpected tracked files
  *   - never copies .env, maps, build caches, logs, credentials/state scrapes
- *   - config.local.php is copied (production secrets) but the bundled
- *     dist/.htaccess denies direct web access to it and to *.local.php
+ *   - config.local.php is EXCLUDED (secrets stay local). Production host
+ *     runs off the baked-in defaults in api/config.php.
  *
  * Run on the machine that deploys. Never commit dist/ (it's git-ignored).
  */
 import { cpSync, existsSync, mkdirSync, rmSync, statSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Buffer } from 'node:buffer'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 const dist = join(root, 'dist')
@@ -35,6 +34,7 @@ const EXCLUDE = [
 ]
 const EXCLUDE_FILES = new Set([
   '.env', '.env.local', '.DS_Store',
+  'config.local.php',
   '_testmail.ps1', '_dump.mjs', '_dump2.mjs', 'layout_check.mjs',
 ])
 
@@ -60,14 +60,11 @@ console.log('== deploy: bundling API into dist/ ==')
 clean(join(dist, 'api'))
 copyDir(join(root, 'api'), join(dist, 'api'))
 
-// config.local.php is git-ignored (secrets) but REQUIRED by the deployed app
-const localCfg = join(root, 'api', 'config.local.php')
-if (!existsSync(localCfg)) {
-  console.error('FATAL: api/config.local.php not found — the deployed API needs it.')
-  console.error('Copy it from wherever production holds it, then re-run.')
-  process.exit(1)
-}
-cpSync(localCfg, join(dist, 'api', 'config.local.php'))
+// NOT copying api/config.local.php into dist. Production runs off the
+// library defaults in api/config.php (which match the host). Shipping the
+// local config (localhost:3308, local dev creds, Groq key) into the artifact
+// would be a security mistake — the remote host has no XAMPP. Local testing
+// still uses this file via Apache on 8082/3000 with the source tree.
 
 console.log('== deploy: bundling data/photos into dist/ ==')
 clean(join(dist, 'data'))

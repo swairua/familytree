@@ -29,10 +29,7 @@ cd C:\xampp\htdocs\familytree
 npm run deploy          # = npm run build && node deploy.mjs
 ```
 
-`deploy.mjs` copies `api/**` (excluding dev junk, maps, test folders) and
-`data/photos` into `dist/`, and copies `api/config.local.php` (production
-secrets — git-ignored; required by the deployed API but never served: the
-bundled `.htaccess` returns 403 for it). It prints a size summary at the end.
+`deploy.mjs` copies `api/**` (excluding dev junk, maps, test folders, and crucially `api/config.local.php` — production secrets stay off the artifact). Production on the host reads `api/config.php` defaults, which already match the host (`localhost:3306`, db/user `wayrusc1_familytree`, pass `Familytree@26`). Local development keeps working through the git-ignored `api/config.local.php` (XAMPP on 3308).
 
 ## What dist/.htaccess does
 
@@ -82,6 +79,27 @@ In **Settings → SMTP → Public URL**, set the final public base URL, e.g.
 password resets, approvals, message notifications, one-click unsubscribe
 (RFC 8058) and the Google Calendar (.ics) feed.
 Then send a test email and click the link from a real device.
+
+## 0. One-time: create the DB on the host
+
+The app needs a MySQL database and user with the same name as configured in
+`api/config.php` defaults (`wayrusc1_familytree` / `wayrusc1_familytree` /
+`Familytree@26`). On cPanel/CI host this is the only manual step; there is no
+way around it — the web host owns its MySQL.
+
+1. cPanel → **MySQL Databases** → Create database `wayrusc1_familytree`
+2. cPanel → **MySQL Databases** → Create user `wayrusc1_familytree`,
+   password `Familytree@26`
+3. cPanel → **MySQL Databases** → Add user `wayrusc1_familytree` to database
+   `wayrusc1_familytree` with **ALL PRIVILEGES**
+4. cPanel → **phpMyAdmin** → select `wayrusc1_familytree` → **Import** →
+   choose the bundled dump
+   `C:\Users\USER\AppData\Local\Temp\opencode\familytree-wayru-deploy.sql`
+   (784 KB, contains 1761 people, 478 families, all settings — all data you
+   now have locally, taken straight from the local `wayrusc1_familytree` DB).
+
+After that, re-upload the entire `dist/` folder. Login should work.
+To regenerate the dump later: `mysqldump -P 3308 -u root wayrusc1_familytree > dump.sql`.
 
 ## 4. Put Cloudflare in front (optional but recommended)
 

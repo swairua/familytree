@@ -14,11 +14,11 @@ if (is_file($localConfig)) {
 }
 
 const APP_DSN_DEFAULTS = [
-    'host' => '127.0.0.1',
-    'port' => '3308',
-    'name' => 'familytree',
-    'user' => 'familytree',
-    'pass' => '',
+    'host' => 'localhost',
+    'port' => '3306',
+    'name' => 'wayrusc1_familytree',
+    'user' => 'wayrusc1_familytree',
+    'pass' => 'Familytree@26',
 ];
 
 $GLOBALS['APP_CONFIG'] = [
