@@ -34,6 +34,10 @@ Options -Indexes +FollowSymLinks
   SetEnvIf Request_URI "^/api/photo\.php" !NO_STORE
   Header set Cache-Control "no-store" env=NO_STORE
 
+  # The deployed API executes PHP; these internals are never public files
+  RedirectMatch 403 ^/api/(config\.local\.php|schema\.sql|.*\.local\.php)$
+  RedirectMatch 403 ^/api/[^/]+\.(sql|md|txt|log|ini|env|json|lock|bak)$
+
   # Small security headers
   Header set X-Content-Type-Options "nosniff"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
