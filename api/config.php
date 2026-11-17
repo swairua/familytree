@@ -17,7 +17,7 @@ const APP_DSN_DEFAULTS = [
     'host' => 'localhost',
     'port' => '3306',
     'name' => 'wayrusc1_familytree',
-    'user' => 'wayrusc1_theheritage',
+    'user' => 'wayrusc1_familytree',
     'pass' => 'Familytree@26',
 ];
 
