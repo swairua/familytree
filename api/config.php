@@ -1,7 +1,12 @@
 <?php
 /**
  * Family Tree API - shared configuration & helpers
- * Reads local credentials from git-ignored config.local.php
+ *
+ * DB selection (in priority order):
+ *   1. $config->local.php (git-ignored) overrides everything below - useful for local dev
+ *   2. Otherwise picks based on Host header:
+ *        - HTTP_HOST contains "wayrus.co.ke"  → production (localhost:3306, user wayrusc1_theheritage)
+ *        - anything else                      → local XAMPP (localhost:3308, user wayrusc1_familytree)
  */
 
 declare(strict_types=1);
@@ -13,15 +18,32 @@ if (is_file($localConfig)) {
     $CONFIG = require $localConfig;
 }
 
-// Pick DB defaults based on Host header: production on the wayrus.co.ke host,
-// local XAMPP anywhere else. config.local.php (git-ignored) always wins when present.
+// --- Environment selection ----------------------------------------------------
 $__hostHeader = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
-const APP_DSN_HOST  = 'localhost';
-const APP_DSN_NAME  = 'wayrusc1_familytree';
-const APP_DSN_PASS  = 'Familytree@26';
-define('APP_DSN_DEFAULTS', (strpos($__hostHeader, 'wayrus.co.ke') !== false)
-    ? ['host' => APP_DSN_HOST, 'port' => '3306', 'name' => APP_DSN_NAME, 'user' => 'wayrusc1_theheritage', 'pass' => APP_DSN_PASS]
-    : ['host' => APP_DSN_HOST, 'port' => '3308', 'name' => APP_DSN_NAME, 'user' => 'wayrusc1_familytree', 'pass' => APP_DSN_PASS]);
+$__isProd   = strpos($__hostHeader, 'wayrus.co.ke') !== false;
+
+// Defaults
+define('APP_DSN_HOST', 'localhost');
+define('APP_DSN_NAME', 'wayrusc1_familytree');
+define('APP_DSN_PASS', 'Familytree@26');
+
+if ($__isProd) {
+    define('APP_DSN_DEFAULTS', [
+        'host' => APP_DSN_HOST,
+        'port' => '3306',
+        'name' => APP_DSN_NAME,
+        'user' => 'wayrusc1_theheritage',
+        'pass' => APP_DSN_PASS,
+    ]);
+} else {
+    define('APP_DSN_DEFAULTS', [
+        'host' => APP_DSN_HOST,
+        'port' => '3308',
+        'name' => APP_DSN_NAME,
+        'user' => 'wayrusc1_familytree',
+        'pass' => APP_DSN_PASS,
+    ]);
+}
 
 $GLOBALS['APP_CONFIG'] = [
     'db_host' => $CONFIG['db_host'] ?? APP_DSN_DEFAULTS['host'],
@@ -37,6 +59,7 @@ $GLOBALS['APP_CONFIG'] = [
     ],
 ];
 
+// --- App helpers --------------------------------------------------------------
 function app_config(?string $key = null)
 {
     $cfg = $GLOBALS['APP_CONFIG'];
@@ -44,7 +67,7 @@ function app_config(?string $key = null)
     return $cfg[$key] ?? null;
 }
 
-// --- PDO connection ---------------------------------------------------------
+// --- PDO connection -----------------------------------------------------------
 function db(): PDO
 {
     static $pdo = null;
@@ -58,32 +81,13 @@ function db(): PDO
         $cfg['db_name']
     );
 
-    // Credential sets to try (config.local.php first, then defaults, then alternative)
-    $credSets = [
-        ['user' => $cfg['db_user'], 'pass' => $cfg['db_pass']],
-        ['user' => APP_DSN_DEFAULTS['user'], 'pass' => APP_DSN_DEFAULTS['pass']],
-        ['user' => 'wayrusc1_theheritage', 'pass' => 'Familytree@26'],
-    ];
+    $pdo = new PDO($dsn, $cfg['db_user'], $cfg['db_pass'], [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
 
-    $lastError = null;
-    foreach ($credSets as $creds) {
-        try {
-            $pdo = new PDO($dsn, $creds['user'], $creds['pass'], [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
-            return $pdo;
-        } catch (PDOException $e) {
-            $lastError = $e;
-            if (strpos($e->getMessage(), '1045') === false && strpos($e->getMessage(), 'Access denied') === false) {
-                throw $e; // Not an auth error, re-throw
-            }
-            continue;
-        }
-    }
-
-    throw $lastError;
+    return $pdo;
 }
 
 // --- CORS / HTTP helpers ------------------------------------------------------
@@ -137,7 +141,6 @@ function is_cli(): bool
 function extract_year(?string $date): ?int
 {
     if ($date === null || $date === '') return null;
-    // "15 MAR 1950", "1950", "ABT 1920", "BET 1900 AND 1910", "1950-01-05"
     if (preg_match('/\b(19\d{2}|20\d{2}|1\d{3})\b/', $date, $m)) {
         return (int) $m[1];
     }
@@ -146,4 +149,3 @@ function extract_year(?string $date): ?int
     }
     return null;
 }
-
