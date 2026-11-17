@@ -507,3 +507,48 @@ export async function adminSendMemberEmail({ recipients, userIds, subject, body 
     body: JSON.stringify({ recipients, user_ids: userIds, subject, body }),
   })
 }
+
+export async function verifyInvitation(token) {
+  const res = await fetch(`${API_BASE}/invites.php?action=verify&token=${encodeURIComponent(token)}`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function acceptInvitation({ token, email, password }) {
+  const res = await fetch(`${API_BASE}/invites.php?action=accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ token, email, password }),
+  })
+  return res.json()
+}
+
+export async function searchInvites(query) {
+  const res = await fetch(`${API_BASE}/invites.php?action=search&query=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+  return res.json()
+}
+
+export async function createInvite(payload) {
+  const res = await fetch(`${API_BASE}/invites.php?action=create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(payload),
+  })
+  return res.json()
+}
+
+export async function revokeInvite(id) {
+  const res = await fetch(`${API_BASE}/invites.php?action=revoke`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ id }),
+  })
+  return res.json()
+}
+
+export async function listInvites() {
+  const res = await fetch(`${API_BASE}/invites.php?action=list`, { credentials: 'same-origin' })
+  return res.json()
+}

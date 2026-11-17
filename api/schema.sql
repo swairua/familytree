@@ -232,3 +232,21 @@ CREATE TABLE IF NOT EXISTS dna_matches (
   KEY idx_kit (kit_id),
   KEY idx_user (user_id)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- Family member invitations - admin sends a one-time link to enroll
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS member_invitations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  individual_id VARCHAR(64) NOT NULL,    -- individuals.id (tree reference)
+  name VARCHAR(255) NOT NULL DEFAULT '',  -- friendly name shown to member
+  invited_by INT NOT NULL,               -- users.id of the admin who sent it
+  email VARCHAR(255) NOT NULL DEFAULT '',  -- prefilled email for direct invites; blank for link-only
+  token_hash VARCHAR(64) NOT NULL UNIQUE,  -- sha256 of raw token in link
+  channel VARCHAR(16) NOT NULL DEFAULT 'link',  -- 'email' or 'link'
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_individual (individual_id),
+  INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

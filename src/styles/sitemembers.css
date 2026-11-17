@@ -171,3 +171,64 @@
 .sm-compose-ok { margin: 0 0 8px; color: #256b43; font-weight: 700; }
 .sm-compose-failures { margin: 0 0 10px; padding-left: 18px; color: #8a3a3a; font-size: 0.82rem; }
 .sm-compose-result { border: 1px solid #bfe0cd; background: #e9f4ec; border-radius: 10px; padding: 12px 14px; }
+
+/* Invite member modal */
+.sm-invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.invite-modal { max-width: 560px; padding: 22px 24px; }
+.invite-modal h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 1.05rem; color: #1f3628; }
+.invite-modal .view-sub { margin-bottom: 10px; color: #6b6259; }
+.invite-modal input[type="search"],
+.invite-modal input[type="email"] {
+  width: 100%; padding: 10px 12px; border: 1px solid #d9d2ca; border-radius: 8px;
+  font-size: 0.9rem; outline: none; box-sizing: border-box; margin-bottom: 12px;
+  background: #faf8f5;
+}
+.invite-modal input[type="search"]:focus,
+.invite-modal input[type="email"]:focus {
+  border-color: #e08c2e;
+  box-shadow: 0 0 0 3px rgba(224,140,46,0.18);
+}
+.invite-results {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid #eee7dc;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 12px;
+}
+.invite-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #f0ece6;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.invite-result:last-child { border-bottom: none; }
+.invite-result:hover { background: #fdf8ef; }
+.invite-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.invite-name { font-weight: 700; color: #2f2b27; flex: 1; }
+.invite-id { font-size: 0.72rem; color: #a69e98; }
+.invite-sent { text-align: left; padding: 10px 0; }
+.invite-link-box {
+  margin: 10px 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #faf8f5;
+  border: 1px solid #e2ddd7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.invite-link-box code { font-size: 0.8rem; color: #1f3628; word-break: break-all; }

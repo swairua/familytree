@@ -30,6 +30,7 @@ const ForgotPasswordView = lazy(() => import('./components/ForgotPasswordView'))
 const ResetPasswordView = lazy(() => import('./components/ResetPasswordView'))
 const PersonDetailView = lazy(() => import('./components/PersonDetailView'))
 const SignUpView = lazy(() => import('./components/SignUpView'))
+const EnrollView = lazy(() => import('./components/EnrollView'))
 const MessagesView = lazy(() => import('./components/MessagesView'))
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [initialThreadId, setInitialThreadId] = useState(null)
   const [resetToken, setResetToken] = useState(null)
+  const [enrollToken, setEnrollToken] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [syncState, setSyncState] = useState({ active: false, state: 'idle', message: '', progress: 0 })
   const [recentActivity, setRecentActivity] = useState({ entries: [], syncedAt: null })
@@ -99,6 +101,10 @@ function App() {
       }
       if (p.get('view') === 'dna-matches') {
         setCurrentView('dna-matches')
+      }
+      if (p.get('view') === 'enroll' && p.get('token')) {
+        setEnrollToken(p.get('token'))
+        setCurrentView('enroll')
       }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,6 +382,13 @@ function App() {
       return (
         <Suspense fallback={authFallback}>
           <SignUpView onBackToLogin={() => setCurrentView('home')} />
+        </Suspense>
+      )
+    }
+    if (currentView === 'enroll') {
+      return (
+        <Suspense fallback={authFallback}>
+          <EnrollView onLoggedIn={(user) => { setCurrentUser(user); setCurrentView('home'); }} />
         </Suspense>
       )
     }

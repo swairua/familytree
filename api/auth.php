@@ -50,70 +50,7 @@ if (!$isCli) {
 // Session helpers
 // ---------------------------------------------------------------------------
 
-function start_session_cookie(): void
-{
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('FAMILYTREE_SESSION');
-        session_start();
-    }
-}
-
-function session_user_row(PDO $pdo, int $uid): ?array
-{
-    $stmt = $pdo->prepare('SELECT id, email, display_name, individual_id, role, status, session_version, totp_enabled, totp_secret, dna_tested FROM users WHERE id = ?');
-    $stmt->execute([$uid]);
-    $u = $stmt->fetch();
-    return $u ?: null;
-}
-
-function current_user(PDO $pdo): ?array
-{
-    start_session_cookie();
-    $uid = $_SESSION['user_id'] ?? null;
-    if (!$uid) return null;
-    $u = session_user_row($pdo, (int)$uid);
-    if (!$u) {
-        clear_session_user();
-        return null;
-    }
-    if ((int)($_SESSION['session_version'] ?? 0) !== (int)$u['session_version']) {
-        clear_session_user();
-        return null;
-    }
-    if (($u['status'] ?? 'active') !== 'active') {
-        clear_session_user();
-        return null;
-    }
-    unset($u['session_version'], $u['totp_secret']);
-    return $u;
-}
-
-function session_user_or_401(PDO $pdo): array
-{
-    $u = current_user($pdo);
-    if (!$u) send_error('You must be signed in', 401);
-    return $u;
-}
-
-function admin_user_or_403(PDO $pdo): array
-{
-    $u = session_user_or_401($pdo);
-    if (($u['role'] ?? '') !== 'admin') send_error('Administrator access required', 403);
-    return $u;
-}
-
-function set_session_user(int $userId): void
-{
-    start_session_cookie();
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = $userId;
-    try {
-        $u = session_user_row(db(), $userId);
-        $_SESSION['session_version'] = (int)($u['session_version'] ?? 0);
-    } catch (Throwable $e) {
-        $_SESSION['session_version'] = 0;
-    }
-}
+require_once __DIR__ . '/session_user.php';
 
 // ---------------------------------------------------------------------------
 // Login throttling (per email + IP, 15-minute sliding window)
@@ -242,17 +179,6 @@ function mfa_verify_backup_code(PDO $pdo, int $userId, string $code): bool
     return false;
 }
 
-function clear_session_user(): void
-{
-    start_session_cookie();
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
-    }
-    session_destroy();
-}
-
 // Best-effort member notification: silently skip when the recipient has a
 // placeholder or invalid address (e.g. imported members without real email).
 function notify_user(PDO $pdo, int $userId, string $subject, string $preheader, string $title, string $bodyHtml): void
@@ -340,7 +266,7 @@ switch ($action) {
             send_error('Your account has been disabled. Please contact the site administrator.', 403);
         }
         if ((int)($u['totp_enabled'] ?? 0) === 1) {
-            // Password is correct — hold the login until the authenticator code arrives
+            // Password is correct Ã¢â‚¬â€ hold the login until the authenticator code arrives
             $token = bin2hex(random_bytes(24));
             $pdo->prepare('INSERT INTO mfa_pending (token, user_id, ip, expires_at) VALUES (?, ?, ?, NOW() + INTERVAL 10 MINUTE)')
                 ->execute([$token, (int)$u['id'], $ip]);
@@ -392,9 +318,9 @@ switch ($action) {
             }
             throw $e;
         }
-        // Welcome + notify admins (best effort — don't fail the request)
+        // Welcome + notify admins (best effort Ã¢â‚¬â€ don't fail the request)
         app_send_branded($pdo, $email,
-            'Welcome to TheWairuaHeritage — your account is pending',
+            'Welcome to TheWairuaHeritage Ã¢â‚¬â€ your account is pending',
             'Welcome to the family',
             'Account received',
             '<p>Hi ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
@@ -409,7 +335,7 @@ switch ($action) {
         }
         foreach ($admins as $adminEmail) {
             app_send_branded($pdo, (string)$adminEmail,
-                'New member request · ' . $name,
+                'New member request Ã‚Â· ' . $name,
                 'New member request from ' . $name,
                 'New member request',
                 '<p><strong>' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</strong> has requested a TheWairuaHeritage account.</p>'
@@ -505,7 +431,7 @@ switch ($action) {
                     'Reset your password',
                     'Reset your TheWairuaHeritage password',
                     '<p>Hi ' . htmlspecialchars($u['display_name'], ENT_QUOTES, 'UTF-8') . ',</p>'
-                    . '<p>We received a request to reset the password for your account. Click the button below — it is valid for <strong>1 hour</strong> and can be used once.</p>'
+                    . '<p>We received a request to reset the password for your account. Click the button below Ã¢â‚¬â€ it is valid for <strong>1 hour</strong> and can be used once.</p>'
                     . app_button('Reset my password', $link)
                     . '<p style="font-size:13px;color:#8b837d;">If you didn\'t request this, you can ignore this email.</p>'
                 );
@@ -599,7 +525,7 @@ switch ($action) {
             'Welcome to the family',
             '<p>Hi,</p>'
             . '<p>The administrator has added your email to TheWairuaHeritage and you\'ll need it to sign in.</p>'
-            . '<p>Sign in with this address — if this is your first visit, use <strong>Forgot password</strong> to choose one.</p>'
+            . '<p>Sign in with this address Ã¢â‚¬â€ if this is your first visit, use <strong>Forgot password</strong> to choose one.</p>'
             . app_button('Sign in to TheWairuaHeritage', app_public_url($pdo) . '/')
         );
         send_json(['ok' => true]);
@@ -672,9 +598,9 @@ switch ($action) {
             notify_user($pdo, $id,
                 'Your TheWairuaHeritage account was approved',
                 'Your account was approved',
-                'Welcome — your account is approved',
+                'Welcome Ã¢â‚¬â€ your account is approved',
                 '<p>Hi,</p>'
-                . '<p>Great news — your TheWairuaHeritage account has been approved. You can now sign in.</p>'
+                . '<p>Great news Ã¢â‚¬â€ your TheWairuaHeritage account has been approved. You can now sign in.</p>'
                 . app_button('Sign in to TheWairuaHeritage', app_public_url($pdo) . '/')
                 . '<p style="font-size:13px;color:#8b837d;">First time signing in? Use <strong>Forgot password</strong> on the sign-in page to choose one.</p>'
             );

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import PersonAvatar from './PersonAvatar'
-import { fetchUsers, userAction, userSetPassword, userSetEmail, adminSendMemberEmail } from '../utils/api'
+import { fetchUsers, userAction, userSetPassword, userSetEmail, adminSendMemberEmail, searchInvites, createInvite, listInvites, revokeInvite } from '../utils/api'
 import '../styles/sitemembers.css'
 
 const PAGE_SIZE = 10
@@ -21,6 +21,19 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
   const [emailError, setEmailError] = useState('')
   const [emailResult, setEmailResult] = useState(null)
 
+  // Invite flow
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteStep, setInviteStep] = useState('search') // 'search' | 'preview' | 'sent'
+  const [inviteQuery, setInviteQuery] = useState('')
+  const [inviteResults, setInviteResults] = useState([])
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [selectedInvite, setSelectedInvite] = useState(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteChannel, setInviteChannel] = useState('email')
+  const [inviteError, setInviteError] = useState('')
+  const [inviteSent, setInviteSent] = useState(null)
+  const [outstandingInvites, setOutstandingInvites] = useState([])
+
   const load = async () => {
     setLoading(true)
     setError('')
@@ -38,7 +51,77 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
     }
   }
 
+  const loadInvites = async () => {
+    try {
+      const res = await listInvites()
+      if (res.ok) setOutstandingInvites(res.invitations || [])
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => { load() }, [])
+
+  const searchTree = async (q) => {
+    if (q.trim().length < 2) { setInviteResults([]); return }
+    setInviteLoading(true)
+    try {
+      const res = await searchInvites(q.trim())
+      if (res.ok) setInviteResults(res.results || [])
+      else setInviteResults([])
+    } catch { setInviteResults([]) } finally { setInviteLoading(false) }
+  }
+
+  useEffect(() => { searchTree(inviteQuery) }, [inviteQuery])
+
+  const openInvite = () => {
+    setShowInvite(true)
+    setInviteStep('search')
+    setInviteQuery('')
+    setInviteResults([])
+    setSelectedInvite(null)
+    setInviteEmail('')
+    setInviteChannel('email')
+    setInviteError('')
+    setInviteSent(null)
+  }
+  const closeInvite = () => setShowInvite(false)
+
+  const pickInvitePerson = (p) => {
+    setSelectedInvite(p)
+    setInviteEmail(p.email || '')
+    setInviteChannel(p.email ? 'email' : 'link')
+    setInviteStep('preview')
+    setInviteError('')
+  }
+
+  const submitInvite = async () => {
+    if (!selectedInvite) return
+    setInviteError('')
+    if (inviteChannel === 'email' && !inviteEmail.trim()) {
+      setInviteError('An email address is required for email invites.')
+      return
+    }
+    setInviteLoading(true)
+    try {
+      const res = await createInvite({
+        individual_id: selectedInvite.id,
+        name: selectedInvite.name,
+        email: inviteChannel === 'email' ? inviteEmail.trim() : '',
+        channel: inviteChannel,
+      })
+      if (!res.ok) {
+        setInviteError(res.error || 'Could not create invite')
+        return
+      }
+      setInviteSent(res)
+      setInviteStep('sent')
+      load()
+      loadInvites()
+    } catch (err) {
+      setInviteError(err.message || 'Could not create invite')
+    } finally {
+      setInviteLoading(false)
+    }
+  }
 
   const setEmail = async (u) => {
     const next = window.prompt(`Set a real email for ${u.display_name || u.email}\nLeave it as-is or type the member's address:`, u.email)
@@ -185,6 +268,9 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
           </span>
           <button className="btn btn-primary btn-sm sm-email-all" onClick={openComposeAll}>
             <i className="fas fa-envelope" aria-hidden="true"></i> Email members
+          </button>
+          <button className="btn btn-sm sm-invite" onClick={openInvite} title="Invite a member from the family tree">
+            <i className="fas fa-user-plus" aria-hidden="true"></i> Invite member
           </button>
         </div>
 
@@ -430,6 +516,87 @@ function SiteMembersView({ currentUser, onSelectPerson }) {
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showInvite && (
+        <div className="modal-overlay" onClick={closeInvite} role="dialog" aria-modal="true" aria-labelledby="sm-invite-title">
+          <div className="modal invite-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 id="sm-invite-title"><i className="fas fa-user-plus" aria-hidden="true"></i> Invite member</h2>
+
+            {inviteStep === 'search' && (
+              <>
+                <p className="view-sub">Find them in the family tree, then send a one-time link.</p>
+                <input
+                  type="search"
+                  autoFocus
+                  placeholder="Type a name..."
+                  value={inviteQuery}
+                  onChange={(e) => setInviteQuery(e.target.value)}
+                  aria-label="Search individuals"
+                />
+                {inviteLoading && <p className="view-sub"><i className="fas fa-spinner fa-spin"></i> Searching…</p>}
+                <div className="invite-results">
+                  {inviteResults.map(p => (
+                    <button key={p.id} type="button" className="invite-result" onClick={() => pickInvitePerson(p)}>
+                      <PersonAvatar person={{ name: p.name, photo: p.photo, gender: p.gender || 'unknown', birthYear: p.birth_date ? (String(p.birth_date).match(/\d{4}/) || [''])[0] : '', deathDate: p.death_date || '' }} className="invite-avatar" />
+                      <span className="invite-name">{p.name}</span>
+                      <span className="invite-id">{p.id}</span>
+                    </button>
+                  ))}
+                  {inviteQuery.trim().length >= 2 && !inviteLoading && inviteResults.length === 0 && (
+                    <p className="view-sub">No matching people in the tree.</p>
+                  )}
+                </div>
+                <div className="edit-actions">
+                  <button type="button" className="btn" onClick={closeInvite}>Cancel</button>
+                </div>
+              </>
+            )}
+
+            {inviteStep === 'preview' && selectedInvite && (
+              <>
+                <div className="account-details" style={{ display:'flex', alignItems:'center', gap: 12, border: '1px solid #eee7dc', borderRadius: 10, padding: '12px 14px', marginBottom: 14, background:'#faf8f5' }}>
+                  <PersonAvatar person={{ name: selectedInvite.name, photo: selectedInvite.photo, gender: selectedInvite.gender || 'unknown', birthYear: selectedInvite.birth_date ? (String(selectedInvite.birth_date).match(/\d{4}/) || [''])[0] : '', deathDate: selectedInvite.death_date || '' }} className="invite-avatar" />
+                  <div>
+                    <strong>{selectedInvite.name}</strong>
+                    <div className="view-sub">{selectedInvite.id}</div>
+                    {selectedInvite.email && <div className="view-sub">tree email: {selectedInvite.email}</div>}
+                  </div>
+                </div>
+                <label className="account-label" htmlFor="invite-email">Email address (optional)</label>
+                <input id="invite-email" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="you@example.com" />
+                {!inviteEmail.trim() && <p className="view-sub" style={{ margin: '2px 0 0' }}>Leave empty to get a shareable link.</p>}
+                {inviteError && <div className="edit-error" role="alert">{inviteError}</div>}
+                <div className="edit-actions">
+                  <button type="button" className="btn" onClick={() => setInviteStep('search')}>Back</button>
+                  <button type="button" className="btn btn-primary" disabled={inviteLoading} onClick={submitInvite}>
+                    {inviteLoading ? 'Creating...' : inviteChannel === 'email' ? 'Send invite' : 'Copy invite link'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {inviteStep === 'sent' && inviteSent && (
+              <>
+                <div className="invite-sent" role="status">
+                  <p className="sm-compose-ok"><i className="fas fa-circle-check"></i> Invite created</p>
+                  {inviteSent.link && (
+                    <div className="invite-link-box">
+                      <code>{inviteSent.link}</code>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(inviteSent.link) }}>
+                        <i className="fas fa-copy"></i> Copy link
+                      </button>
+                    </div>
+                  )}
+                  {inviteSent.email_sent && <p className="view-sub">An invite email was sent to {selectedInvite?.email}.</p>}
+                </div>
+                <div className="edit-actions">
+                  <button type="button" className="btn btn-primary" onClick={closeInvite}>Done</button>
+                </div>
+              </>
             )}
           </div>
         </div>
