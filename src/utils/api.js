@@ -1,4 +1,17 @@
-const API_BASE = '/api'
+﻿const API_BASE = '/api'
+
+async function safeJson(res) {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    if (res.status === 0 || res.status >= 400) {
+      // Most likely an HTML error page or empty body (server down / 500)
+      return { ok: false, error: `Server error ${res.status || ''}. Please try again later.`, raw: text.slice(0, 500) }
+    }
+    return { ok: false, error: 'Server returned an unexpected response.', raw: text.slice(0, 500) }
+  }
+}
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}/${path}`, {
@@ -6,10 +19,10 @@ async function request(path, options = {}) {
     ...options,
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || `API error ${res.status}`)
+    const err = await safeJson(res)
+    throw new Error(err.error || `Request failed (${res.status})`)
   }
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchSummary() {
@@ -44,7 +57,7 @@ export async function login(email, password) {
     credentials: 'same-origin',
     body: JSON.stringify({ email, password }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function verifyMfa(pendingToken, code) {
@@ -54,7 +67,7 @@ export async function verifyMfa(pendingToken, code) {
     credentials: 'same-origin',
     body: JSON.stringify({ pendingToken, code }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function mfaSetup() {
@@ -64,7 +77,7 @@ export async function mfaSetup() {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function mfaConfirm(code) {
@@ -74,7 +87,7 @@ export async function mfaConfirm(code) {
     credentials: 'same-origin',
     body: JSON.stringify({ code }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function mfaDisable(password, code) {
@@ -84,7 +97,7 @@ export async function mfaDisable(password, code) {
     credentials: 'same-origin',
     body: JSON.stringify({ password, code }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function signOutEverywhere() {
@@ -94,7 +107,7 @@ export async function signOutEverywhere() {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function logout() {
@@ -104,7 +117,7 @@ export async function logout() {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function registerAccount({ name, email, password }) {
@@ -114,7 +127,7 @@ export async function registerAccount({ name, email, password }) {
     credentials: 'same-origin',
     body: JSON.stringify({ name, email, password }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function forgotPassword(email) {
@@ -124,7 +137,7 @@ export async function forgotPassword(email) {
     credentials: 'same-origin',
     body: JSON.stringify({ email }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function resetPassword(token, password) {
@@ -134,7 +147,7 @@ export async function resetPassword(token, password) {
     credentials: 'same-origin',
     body: JSON.stringify({ token, password }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function changePassword({ current_password, new_password }) {
@@ -144,7 +157,7 @@ export async function changePassword({ current_password, new_password }) {
     credentials: 'same-origin',
     body: JSON.stringify({ current_password, new_password }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function changeProfile({ display_name, email }) {
@@ -154,32 +167,32 @@ export async function changeProfile({ display_name, email }) {
     credentials: 'same-origin',
     body: JSON.stringify({ display_name, email }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function searchMessages(query) {
   const res = await fetch(`${API_BASE}/messages.php?action=search&q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchDirectory() {
   const res = await fetch(`${API_BASE}/messages.php?action=directory`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchInbox() {
   const res = await fetch(`${API_BASE}/messages.php?action=inbox`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchSent() {
   const res = await fetch(`${API_BASE}/messages.php?action=sent`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchMessage(id) {
   const res = await fetch(`${API_BASE}/messages.php?action=view&id=${id}`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function sendMessage({ toUserId, subject, body }) {
@@ -189,7 +202,7 @@ export async function sendMessage({ toUserId, subject, body }) {
     credentials: 'same-origin',
     body: JSON.stringify({ to_user_id: toUserId, subject, body }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function markMessageRead(id) {
@@ -199,7 +212,7 @@ export async function markMessageRead(id) {
     credentials: 'same-origin',
     body: JSON.stringify({ id }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function markAllMessagesRead() {
@@ -209,19 +222,19 @@ export async function markAllMessagesRead() {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchUnreadCount() {
   const res = await fetch(`${API_BASE}/messages.php?action=unread-count`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchUsers() {
   const res = await fetch(`${API_BASE}/auth.php?action=users-list`, {
     credentials: 'same-origin',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function userAction(action, id) {
@@ -231,7 +244,7 @@ export async function userAction(action, id) {
     credentials: 'same-origin',
     body: JSON.stringify({ id }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function userSetPassword(id, password) {
@@ -241,14 +254,14 @@ export async function userSetPassword(id, password) {
     credentials: 'same-origin',
     body: JSON.stringify({ id, password }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchSettings() {
   const res = await fetch(`${API_BASE}/settings.php?action=get`, {
     credentials: 'same-origin',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function updateSettings(patch) {
@@ -258,7 +271,7 @@ export async function updateSettings(patch) {
     credentials: 'same-origin',
     body: JSON.stringify(patch),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function sendTestEmail(to) {
@@ -268,7 +281,7 @@ export async function sendTestEmail(to) {
     credentials: 'same-origin',
     body: JSON.stringify({ to }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function userSetEmail(id, email) {
@@ -278,14 +291,14 @@ export async function userSetEmail(id, email) {
     credentials: 'same-origin',
     body: JSON.stringify({ id, email }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchMe() {
   const res = await fetch(`${API_BASE}/auth.php?action=me`, {
     credentials: 'same-origin',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function importGedcom(gedcomText) {
@@ -333,7 +346,7 @@ export async function createIndividual(childId, role, fields) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error || `Error ${res.status}`)
   }
-  return res.json()
+  return safeJson(res)
 }
 
 export async function syncStatus() {
@@ -352,7 +365,7 @@ export async function fetchUpcomingBirthdays(days = 30) {
   const res = await fetch(`${API_BASE}/birthdays.php?action=list&days=${days}`, {
     credentials: 'same-origin',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function sendBirthdayReminders(days = 30) {
@@ -361,7 +374,7 @@ export async function sendBirthdayReminders(days = 30) {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function aiSearch(prompt) {
@@ -374,18 +387,18 @@ export async function aiSearch(prompt) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error || `AI error ${res.status}`)
   }
-  return res.json()
+  return safeJson(res)
 }
 
 
 export async function fetchAlbums() {
   const res = await fetch(`${API_BASE}/albums.php?action=list`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fetchAlbum(id) {
   const res = await fetch(`${API_BASE}/albums.php?action=view&id=${encodeURIComponent(id)}`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function createAlbum(name, description = '') {
@@ -414,17 +427,17 @@ export async function setAlbumCover(id, photo) {
 
 export async function fetchCalendarStatus() {
   const res = await fetch(`${API_BASE}/calendar.php?action=status`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 
 export async function fetchFsStatus() {
   const res = await fetch(`${API_BASE}/familysearch.php?action=status`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export function fsConnectUrl() {
-  // Full-page navigation â€” OAuth round trip, not fetch
+  // Full-page navigation Ã¢â‚¬â€ OAuth round trip, not fetch
   return `${API_BASE}/familysearch.php?action=connect`
 }
 
@@ -434,7 +447,7 @@ export async function fsDisconnect() {
     credentials: 'same-origin',
     body: '{}',
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function fsSearch({ given, surname, birthYear, place, count }) {
@@ -445,13 +458,13 @@ export async function fsSearch({ given, surname, birthYear, place, count }) {
   if (place) params.set('place', place)
   params.set('count', String(count || 20))
   const res = await fetch(`${API_BASE}/familysearch.php?action=search&${params}`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 
 export async function fetchDnaList() {
   const res = await fetch(`${API_BASE}/dna.php?action=list`, { credentials: 'same-origin' })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function dnaKitCreate(payload) {
@@ -485,7 +498,7 @@ export async function setDnaTested(dnaTested) {
     credentials: 'same-origin',
     body: JSON.stringify({ dna_tested: dnaTested }),
   })
-  return res.json()
+  return safeJson(res)
 }
 
 export async function adminSendMemberEmail({ recipients, userIds, subject, body }) {
