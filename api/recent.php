@@ -6,25 +6,25 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/config.php';
-
-if (!is_cli()) {
-    send_cors_headers();
-}
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
+// recent.php doesn't need the database - just read the JSON file
 $file = __DIR__ . '/../data/recent_activity.json';
 if (!is_file($file)) {
-    send_json(['ok' => false, 'error' => 'Recent activity not synced yet.'], 404);
+    http_response_code(404);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'error' => 'Recent activity not synced yet.']);
+    exit;
 }
 
 $data = json_decode(file_get_contents($file), true);
 if (!is_array($data)) {
-    send_error('Corrupt recent activity file', 500);
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'error' => 'Corrupt recent activity file']);
+    exit;
 }
 
-send_json(array_merge(['ok' => true], $data));
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(array_merge(['ok' => true], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+exit;
+
 
