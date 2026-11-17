@@ -60,24 +60,31 @@ function collect_upcoming(PDO $pdo, int $days): array
     $now = new DateTimeImmutable('today');
     $end = $now->modify('+' . max(0, (int)$days) . ' days');
     $out = [];
-    foreach ($pdo->query("SELECT id, name, birth_date, gender FROM individuals WHERE birth_date <> ''") as $r) {
-        $p = parse_birth($r['birth_date']);
-        if (!$p || !$p['day']) continue;
-        for ($d = $now; $d <= $end; $d = $d->modify('+1 day')) {
-            if ((int)$d->format('n') === $p['month'] && (int)$d->format('j') === $p['day']) {
-                $age = null;
-                if (preg_match('/(19|20)\d{2}/', (string)$r['birth_date'], $m)) {
-                    $age = (int)$d->format('Y') - (int)$m[0];
+    $sources = [
+        ['col' => 'birth_date', 'type' => 'birthday'],
+        ['col' => 'death_date', 'type' => 'death'],
+    ];
+    foreach ($sources as $src) {
+        foreach ($pdo->query("SELECT id, name, {$src['col']} AS ddate, gender FROM individuals WHERE {$src['col']} <> ''") as $r) {
+            $p = parse_birth($r['ddate']);
+            if (!$p || !$p['day']) continue;
+            for ($d = $now; $d <= $end; $d = $d->modify('+1 day')) {
+                if ((int)$d->format('n') === $p['month'] && (int)$d->format('j') === $p['day']) {
+                    $age = null;
+                    if ($src['type'] === 'birthday' && preg_match('/(19|20)\d{2}/', (string)$r['ddate'], $m)) {
+                        $age = (int)$d->format('Y') - (int)$m[0];
+                    }
+                    $out[] = [
+                        'id' => $r['id'],
+                        'name' => $r['name'],
+                        'type' => $src['type'],
+                        'birth_date' => (string)$r['ddate'],
+                        'date' => $d->format('Y-m-d'),
+                        'age' => $age,
+                        'gender' => $r['gender'],
+                    ];
+                    break;
                 }
-                $out[] = [
-                    'id' => $r['id'],
-                    'name' => $r['name'],
-                    'birth_date' => $r['birth_date'],
-                    'date' => $d->format('Y-m-d'),
-                    'age' => $age,
-                    'gender' => $r['gender'],
-                ];
-                break; // one birthday per year
             }
         }
     }
@@ -88,20 +95,32 @@ function collect_upcoming(PDO $pdo, int $days): array
 function birthday_html(array $list): string
 {
     if (!$list) {
-        return '<p>No birthdays in the selected window.</p>';
+        return '<p>No events in the selected window.</p>';
     }
-    $items = '';
-    foreach ($list as $p) {
-        $age = $p['age'] !== null ? ' Turns <strong>' . (int)$p['age'] . '</strong>' : '';
-        $items .= '<li style="margin:8px 0;"><strong>'
-            . htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') . '</strong><br>'
-            . '<span style="color:#8b837d;font-size:13px;">'
-            . htmlspecialchars($p['birth_date'], ENT_QUOTES, 'UTF-8')
-            . ' - ' . htmlspecialchars($p['date'], ENT_QUOTES, 'UTF-8')
-            . $age . '</span></li>';
-    }
-    return '<ul style="list-style:none;padding:0;">' . $items . '</ul>'
-        . '<p style="font-size:13px;color:#8b837d;margin-top:14px;">Go say happy birthday!</p>';
+    $bdays = array_filter($list, fn($p) => ($p['type'] ?? 'birthday') === 'birthday');
+    $deaths = array_filter($list, fn($p) => ($p['type'] ?? '') === 'death');
+
+    $render = function (array $items, string $heading): string {
+        if (!$items) return '';
+        $lis = '';
+        foreach ($items as $p) {
+            $tip = ($p['type'] ?? 'birthday') === 'death' ? 'death anniversary' : 'birthday';
+            $age = ($p['type'] ?? 'birthday') === 'birthday' && $p['age'] !== null
+                ? ' Turns <strong>' . (int)$p['age'] . '</strong>'
+                : '';
+            $lis .= '<li style="margin:8px 0;"><strong>' . htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8') . '</strong><br>'
+                . '<span style="color:#8b837d;font-size:13px;">'
+                . htmlspecialchars($p['birth_date'], ENT_QUOTES, 'UTF-8')
+                . ' &middot; ' . htmlspecialchars($p['date'], ENT_QUOTES, 'UTF-8')
+                . $age . '</span></li>';
+        }
+        return '<h3 style="font-size:15px;margin:14px 0 6px 0;color:#1f3628;">' . htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') . '</h3>'
+            . '<ul style="list-style:none;padding:0;">' . $lis . '</ul>';
+    };
+
+    return $render($bdays, 'Birthdays')
+        . $render($deaths, 'Memorials')
+        . '<p style="font-size:13px;color:#8b837d;margin-top:14px;">Say hi, or light a candle.</p>';
 }
 
 function send_birthday_digest(PDO $pdo, int $days): array
@@ -109,22 +128,22 @@ function send_birthday_digest(PDO $pdo, int $days): array
     $list = collect_upcoming($pdo, $days);
     $today = new DateTimeImmutable('today');
     $windowLabel = $today->format('j M') . ' to ' . $today->modify('+' . $days . ' days')->format('j M Y');
-    $body = '<p>The next <strong>' . $days . '</strong> days bring birthdays for our family:</p>'
+    $body = '<p>The next <strong>' . $days . '</strong> days bring these family events:</p>'
         . birthday_html($list);
     $sent = 0;
     $skipped = 0;
     foreach ($pdo->query("SELECT id, email, display_name FROM users WHERE status = 'active'") as $u) {
         if (!email_is_real((string)$u['email'])) { $skipped++; continue; }
         $result = app_send_branded($pdo, (string)$u['email'],
-            'Birthday reminders: ' . $windowLabel,
-            'Upcoming birthdays',
+            'Family events: ' . $windowLabel,
+            'Family events',
             'This month in our family',
             $body,
             null,
             'notification');
         if ($result['ok']) $sent++; else $skipped++;
     }
-    return ['ok' => true, 'sent' => $sent, 'skipped' => $skipped, 'birthdays' => count($list)];
+    return ['ok' => true, 'sent' => $sent, 'skipped' => $skipped, 'birthdays' => count($list), 'events' => count($list)];
 }
 
 function cli_cmd(): string

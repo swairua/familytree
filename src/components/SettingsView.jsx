@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { fetchSettings, updateSettings, sendTestEmail, fetchUpcomingBirthdays, sendBirthdayReminders } from '../utils/api'
+import { fetchSettings, updateSettings, sendTestEmail, fetchUpcomingBirthdays, sendBirthdayReminders, fetchTreeSummary } from '../utils/api'
 import '../styles/viewpages.css'
 import '../styles/account.css'
 import '../styles/settings.css'
@@ -32,6 +32,9 @@ export default function SettingsView({ currentUser, onSwitchView }) {
   const [birthdayEnabled, setBirthdayEnabled] = useState(true)
   const [birthdayLeadDays, setBirthdayLeadDays] = useState('14')
   const [upcoming, setUpcoming] = useState([])
+  const [treeStats, setTreeStats] = useState(null)
+  const [treeLoading, setTreeLoading] = useState(false)
+  const [treeError, setTreeError] = useState('')
   const [upcomingLoading, setUpcomingLoading] = useState(false)
   const [sendState, setSendState] = useState('')
   const [sendError, setSendError] = useState('')
@@ -66,6 +69,21 @@ export default function SettingsView({ currentUser, onSwitchView }) {
     } finally {
       setLoading(false)
       loadUpcoming()
+      loadTreeStats()
+    }
+  }
+
+  const loadTreeStats = async () => {
+    setTreeLoading(true)
+    setTreeError('')
+    try {
+      const res = await fetchTreeSummary()
+      if (res.ok) setTreeStats(res)
+      else setTreeError(res.error || 'Could not load tree stats')
+    } catch (err) {
+      setTreeError(err.message || 'Could not load tree stats')
+    } finally {
+      setTreeLoading(false)
     }
   }
 
@@ -232,6 +250,24 @@ export default function SettingsView({ currentUser, onSwitchView }) {
               <div className="settings-section-header">
                 <h2><i className="fas fa-envelope" aria-hidden="true"></i> Email (SMTP)</h2>
                 <p>Outgoing server, email account credentials, and where links go.</p>
+              </div>
+
+              <div className="settings-data-health">
+                <div className="settings-data-health-header">
+                  <h3><i className="fas fa-tree" aria-hidden="true"></i> Data health</h3>
+                  {treeLoading && <span className="view-sub">Loading…</span>}
+                </div>
+                {treeError && <p className="account-error" role="alert">{treeError}</p>}
+                {treeStats && treeStats.stats && (
+                  <dl className="settings-data-grid">
+                    <div><dt>Individuals in tree</dt><dd>{treeStats.stats.individualCount}</dd></div>
+                    <div><dt>Families</dt><dd>{treeStats.stats.familyCount}</dd></div>
+                    <div><dt>Living / deceased</dt><dd>{treeStats.living} / {treeStats.deceased}</dd></div>
+                    <div><dt>Birthdays with dates</dt><dd>{treeStats.stats.eventCount ?? '—'} events</dd></div>
+                    <div><dt>Known male / female / unknown</dt><dd>{treeStats.gender?.male ?? '—'} / {treeStats.gender?.female ?? '—'} / {treeStats.gender?.unknown ?? '—'}</dd></div>
+                    <div><dt>Individuals with a birth year</dt><dd>{treeStats.withBirthYear}</dd></div>
+                  </dl>
+                )}
               </div>
 
               <form className="account-form settings-form" onSubmit={handleSave}>

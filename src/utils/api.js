@@ -552,3 +552,8 @@ export async function listInvites() {
   const res = await fetch(`${API_BASE}/invites.php?action=list`, { credentials: 'same-origin' })
   return res.json()
 }
+
+export async function fetchTreeSummary() {
+  const res = await fetch(`${API_BASE}/tree.php?action=summary`, { credentials: 'same-origin' })
+  return res.json()
+}

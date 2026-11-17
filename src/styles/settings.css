@@ -281,3 +281,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Settings - data-health card */
+.settings-data-health {
+  background: #faf8f5;
+  border: 1px solid #e2ddd7;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  margin-bottom: 16px;
+}
+.settings-data-health-header { display: flex; align-items: baseline; gap: 12px; }
+.settings-data-health-header h3 { margin: 0; font-size: 0.95rem; color: #1f3628; }
+.settings-data-health-header h3 i { color: #e08c2e; margin-right: 6px; }
+.settings-data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 24px; margin: 12px 0 0; }
+.settings-data-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.settings-data-grid dt { font-size: 0.72rem; color: #8b837d; font-family: Arial, sans-serif; letter-spacing: 0.03em; text-transform: uppercase; }
+.settings-data-grid dd { margin: 0; font-size: 0.92rem; color: #1f3628; font-weight: 700; }
