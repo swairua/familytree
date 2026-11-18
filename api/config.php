@@ -81,13 +81,33 @@ function db(): PDO
         $cfg['db_name']
     );
 
-    $pdo = new PDO($dsn, $cfg['db_user'], $cfg['db_pass'], [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ]);
+    // Credential sets to try (config.local.php first, then defaults, then alternative)
+    $credSets = [
+        ['user' => $cfg['db_user'], 'pass' => $cfg['db_pass']],
+        ['user' => APP_DSN_DEFAULTS['user'], 'pass' => APP_DSN_DEFAULTS['pass']],
+        ['user' => 'wayrusc1_theheritage', 'pass' => APP_DSN_PASS],
+        ['user' => 'wayrusc1_familytree', 'pass' => APP_DSN_PASS],
+    ];
 
-    return $pdo;
+    $lastError = null;
+    foreach ($credSets as $creds) {
+        try {
+            $pdo = new PDO($dsn, $creds['user'], $creds['pass'], [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]);
+            return $pdo;
+        } catch (PDOException $e) {
+            $lastError = $e;
+            if (strpos($e->getMessage(), '1045') === false && strpos($e->getMessage(), 'Access denied') === false) {
+                throw $e;
+            }
+            continue;
+        }
+    }
+
+    throw $lastError;
 }
 
 // --- CORS / HTTP helpers ------------------------------------------------------
